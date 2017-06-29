@@ -26,7 +26,29 @@ mod test;
 use libc::*;
 
 extern "C" {
-    pub fn cuckoo_basic_mine(edge_bits:c_int, 
+
+    /// #Description 
+    ///
+    /// Call to the cuckoo_basic_mine function in the library, which calls the base
+    /// cuckoo miner implementation found in cuckoo_miner.cpp.
+    ///
+    /// #Arguments
+    ///
+    /// * `edge_bits` the number of bits to use for edges, i.e. size of the graph
+    /// * `header` The SHA3 hash to use for the seed to the internal SIPHASH function
+    ///    which generates edge locations in the graph
+    /// * `header_len` the length of the header
+    /// * `sol_nonces` an array (which must be of size 42) in which solution nonces will
+    ///    be stored if a solution is found
+    ///
+    /// Returns 1 if a solution is found, with the 42 solution nonces contained within
+    /// sol_nonces. Returns 0 if no solution is found.
+    ///
+    /// #Example
+    /// TBD
+    ///
+
+    pub fn cuckoo_basic_mine(edge_bits:c_uint, 
                              header: *const c_uchar, 
                              header_len: size_t,
                              sol_nonces: *mut uint32_t) -> uint32_t;
