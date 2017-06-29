@@ -18,8 +18,11 @@
 extern crate cuckoo_miner;
 extern crate env_logger;
 
-use cuckoo_miner::{CuckooMinerConfig, CuckooMiner};
-
+use cuckoo_miner::miner::CuckooMiner;
+use cuckoo_miner::types::{CuckooMinerImplType, 
+                CuckooMinerConfig, 
+                CuckooMinerError,
+                CuckooMinerSolution};
 fn main() {
 
     let test_header = [0xA6, 0xC1, 0x64, 0x43, 0xFC, 0x82, 0x25, 0x0B, 
@@ -27,11 +30,16 @@ fn main() {
                        0x9B, 0xA6, 0x87, 0x91, 0x8C, 0xB0, 0x0C, 0x4C, 
                        0x10, 0xD6, 0x62, 0x5E, 0x3A, 0x2E, 0x7B, 0xCC];
     env_logger::init();
-    println!("Hello, world!");
-    let config = CuckooMinerConfig::new();
-    let miner = CuckooMiner::new(config);
+    
+    let mut config = CuckooMinerConfig::new();
+    let miner = CuckooMiner::new(config).unwrap();
+    let mut solution = CuckooMinerSolution::new();
 
     //Just a testing stub for the time being
-    miner.mine(&test_header);
+    let result=miner.mine(&test_header, &mut solution).unwrap();
+
+    if result == true {
+        println!("Solution found: {}", solution);
+    }
 
 }
