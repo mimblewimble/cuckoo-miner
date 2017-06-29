@@ -1,24 +1,25 @@
 [package]
-name = "libcuckoo-sys"
+name = "cuckoo-sys"
 version = "0.1.0"
 authors = ["yeastplume"]
 license = "MIT/Apache-2.0/BSD-3-Clause"
-description = "Native bindings to John Tromp's Cuckoo Cycle Implementations"
+description = "Rust bindings to John Tromp's Cuckoo Cycle Implementations"
 readme = "README.md"
+workspace = ".."
 
 build = "build.rs"
-links = "cuckoo"
+links = "cuckoo-miner"
 
 [features]
 default = [ "static" ]
 static = []
 
 [dependencies]
-libc = "0.2"
+libc = "0.2.24"
 
 [dev-dependencies]
 const-cstr = "0.2"
 
 [build-dependencies]
-gcc = { version = "0.3", features = ["parallel"] }
+gcc = "0.3.51"
 make-cmd = "0.1"

@@ -16,13 +16,26 @@
 //!
 
 extern crate cuckoo_miner;
+extern crate cuckoo_sys;
 extern crate env_logger;
 
-use cuckoo_miner::test_function;
 
+use cuckoo_miner::test_function;
+use cuckoo_sys::{cuckoo_test_link, cuckoo_test_wrap};
 
 fn main() {
     env_logger::init();
     println!("Hello, world!");
-    test_function();
+    unsafe {
+        for i in 0..1000 {
+            let result=cuckoo_test_wrap(12, i, 10, 0);
+            if (result==1){
+                break;
+            }
+            //if i%10 == 0 {
+                println!("Count: {}", i);
+            //}
+        }
+    }
+    
 }

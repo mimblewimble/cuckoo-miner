@@ -26,6 +26,13 @@ mod test;
 use libc::*;
 
 extern "C" {
+
+    //int cuckoo_test_wrap(int argc, char **argv);
+
+    pub fn cuckoo_test_link();
+
+    pub fn cuckoo_test_wrap(edge_bits:c_int, nonce: c_int, range: c_int, argv:c_uchar)->uint32_t;
+
     // Database operations
 
     /*pub fn rocksdb_open(options: *const rocksdb_options_t,
