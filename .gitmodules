@@ -1,3 +1,0 @@
-[submodule "cuckoo"]
-	path = cuckoo_sys/cuckoo
-	url = https://github.com/tromp/cuckoo.git

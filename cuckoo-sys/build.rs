@@ -25,18 +25,23 @@ fn fail_on_empty_directory(name: &str) {
 
 fn build_cuckoo() {
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=cuckoo/");
+    println!("cargo:rerun-if-changed=cuckoo-sys/");
+    println!("cargo:rerun-if-changed=cuckoo-sys/include");
+    println!("cargo:rerun-if-changed=cuckoo-sys/src");
 
     let mut config = gcc::Config::new();
-    config.include("cuckoo/src");
+    config.include("cuckoo-sys/src");
+    config.include("cuckoo-sys/include");
     config.include(".");
 
     //Leave this here for now, config defines go here
     config.define("NDEBUG", Some("1"));
     
-    let mut lib_sources = include_str!("libcuckoo_lib_sources.txt")
+    let mut lib_sources = include_str!("cuckoo_sys_lib_sources.txt")
         .split(" ")
         .collect::<Vec<&'static str>>();
+
+
     
     if cfg!(target_env = "msvc") {
         config.flag("-EHsc");
@@ -45,35 +50,18 @@ fn build_cuckoo() {
     }
 
     for file in lib_sources {
-        let file = "cuckoo/src/".to_string() + file;
+        let file = "cuckoo-sys/src/".to_string() + file;
         config.file(&file);
     }
 
+    //config.flag("-lssl");
+    //config.flag("-lcrypto");
+
     config.cpp(true);
-    config.compile("libcuckoo.a");
-}
-
-fn build_snappy() {
-    let mut config = gcc::Config::new();
-    config.include("snappy/");
-    config.include(".");
-
-    config.define("NDEBUG", Some("1"));
-
-    if cfg!(target_env = "msvc") {
-        config.flag("-EHsc");
-    } else {
-        config.flag("-std=c++11");
-    }
-
-    config.file("snappy/snappy.cc");
-    config.file("snappy/snappy-sinksource.cc");
-    config.file("snappy/snappy-c.cc");
-    config.cpp(true);
-    config.compile("libsnappy.a");
+    config.compile("libcuckoo-sys.a");
 }
 
 fn main() {
-    fail_on_empty_directory("cuckoo");
+    fail_on_empty_directory("cuckoo-sys");
     build_cuckoo();
 }
