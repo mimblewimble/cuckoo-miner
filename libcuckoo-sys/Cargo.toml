@@ -1,0 +1,24 @@
+[package]
+name = "libcuckoo-sys"
+version = "0.1.0"
+authors = ["yeastplume"]
+license = "MIT/Apache-2.0/BSD-3-Clause"
+description = "Native bindings to John Tromp's Cuckoo Cycle Implementations"
+readme = "README.md"
+
+build = "build.rs"
+links = "cuckoo"
+
+[features]
+default = [ "static" ]
+static = []
+
+[dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+const-cstr = "0.2"
+
+[build-dependencies]
+gcc = { version = "0.3", features = ["parallel"] }
+make-cmd = "0.1"
