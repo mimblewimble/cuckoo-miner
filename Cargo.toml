@@ -1,0 +1,16 @@
+[package]
+name = "cuckoo-miner"
+version = "0.1.0"
+authors = ["yeastplume"]
+
+[workspace]
+members = ["cuckoo_miner"]
+
+[dependencies]
+cuckoo_miner = { path = "cuckoo_miner" }
+
+env_logger="^0.3.5"
+log = "^0.3"
+
+
+
