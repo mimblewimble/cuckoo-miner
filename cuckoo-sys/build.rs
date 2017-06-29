@@ -30,8 +30,8 @@ fn build_cuckoo() {
     println!("cargo:rerun-if-changed=cuckoo-sys/src");
 
     let mut config = gcc::Config::new();
-    config.include("cuckoo-sys/src");
-    config.include("cuckoo-sys/include");
+    config.include("cuckoo/src");
+    config.include("cuckoo/src/cuckoo_miner");
     config.include(".");
 
     //Leave this here for now, config defines go here
@@ -50,7 +50,7 @@ fn build_cuckoo() {
     }
 
     for file in lib_sources {
-        let file = "cuckoo-sys/src/".to_string() + file;
+        let file = "cuckoo/src/".to_string() + file;
         config.file(&file);
     }
 
@@ -62,6 +62,6 @@ fn build_cuckoo() {
 }
 
 fn main() {
-    fail_on_empty_directory("cuckoo-sys");
+    fail_on_empty_directory("cuckoo");
     build_cuckoo();
 }
