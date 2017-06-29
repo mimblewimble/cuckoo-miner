@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["yeastplume"]
 
 [workspace]
-members = ["cuckoo_miner","libcuckoo-sys"]
+members = ["cuckoo_miner","cuckoo_sys"]
 
 [dependencies]
 cuckoo_miner = { path = "cuckoo_miner" }
