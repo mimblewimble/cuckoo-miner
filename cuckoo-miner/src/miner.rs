@@ -14,7 +14,7 @@
 
 //! Main interface for callers into cuckoo-miner
 
-use cuckoo_sys::{cuckoo_basic_mine};
+use cuckoo_sys::{call_cuckoo};
 
 use types::*;
 
@@ -69,16 +69,11 @@ impl CuckooMiner {
 
     pub fn mine(&self, header: &[u8], solution:&mut CuckooMinerSolution) 
         -> Result<bool, CuckooMinerError> {    
-            unsafe {
-                let result=cuckoo_basic_mine(self.config.edge_bits-1, 
-                                            header.as_ptr(), 
-                                            header.len(), 
-                                            solution.solution_nonces.as_mut_ptr());
-                if result==1 {
-                    return Ok(true)
-                } else {
-                    return Ok(false)
-                }
+            let result=call_cuckoo(header, &mut solution.solution_nonces);
+            if result==1 {
+                return Ok(true)
+            } else {
+                return Ok(false)
             }
     }
 }
