@@ -18,39 +18,21 @@
 
 #![allow(dead_code, non_camel_case_types, non_upper_case_globals, non_snake_case)]
 
+extern crate libloading as lib;
 extern crate libc;
+
+use libc::*;
 
 #[cfg(test)]
 mod test;
 
-use libc::*;
-
-extern "C" {
-
-    /// #Description 
-    ///
-    /// Call to the cuckoo_basic_mine function in the library, which calls the base
-    /// cuckoo miner implementation found in cuckoo_miner.cpp.
-    ///
-    /// #Arguments
-    ///
-    /// * `edge_bits` the number of bits to use for edges, i.e. size of the graph
-    /// * `header` The SHA3 hash to use for the seed to the internal SIPHASH function
-    ///    which generates edge locations in the graph
-    /// * `header_len` the length of the header
-    /// * `sol_nonces` an array (which must be of size 42) in which solution nonces will
-    ///    be stored if a solution is found
-    ///
-    /// Returns 1 if a solution is found, with the 42 solution nonces contained within
-    /// sol_nonces. Returns 0 if no solution is found.
-    ///
-    /// #Example
-    /// TBD
-    ///
-
-    pub fn cuckoo_basic_mine(edge_bits:c_uint, 
-                             header: *const c_uchar, 
-                             header_len: size_t,
-                             sol_nonces: *mut uint32_t) -> uint32_t;
-
+pub fn call_cuckoo(header: &[u8], solutions:&mut [u32; 42] ) -> u32 {
+    let lib = lib::Library::new("libcuckoo_10.so").unwrap();
+    unsafe {
+        let func: lib::Symbol<unsafe extern fn(*const c_uchar, size_t, *mut uint32_t) -> uint32_t> 
+            = lib.get(b"cuckoo_call").unwrap();
+        return func(header.as_ptr(), header.len(), solutions.as_mut_ptr());
+    }
 }
+
+

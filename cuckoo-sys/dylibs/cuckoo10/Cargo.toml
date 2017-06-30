@@ -1,23 +1,21 @@
 [package]
-name = "cuckoo-sys"
+name = "cuckoo_10"
 version = "0.1.0"
 authors = ["yeastplume"]
 license = "MIT/Apache-2.0/BSD-3-Clause"
-description = "Rust bindings to John Tromp's Cuckoo Cycle Implementations"
+description = "Cuckoo 10 Build"
 readme = "README.md"
-workspace = ".."
+workspace = "../../../"
 
 build = "build.rs"
-links = "cuckoo-miner"
 
-[features]
-default = [ "static" ]
-static = []
+[lib]
+name = "cuckoo_10"
+crate-type = ["dylib"]
 
 [dependencies]
 libc = "0.2.24"
 libloading = "0.4.0"
-cuckoo_10 = { path = "dylibs/cuckoo10" }
 
 [dev-dependencies]
 const-cstr = "0.2"
