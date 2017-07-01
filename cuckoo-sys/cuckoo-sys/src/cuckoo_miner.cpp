@@ -8,25 +8,31 @@
 
 #include <stdio.h>
 
-extern "C" void cuckoo_test_link(){
-    printf("Hello from lib\n");
-}
-
 #if SQUASH_OUTPUT
 #define printf(fmt, ...) (0)
 #endif
 
-extern "C" int cuckoo_test_wrap(u32 edge_bits, u32 nonce, u32 range, char **argv){
+extern "C" int cuckoo_basic_mine(u32 edge_bits, 
+                                 char* header_data, 
+                                 int header_length, 
+                                 u32* sol_nonces){
   EDGEBITS = edge_bits;
-
-//int main(int argc, char **argv) {
   int nthreads = 1;
   int ntrims   = 1 + (PART_BITS+3)*(PART_BITS+4)/2;
   char header[HEADERLEN];
-  unsigned len;
   int c;
+  int nonce = 0;
+  int range = 1;
+
+  assert(header_length <= sizeof(header));
 
   memset(header, 0, sizeof(header));
+
+  memcpy(header, header_data, header_length);
+
+  //print_buf("Coming in is: ", (const unsigned char*) &header, header_length);
+
+  //memset(header, 0, sizeof(header));
   /*while ((c = getopt (argc, argv, "h:m:n:r:t:")) != -1) {
     switch (c) {
       case 'h':
@@ -48,6 +54,7 @@ extern "C" int cuckoo_test_wrap(u32 edge_bits, u32 nonce, u32 range, char **argv
         break;
     }
   }*/
+
   printf("Looking for %d-cycle on cuckoo%d(\"%s\",%d", PROOFSIZE, EDGEBITS+1, header, nonce);
   if (range > 1)
     printf("-%d", nonce+range-1);
@@ -66,7 +73,8 @@ extern "C" int cuckoo_test_wrap(u32 edge_bits, u32 nonce, u32 range, char **argv
 
   u32 sumnsols = 0;
   for (int r = 0; r < range; r++) {
-    ctx.setheadernonce(header, sizeof(header), nonce + r);
+    //ctx.setheadernonce(header, sizeof(header), nonce + r);
+    ctx.setheadergrin(header, header_length, nonce + r);
     printf("k0 %lx k1 %lx\n", ctx.sip_keys.k0, ctx.sip_keys.k1);
     for (int t = 0; t < nthreads; t++) {
       threads[t].id = t;
@@ -80,8 +88,10 @@ extern "C" int cuckoo_test_wrap(u32 edge_bits, u32 nonce, u32 range, char **argv
     }
     for (unsigned s = 0; s < ctx.nsols; s++) {
       printf("Solution");
-      for (int i = 0; i < PROOFSIZE; i++)
+      for (int i = 0; i < PROOFSIZE; i++) {
         printf(" %jx", (uintmax_t)ctx.sols[s][i]);
+        sol_nonces[i] = ctx.sols[s][i]; 
+      }
       printf("\n");
       return 1;
     }

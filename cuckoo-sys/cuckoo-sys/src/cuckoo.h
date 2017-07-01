@@ -3,9 +3,11 @@
 
 #include <stdint.h> // for types uint32_t,uint64_t
 #include <string.h> // for functions strlen, memset
+#include <stdio.h>
 //#include <openssl/sha.h>  //Removing for now, to see if we can live without it
                             //Would give a dependency on openssl we'd rather avoid
 #include "siphash.h"
+#include "hash_impl.h"
 
 #define GRIN_MOD 1
 #define SQUASH_OUTPUT 0
@@ -64,9 +66,32 @@ const char *errstr[] = { "OK", "wrong header length", "nonce too big", "nonces n
 #define HEADERLEN 80
 #endif
 
+//Just keep this around for debugging
+static void print_buf(const char *title, const unsigned char *buf, size_t buf_len)
+{
+    size_t i = 0;
+    printf("%s\n", title);
+    for(i = 0; i < buf_len; ++i)
+    printf("%02X%s", buf[i],
+             ( i + 1 ) % 16 == 0 ? "\r\n" : " " );
+
+}
+
+void SHA256(unsigned char * in, u32 len, unsigned char* out){
+    //print_buf("Input for SHA256 for key: ", in, len);
+    secp256k1_sha256_t sha;
+    secp256k1_sha256_initialize(&sha);
+    secp256k1_sha256_write(&sha, in, len);
+    secp256k1_sha256_finalize(&sha, out);
+    //print_buf("SHA256 for key: ", out, len);
+    
+
+
+}
+
 void setheader(const char *header, const u32 headerlen, siphash_keys *keys) {
   char hdrkey[32];
-  //SHA256((unsigned char *)header, HEADERLEN, (unsigned char *)hdrkey);
+  SHA256((unsigned char *)header, headerlen, (unsigned char *)hdrkey);
   setkeys(keys, hdrkey);
 }
 

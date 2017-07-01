@@ -27,14 +27,8 @@
 extern crate log;
 extern crate env_logger;
 
-pub fn test_function(){
-    println!("Called first test function");
-    debug!("arf");
-}
+extern crate cuckoo_sys;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-    }
-}
+pub mod cuckoo_miner;
+
+pub use cuckoo_miner::{CuckooMiner, CuckooMinerConfig};

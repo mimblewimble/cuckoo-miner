@@ -4,11 +4,10 @@ version = "0.1.0"
 authors = ["yeastplume"]
 
 [workspace]
-members = ["cuckoo_miner","cuckoo-sys"]
+members = ["cuckoo-miner","cuckoo-sys"]
 
 [dependencies]
-cuckoo_miner = { path = "cuckoo_miner" }
-cuckoo-sys = { path = "cuckoo-sys" }
+cuckoo_miner = { path = "cuckoo-miner" }
 
 env_logger="^0.3.5"
 log = "^0.3"
