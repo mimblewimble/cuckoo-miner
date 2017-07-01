@@ -247,6 +247,7 @@ public:
     assert(sols != 0);
     nsols = 0;
   }
+  
   void setheadernonce(char* headernonce, const u32 len, const u32 nce) {
     nonce = nce;
     ((u32 *)headernonce)[len/sizeof(u32)-1] = htole32(nonce); // place nonce at end
@@ -254,6 +255,14 @@ public:
     alive->clear(); // set all edges to be alive
     nsols = 0;
   }
+
+  void setheadergrin(char* header, const u32 len, const u32 nce) {
+    nonce = nce;
+    setheader(header, len, &sip_keys);
+    alive->clear();
+    nsols = 0;
+  }
+
   ~cuckoo_ctx() {
     delete alive;
     delete nonleaf;

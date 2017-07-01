@@ -12,30 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Testing binary for the cuckoo_miner lib project
+//! Testing/Sample app using the cuckoo_miner lib
 //!
 
 extern crate cuckoo_miner;
-extern crate cuckoo_sys;
 extern crate env_logger;
 
-
-use cuckoo_miner::test_function;
-use cuckoo_sys::{cuckoo_test_link, cuckoo_test_wrap};
+use cuckoo_miner::{CuckooMinerConfig, CuckooMiner};
 
 fn main() {
+
+    let test_header = [0xA6, 0xC1, 0x64, 0x43, 0xFC, 0x82, 0x25, 0x0B, 
+                       0x49, 0xC7, 0xFA, 0xA3, 0x87, 0x6E, 0x7A, 0xB8, 
+                       0x9B, 0xA6, 0x87, 0x91, 0x8C, 0xB0, 0x0C, 0x4C, 
+                       0x10, 0xD6, 0x62, 0x5E, 0x3A, 0x2E, 0x7B, 0xCC];
     env_logger::init();
     println!("Hello, world!");
-    unsafe {
-        for i in 0..1000 {
-            let result=cuckoo_test_wrap(12, i, 10, 0);
-            if (result==1){
-                break;
-            }
-            //if i%10 == 0 {
-                println!("Count: {}", i);
-            //}
-        }
-    }
-    
+    let config = CuckooMinerConfig::new();
+    let miner = CuckooMiner::new(config);
+
+    //Just a testing stub for the time being
+    miner.mine(&test_header);
+
 }
