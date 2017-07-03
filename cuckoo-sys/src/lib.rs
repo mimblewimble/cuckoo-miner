@@ -27,7 +27,7 @@ use libc::*;
 mod test;
 
 pub fn call_cuckoo(header: &[u8], solutions:&mut [u32; 42] ) -> u32 {
-    let lib = lib::Library::new("libcuckoo_10.so").unwrap();
+    let lib = lib::Library::new("libcuckoo_basic_12.so").unwrap();
     unsafe {
         let func: lib::Symbol<unsafe extern fn(*const c_uchar, size_t, *mut uint32_t) -> uint32_t> 
             = lib.get(b"cuckoo_call").unwrap();
