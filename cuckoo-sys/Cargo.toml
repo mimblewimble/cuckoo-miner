@@ -7,9 +7,6 @@ description = "Rust bindings to John Tromp's Cuckoo Cycle Implementations"
 readme = "README.md"
 workspace = ".."
 
-build = "build.rs"
-links = "cuckoo-miner"
-
 [features]
 default = [ "static" ]
 static = []
@@ -17,11 +14,16 @@ static = []
 [dependencies]
 libc = "0.2.24"
 libloading = "0.4.0"
-cuckoo_10 = { path = "dylibs/cuckoo10" }
+cuckoo_basic_12 = { path = "dylibs/cuckoo_basic_12" }
+cuckoo_basic_30 = { path = "dylibs/cuckoo_basic_30" }
+#cuckoo_tomato_12 = { path = "dylibs/cuckoo_tomato_12" }
+#cuckoo_tomato_30 = { path = "dylibs/cuckoo_tomato_30" }
+cuckoo_mean_28 = { path = "dylibs/cuckoo_mean_28" }
+cuckoo_mean_30 = { path = "dylibs/cuckoo_mean_30" }
+
 
 [dev-dependencies]
 const-cstr = "0.2"
 
 [build-dependencies]
 gcc = "0.3.51"
-make-cmd = "0.1"

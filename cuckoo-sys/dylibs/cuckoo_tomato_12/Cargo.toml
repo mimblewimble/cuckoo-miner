@@ -1,0 +1,18 @@
+[package]
+name = "cuckoo_tomato_12"
+version = "0.1.0"
+authors = ["yeastplume"]
+license = "MIT/Apache-2.0/BSD-3-Clause"
+description = "Cuckoo Tomato 12 Build"
+
+build = "build.rs"
+
+[lib]
+crate-type = ["dylib"]
+path = "../common/lib.rs"
+
+[dependencies]
+libc = "0.2.24"
+
+[build-dependencies]
+common = { path = "../common" }
