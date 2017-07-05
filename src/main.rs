@@ -16,13 +16,13 @@
 //!
 
 extern crate cuckoo_miner;
+extern crate cuckoo_config;
 extern crate env_logger;
 
-use cuckoo_miner::miner::CuckooMiner;
-use cuckoo_miner::types::{CuckooMinerImplType, 
-                CuckooMinerConfig, 
-                CuckooMinerError,
-                CuckooMinerSolution};
+
+use cuckoo_config::*;
+use cuckoo_miner::CuckooMiner;
+
 fn main() {
 
     let test_header = [0xA6, 0xC1, 0x64, 0x43, 0xFC, 0x82, 0x25, 0x0B, 
@@ -32,7 +32,10 @@ fn main() {
     env_logger::init();
     
     let mut config = CuckooMinerConfig::new();
-    let miner = CuckooMiner::new(config).unwrap();
+    config.cuckoo_size = 12;
+    let mut miner = CuckooMiner::new(config).unwrap();
+    miner.init().expect("Miner initialisation failed.");
+    //miner.init();
     let mut solution = CuckooMinerSolution::new();
 
     //Just a testing stub for the time being

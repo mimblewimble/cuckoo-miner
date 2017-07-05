@@ -26,10 +26,10 @@
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-extern crate cuckoo_sys;
-extern crate cuckoo_config;
 
-pub mod miner;
+pub mod types;
 
-pub use miner::CuckooMiner;
-
+pub use types::{CuckooMinerConfig, 
+                CuckooMinerError,
+                CuckooMinerSolution,
+                CuckooMinerImplType};

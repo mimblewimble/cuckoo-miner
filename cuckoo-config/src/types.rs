@@ -25,8 +25,14 @@ const CUCKOO_SOLUTION_SIZE:usize = 42;
 // Errors possible when trying to create the miner
 #[derive(Debug)]
 pub enum CuckooMinerError {
+    // Error when requested miner is not loaded
+    MinerNotLoadedError(String),
+
     // Error when requested miner is not implemented
-    NotImplementedError()
+    NotImplementedError(String),
+
+    // Unexpected return code from miner call
+    UnexpectedResultError(u32),
 
 }
 
@@ -104,12 +110,11 @@ impl cmp::PartialEq for CuckooMinerSolution {
 /// of a miner.
 
 pub struct CuckooMinerConfig {
-    // The size of the cuckoo graph, i.e. the maximum
-    // number of bits used to store edges
-    pub edge_bits: u32,
-
     // The implementation of the miner to use
     pub miner_impl: CuckooMinerImplType,
+
+    // Edgebits, or cuckoo size (sizeshift) to use
+    pub cuckoo_size: u8,
 
 
 }
@@ -118,7 +123,7 @@ impl Default for CuckooMinerConfig {
 	fn default() -> CuckooMinerConfig {
 		CuckooMinerConfig{
             miner_impl: CuckooMinerImplType::Base,
-			edge_bits: 12,
+			cuckoo_size: 12,
 		}
 	}
 }
