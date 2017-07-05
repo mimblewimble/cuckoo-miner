@@ -14,6 +14,9 @@ static = []
 [dependencies]
 libc = "0.2.24"
 libloading = "0.4.0"
+lazy_static = "0.2.8"
+cuckoo_config = { path = "../cuckoo-config" }
+
 cuckoo_basic_12 = { path = "dylibs/cuckoo_basic_12" }
 cuckoo_basic_30 = { path = "dylibs/cuckoo_basic_30" }
 #cuckoo_tomato_12 = { path = "dylibs/cuckoo_tomato_12" }

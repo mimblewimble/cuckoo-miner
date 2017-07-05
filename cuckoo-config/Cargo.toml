@@ -1,5 +1,5 @@
 [package]
-name = "cuckoo_miner"
+name = "cuckoo_config"
 version = "0.1.0"
 authors = ["yeastplume"]
 workspace = ".."
@@ -7,8 +7,6 @@ workspace = ".."
 [dependencies]
 env_logger="^0.3.5"
 log = "^0.3"
-cuckoo-sys = { path = "../cuckoo-sys" }
-cuckoo_config = { path = "../cuckoo-config" }
 
 
 
