@@ -43,13 +43,13 @@ fn main() {
         miner.init(c).expect("Miner initialisation failed.");
         let mut solution = CuckooMinerSolution::new();
         
-        let result = miner.mine(&test_header, &mut solution).unwrap();
+        /*let result = miner.mine(&test_header, &mut solution).unwrap();
 
         if result == true {
            println!("Solution found: {}", solution);
         } else {
            println!("No Solution found");
-        }
+        }*/
     }
 
 
