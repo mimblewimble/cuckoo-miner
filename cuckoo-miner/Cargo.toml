@@ -10,5 +10,8 @@ log = "^0.3"
 cuckoo-sys = { path = "../cuckoo-sys" }
 cuckoo_config = { path = "../cuckoo-config", version="0.1.0" }
 
+[dev-dependencies]
+rust-crypto = "0.2.36"
+
 
 

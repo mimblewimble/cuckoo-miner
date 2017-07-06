@@ -73,7 +73,7 @@ fn get_plugin_caps(full_path:String)
     -> Result<CuckooPluginCapabilities, CuckooMinerError> {
         //println!("{:?}",path.display() );
         let mut caps=CuckooPluginCapabilities::default();
-        load_lib(full_path.clone())?;
+        load_lib(&full_path)?;
         let mut name_bytes:[u8;256]=[0;256];
         let mut description_bytes:[u8;256]=[0;256];
         let mut name_len=name_bytes.len() as u32;
@@ -100,9 +100,9 @@ fn get_plugin_caps(full_path:String)
 }
 // Gets info from all of the available plugins
 
-pub fn get_available_plugins(config:&CuckooMinerConfig) 
+pub fn get_available_plugins(plugin_dir: &str) 
         -> Result<Vec<CuckooPluginCapabilities>,CuckooMinerError>{
-    let lib_full_path = abspath(Path::new(&config.plugin_dir));
+    let lib_full_path = abspath(Path::new(&plugin_dir));
     let glob_search_path = format!("{}/*cuckoo*{}", lib_full_path, DLL_SUFFIX);
 
     let mut result_vec:Vec<CuckooPluginCapabilities> = Vec::new();
@@ -129,20 +129,21 @@ pub fn get_available_plugins(config:&CuckooMinerConfig)
 
 // loads a library with given full path
 
-fn load_lib(lib_full_path:String) -> Result<(), CuckooMinerError> {
+fn load_lib(lib_full_path:&str) -> Result<(), CuckooMinerError> {
     debug!("Loading miner plugin: {}", &lib_full_path);
-    //TODO: check if lib is loaded and unload if so
+    let mut loaded_library_ref = loaded_library.lock().unwrap();
+    
     let result = libloading::Library::new(lib_full_path.clone());
     let loaded_lib = {
         match result {
             Ok(l) => l,
             Err(e) => {
-                return Err(CuckooMinerError::PluginNotFoundError(lib_full_path));
+                return Err(CuckooMinerError::PluginNotFoundError(String::from(lib_full_path)));
             }
         }
     };
 
-    let mut loaded_library_ref = loaded_library.lock().unwrap();
+
     *loaded_library_ref = Some(loaded_lib);
 
     let mut cuckoo_call_ref = cuckoo_call.lock().unwrap();
@@ -157,13 +158,27 @@ fn load_lib(lib_full_path:String) -> Result<(), CuckooMinerError> {
     Ok(())
 }
 
+fn unload_lib(){
+    let mut cuckoo_call_ref = cuckoo_call.lock().unwrap();
+    drop(cuckoo_call_ref);
+    
+    let mut cuckoo_description_ref = cuckoo_description.lock().unwrap();
+    drop(cuckoo_description_ref);
+
+    let mut loaded_library_ref = loaded_library.lock().unwrap();
+    drop(loaded_library_ref);
+    
+}
+
 // Loads the appropriate cuckoo libary and needed function pointers based on
 // the given configuration
 
-pub fn load_cuckoo_lib(caps:&CuckooPluginCapabilities) -> Result<(), CuckooMinerError>{
+pub fn load_cuckoo_lib(full_path:&str) -> Result<(), CuckooMinerError>{
     //let lib_full_path = abspath(Path::new(&config.plugin_dir));
     //let lib_name = format!("{}{}lib{}{}", lib_full_path, MAIN_SEPARATOR, &caps.plugin_name, DLL_SUFFIX);
-    load_lib(caps.full_path.clone())
+    let result=load_lib(full_path);
+    if let Err(e) = result {return Err(e)}
+    Ok(())
     
 }
 

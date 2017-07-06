@@ -30,6 +30,8 @@ extern crate cuckoo_sys;
 extern crate cuckoo_config;
 
 pub mod miner;
+pub mod pluginmanager;
 
 pub use miner::CuckooMiner;
+pub use pluginmanager::CuckooPluginManager;
 
