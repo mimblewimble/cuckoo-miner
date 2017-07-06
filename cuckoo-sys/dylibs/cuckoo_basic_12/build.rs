@@ -1,7 +1,7 @@
 extern crate common;
 
-use common::*;
+use common::CuckooBuildEnv;
 
 fn main() {
-    build_cuckoo(String::from("sources.txt"), "basic", 12);
+    CuckooBuildEnv::new().build_cuckoo(String::from("sources.txt"), "basic", 12);
 }

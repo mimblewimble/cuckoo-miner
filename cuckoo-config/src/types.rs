@@ -33,6 +33,9 @@ pub enum CuckooMinerError {
     // Error when requested miner is not implemented
     PluginNotFoundError(String),
 
+    // Error when no plugins exist in target directory
+    NoPluginsFoundError(String),
+
     // Unexpected return code from miner call
     UnexpectedResultError(u32),
 

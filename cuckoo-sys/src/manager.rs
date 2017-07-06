@@ -103,7 +103,7 @@ fn get_plugin_caps(full_path:String)
 pub fn get_available_plugins(config:&CuckooMinerConfig) 
         -> Result<Vec<CuckooPluginCapabilities>,CuckooMinerError>{
     let lib_full_path = abspath(Path::new(&config.plugin_dir));
-    let glob_search_path = format!("{}/*cuckoo*.so", lib_full_path);
+    let glob_search_path = format!("{}/*cuckoo*{}", lib_full_path, DLL_SUFFIX);
 
     let mut result_vec:Vec<CuckooPluginCapabilities> = Vec::new();
     
@@ -117,6 +117,13 @@ pub fn get_available_plugins(config:&CuckooMinerConfig)
             Err(e) => println!("{:?}", e),
         }
     }
+
+    if result_vec.len()==0 {
+        return Err(CuckooMinerError::NoPluginsFoundError(
+            format!("No plugins found in plugin directory {}", lib_full_path.clone())
+            ));
+    }
+
     Ok(result_vec)
 }
 
