@@ -32,17 +32,33 @@ fn main() {
     env_logger::init();
     
     let mut config = CuckooMinerConfig::new();
-    config.cuckoo_size = 12;
+    config.num_threads=1;
     let mut miner = CuckooMiner::new(config).unwrap();
-    miner.init().expect("Miner initialisation failed.");
-    //miner.init();
-    let mut solution = CuckooMinerSolution::new();
+    let caps = miner.get_available_plugins().unwrap();
+
+    //Let's just run through them all and mine the same thing
+    for c in &caps {
+        println!("Test finding solution on plugin with caps: [{}]", c);
+
+        miner.init(c).expect("Miner initialisation failed.");
+        let mut solution = CuckooMinerSolution::new();
+        
+        let result = miner.mine(&test_header, &mut solution).unwrap();
+
+        if result == true {
+           println!("Solution found: {}", solution);
+        } else {
+           println!("No Solution found");
+        }
+    }
+
+
 
     //Just a testing stub for the time being
-    let result=miner.mine(&test_header, &mut solution).unwrap();
+    //let result=miner.mine(&test_header, &mut solution).unwrap();
 
-    if result == true {
+    /*if result == true {
         println!("Solution found: {}", solution);
-    }
+    }*/
 
 }

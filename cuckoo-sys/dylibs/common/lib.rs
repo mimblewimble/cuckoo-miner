@@ -45,6 +45,17 @@ extern "C" {
 
     pub fn cuckoo_call(header: *const c_uchar, 
                        header_len: size_t,
+                       num_threads: u32,
+                       num_trims: u32,
                        sol_nonces: *mut uint32_t) -> uint32_t;
 
+    /// #Description
+    /// 
+    /// Queries the plugin library for its description
+    ///
+
+    pub fn cuckoo_description(name_buf: *mut c_uchar,
+                              name_buf_len: *mut uint32_t,
+                              description_buf: *mut c_uchar,
+                              description_buf_len: *mut uint32_t);
 }
