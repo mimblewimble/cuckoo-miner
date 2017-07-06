@@ -24,14 +24,16 @@
 #![warn(missing_docs)]
 
 #[macro_use]
-extern crate log;
-extern crate env_logger;
-extern crate cuckoo_sys;
-extern crate cuckoo_config;
+extern crate config;
+extern crate miner;
 
-pub mod miner;
-pub mod pluginmanager;
+//pub mod cuckoo_miner;
+
+pub use config::{CuckooMinerConfig, 
+                CuckooMinerError,
+                CuckooMinerSolution,
+                CuckooPluginCapabilities};
 
 pub use miner::CuckooMiner;
-pub use pluginmanager::CuckooPluginManager;
+pub use miner::pluginmanager::CuckooPluginManager;
 

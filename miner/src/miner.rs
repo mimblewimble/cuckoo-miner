@@ -18,7 +18,7 @@ use cuckoo_sys::{call_cuckoo,
                  load_cuckoo_lib,
                  get_available_plugins};
 
-use cuckoo_config::*;
+use config::*;
 
 pub struct CuckooMiner{
     // Configuration

@@ -12,23 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! lib_cuckoo_miner is a Rust wrapper around John Tromp's Cuckoo Miner 
+//! C implementations, intended primarily for use in the Grin MimbleWimble
+//! blockhain development project.
+//!
+
 #![deny(non_upper_case_globals)]
 #![deny(non_camel_case_types)]
 #![deny(non_snake_case)]
+#![deny(unused_mut)]
 #![warn(missing_docs)]
 
 #[macro_use]
-extern crate lazy_static;
-extern crate libloading as libloading;
-extern crate libc;
-extern crate config;
-#[macro_use]
 extern crate log;
+extern crate env_logger;
+extern crate cuckoo_sys;
+extern crate config;
 
-extern crate glob;
+pub mod miner;
+pub mod pluginmanager;
 
-pub mod manager;
+pub use miner::CuckooMiner;
+pub use pluginmanager::CuckooPluginManager;
 
-pub use manager::{load_cuckoo_lib,
-                  call_cuckoo,
-                  get_available_plugins};

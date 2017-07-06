@@ -28,7 +28,7 @@ use glob::glob;
 use libloading;
 use libc::*;
 
-use cuckoo_config::*;
+use config::*;
 
 #[cfg(test)]
 mod test;

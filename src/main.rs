@@ -15,13 +15,13 @@
 //! Testing/Sample app using the cuckoo_miner lib
 //!
 
-extern crate cuckoo_miner;
-extern crate cuckoo_config;
+extern crate miner;
+extern crate config;
 extern crate env_logger;
 
 
-use cuckoo_config::*;
-use cuckoo_miner::{CuckooMiner,CuckooPluginManager};
+use config::*;
+use miner::{CuckooMiner,CuckooPluginManager};
 
 fn main() {
 
