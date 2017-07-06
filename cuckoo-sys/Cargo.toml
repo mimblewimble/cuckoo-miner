@@ -18,7 +18,7 @@ lazy_static = "0.2.8"
 glob = "0.2.11"
 log = "^0.3"
 
-cuckoo_config = { path = "../cuckoo-config" }
+config = { path = "../config" }
 
 cuckoo_basic_12 = { path = "dylibs/cuckoo_basic_12" }
 cuckoo_basic_30 = { path = "dylibs/cuckoo_basic_30" }

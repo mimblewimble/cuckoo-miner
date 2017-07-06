@@ -15,8 +15,8 @@
 
 //! Tests to exercise calling the different cuckoo_miner implementations
 
-extern crate cuckoo_miner;
-extern crate cuckoo_config;
+extern crate miner;
+extern crate config;
 extern crate env_logger;
 extern crate crypto;
 
@@ -24,8 +24,8 @@ extern crate crypto;
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 
-use cuckoo_config::*;
-use cuckoo_miner::{CuckooMiner,CuckooPluginManager};
+use config::*;
+use miner::{CuckooMiner,CuckooPluginManager};
 
 use std::time::{Duration, SystemTime};
 

@@ -17,7 +17,7 @@
 //! descriptions, parameters, and capabilities
 
 use cuckoo_sys::{get_available_plugins};
-use cuckoo_config::{CuckooMinerError, CuckooPluginCapabilities};
+use config::{CuckooMinerError, CuckooPluginCapabilities};
 
 pub struct CuckooPluginManager {
     // The directory in which to look for plugins
