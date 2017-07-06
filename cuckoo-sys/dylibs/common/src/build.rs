@@ -78,6 +78,13 @@ impl CuckooBuildEnv {
         config.flag(format!("-DEDGEBITS={}",size-1).as_str());
         config.flag("-DATOMIC");
 
+        //Have to change the output dir, to ensure generated
+        //object files from each build don't overwrite each other
+        let out_dir = env::var("OUT_DIR").unwrap();
+        println!("{}", out_dir);
+        let modded_out_dir = format!("{}/cuckoo-{}" ,out_dir, size);
+        config.out_dir(Path::new(&modded_out_dir));
+
         config.cpp(true);
         config.shared_flag(true);
         config.compile(format!("libcuckoo_{}_{}.a",variation,size).as_str());
