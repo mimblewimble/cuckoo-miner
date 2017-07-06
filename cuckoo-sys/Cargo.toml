@@ -24,8 +24,8 @@ cuckoo_basic_12 = { path = "dylibs/cuckoo_basic_12" }
 cuckoo_basic_30 = { path = "dylibs/cuckoo_basic_30" }
 #cuckoo_tomato_12 = { path = "dylibs/cuckoo_tomato_12" }
 #cuckoo_tomato_30 = { path = "dylibs/cuckoo_tomato_30" }
-cuckoo_mean_28 = { path = "dylibs/cuckoo_mean_28" }
-cuckoo_mean_30 = { path = "dylibs/cuckoo_mean_30" }
+#cuckoo_mean_28 = { path = "dylibs/cuckoo_mean_28" }
+#cuckoo_mean_30 = { path = "dylibs/cuckoo_mean_30" }
 
 
 [dev-dependencies]

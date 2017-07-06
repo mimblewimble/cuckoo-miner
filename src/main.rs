@@ -21,7 +21,7 @@ extern crate env_logger;
 
 
 use cuckoo_config::*;
-use cuckoo_miner::CuckooMiner;
+use cuckoo_miner::{CuckooMiner,CuckooPluginManager};
 
 fn main() {
 
@@ -30,35 +30,46 @@ fn main() {
                        0x9B, 0xA6, 0x87, 0x91, 0x8C, 0xB0, 0x0C, 0x4C, 
                        0x10, 0xD6, 0x62, 0x5E, 0x3A, 0x2E, 0x7B, 0xCC];
     env_logger::init();
-    
-    let mut config = CuckooMinerConfig::new();
-    config.num_threads=4;
-    let mut miner = CuckooMiner::new(config).unwrap();
-    let caps = miner.get_available_plugins().unwrap();
 
-    //Let's just run through them all and mine the same thing
-    for c in &caps {
-        println!("Test finding solution on plugin with caps: [{}]", c);
+    //First, load and query the plugins in the given directory
+    let mut plugin_manager = CuckooPluginManager::new().unwrap();
+    let result=plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
+    //Get a list of installed plugins and capabilities
+    let caps = plugin_manager.get_available_plugins().unwrap();
 
-        miner.init(c).expect("Miner initialisation failed.");
-        let mut solution = CuckooMinerSolution::new();
-        
-        let result = miner.mine(&test_header, &mut solution).unwrap();
-
-        if result == true {
-           println!("Solution found: {}", solution);
-        } else {
-           println!("No Solution found");
-        }
+    //Print all available plugins
+    for c in caps {
+        println!("Found plugin: [{}]", c);
     }
 
+    //Select a plugin somehow, and insert it into the miner configuration
+    //being created below
+    
+    let mut config = CuckooMinerConfig::new();
+    config.plugin_full_path = caps[0].full_path.clone();
+    
+    //set the number of threads for the miner to use
+    config.num_threads=4;
 
+    //set the number of trimes, 0 lets the plugin decide
+    config.num_trims=0;
 
-    //Just a testing stub for the time being
-    //let result=miner.mine(&test_header, &mut solution).unwrap();
+    //Build a new miner with this info, which will load
+    //the associated plugin and 
+    
+    let mut miner = CuckooMiner::new(config).expect("");
 
-    /*if result == true {
-        println!("Solution found: {}", solution);
-    }*/
+    //Keep a structure to hold the solution.. this will be
+    //filled out by the plugin
+    let mut solution = CuckooMinerSolution::new();
+        
+    //Mine with given header and check for result
+    let result = miner.mine(&test_header, &mut solution).unwrap();
+
+    if result == true {
+       println!("Solution found: {}", solution);
+    } else {
+       println!("No Solution found");
+    }
 
 }

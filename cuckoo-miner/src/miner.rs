@@ -36,18 +36,15 @@ impl Default for CuckooMiner {
 impl CuckooMiner {
 
     pub fn new(config:CuckooMinerConfig)->Result<CuckooMiner, CuckooMinerError>{
-        Ok(CuckooMiner{
+        let mut return_val=CuckooMiner{
             config: config,
-        })
+        };
+        return_val.init()?;
+        Ok(return_val)
     }
 
-    pub fn init(&mut self, caps:&CuckooPluginCapabilities) -> Result<(), CuckooMinerError> {
-        load_cuckoo_lib(&caps)
-    }
-
-    pub fn get_available_plugins(&mut self) -> 
-        Result<Vec<CuckooPluginCapabilities>, CuckooMinerError>{
-        get_available_plugins(&self.config)
+    fn init(&mut self) -> Result<(), CuckooMinerError> {
+        load_cuckoo_lib(&self.config.plugin_full_path)
     }
 
     /// #Description 

@@ -139,11 +139,9 @@ impl cmp::PartialEq for CuckooMinerSolution {
 /// of a miner.
 
 pub struct CuckooMinerConfig {
-    // The directory in which mining plugins are found
-    pub plugin_dir: String,
 
-    // The implementation of the miner to use
-    pub plugin_name: String,
+    // The full path to the plugin to use
+    pub plugin_full_path: String,
 
     // Number of threads to use
     pub num_threads: u32,
@@ -157,8 +155,7 @@ pub struct CuckooMinerConfig {
 impl Default for CuckooMinerConfig {
 	fn default() -> CuckooMinerConfig {
 		CuckooMinerConfig{
-            plugin_dir: String::from("target/debug"),
-            plugin_name: String::from("cuckoo_basic_12"),
+            plugin_full_path: String::from(""),
             num_threads: 1,
             //0 = let the plugin decide
             num_trims: 0,

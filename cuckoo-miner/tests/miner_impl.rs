@@ -15,17 +15,19 @@
 
 //! Tests to exercise calling the different cuckoo_miner implementations
 
-extern crate env_logger;
 extern crate cuckoo_miner;
-
-use cuckoo_miner::miner::CuckooMiner;
-use cuckoo_miner::types::{CuckooMinerImplType, 
-                CuckooMinerConfig, 
-                CuckooMinerError,
-                CuckooMinerSolution};
+extern crate cuckoo_config;
+extern crate env_logger;
+extern crate crypto;
 
 
+use crypto::digest::Digest;
+use crypto::sha2::Sha256;
 
+use cuckoo_config::*;
+use cuckoo_miner::{CuckooMiner,CuckooPluginManager};
+
+use std::time::{Duration, SystemTime};
 
 static TEST_HEADER_1:[u8;32] = [0xA6, 0xC1, 0x64, 0x43, 0xFC, 0x82, 0x25, 0x0B, 
                              0x49, 0xC7, 0xFA, 0xA3, 0x87, 0x6E, 0x7A, 0xB8, 
@@ -44,19 +46,65 @@ static TEST_SOLUTION_1:[u32;42] = [1, 17, 122, 171, 238, 289, 340,
 fn mine_basic_cuckoo_12() {
 
     env_logger::init();
+
+    //First, load and query the plugins in the given directory
+    let mut plugin_manager = CuckooPluginManager::new().unwrap();
+    let result=plugin_manager.load_plugin_dir(String::from("../target/debug")).expect("");
+    //Get a list of installed plugins and capabilities
+    let caps = plugin_manager.get_available_plugins().unwrap();
+
+    //Print all available plugins
+    for c in caps {
+        println!("Found plugin: [{}]", c);
+    }
+
+    //Select a plugin somehow, and insert it into the miner configuration
+    //being created below
     
     let mut config = CuckooMinerConfig::new();
-    let miner = CuckooMiner::new(config).unwrap();
+    config.plugin_full_path = caps[0].full_path.clone();
+    
+    //set the number of threads for the miner to use
+    config.num_threads=1;
+
+    //set the number of trimes, 0 lets the plugin decide
+    config.num_trims=0;
+
+
+    //Build a new miner with this info, which will load
+    //the associated plugin and 
+    
+    let mut miner = CuckooMiner::new(config).expect("");
+
+    //Keep a structure to hold the solution.. this will be
+    //filled out by the plugin
     let mut solution = CuckooMinerSolution::new();
-    let mut expected_solution = CuckooMinerSolution::new();
-    expected_solution.set_nonces(TEST_SOLUTION_1);
 
-    //Just a testing stub for the time being
-    let result=miner.mine(&TEST_HEADER_1, &mut solution).unwrap();
 
-    if result == true {
-        println!("Solution found: {}", solution);
+    let mut i = 0;
+    let start_seed = SystemTime::now();
+    loop {
+        let input = format!("{:?}{}",start_seed, i);
+        let mut sha = Sha256::new();
+        sha.input_str(&input);
+        
+        let mut bytes:[u8;32]=[0;32];
+        sha.result(&mut bytes);
+
+
+        //Mine away until we get a solution
+        let result = miner.mine(&bytes, &mut solution).unwrap();
+
+        if result == true {
+            println!("Solution found after {} iterations: {}", i, solution);
+            println!("For seed: {}", sha.result_str());
+            break;
+        } 
+
+
+        i+=1;
+
     }
-    assert_eq!(solution, expected_solution);
+    panic!("panic");
 
 }
