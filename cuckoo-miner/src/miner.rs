@@ -14,7 +14,9 @@
 
 //! Main interface for callers into cuckoo-miner
 
-use cuckoo_sys::{call_cuckoo, load_cuckoo_lib, CuckooBindingConfig};
+use cuckoo_sys::{call_cuckoo, 
+                 load_cuckoo_lib,
+                 get_available_plugins};
 
 use cuckoo_config::*;
 
@@ -34,28 +36,19 @@ impl Default for CuckooMiner {
 impl CuckooMiner {
 
     pub fn new(config:CuckooMinerConfig)->Result<CuckooMiner, CuckooMinerError>{
-        // Just return error for anything not currently implemented
-        match config.miner_impl {
-            CuckooMinerImplType::Base | CuckooMinerImplType::Mean => {
-                Ok(CuckooMiner{
-                       config: config,
-                   })
-            }
-            _ => Err(CuckooMinerError::NotImplementedError(String::from("Will probably remove this error check from here")))
-        }
+        Ok(CuckooMiner{
+            config: config,
+        })
     }
 
-    pub fn init(&mut self) -> Result<(), CuckooMinerError> {
-        let mut config = CuckooBindingConfig::default();
-        config.cuckoo_impl = match self.config.miner_impl {
-            CuckooMinerImplType::Base => String::from("basic"),
-            CuckooMinerImplType::Mean => String::from("mean"),
-            _ => String::from("basic")
-        };
-        config.cuckoo_size = self.config.cuckoo_size;
-        load_cuckoo_lib(config)
+    pub fn init(&mut self, caps:&CuckooPluginCapabilities) -> Result<(), CuckooMinerError> {
+        load_cuckoo_lib(&caps)
     }
 
+    pub fn get_available_plugins(&mut self) -> 
+        Result<Vec<CuckooPluginCapabilities>, CuckooMinerError>{
+        get_available_plugins(&self.config)
+    }
 
     /// #Description 
     ///
@@ -79,7 +72,10 @@ impl CuckooMiner {
 
     pub fn mine(&self, header: &[u8], solution:&mut CuckooMinerSolution) 
         -> Result<bool, CuckooMinerError> {    
-            match call_cuckoo(header, &mut solution.solution_nonces) {
+            match call_cuckoo(header, 
+                              self.config.num_threads,
+                              self.config.num_trims,
+                              &mut solution.solution_nonces) {
                 Ok(result) => {
                     match result {
                         1 => Ok(true),
@@ -87,7 +83,7 @@ impl CuckooMiner {
                         _ => Err(CuckooMinerError::UnexpectedResultError(result))
                     }
                 },
-                Err(e) => Err(CuckooMinerError::MinerNotLoadedError(
+                Err(e) => Err(CuckooMinerError::PluginNotLoadedError(
                     String::from("Please call init to load a miner plug-in"))),
             }
     }

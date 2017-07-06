@@ -32,4 +32,4 @@ pub mod types;
 pub use types::{CuckooMinerConfig, 
                 CuckooMinerError,
                 CuckooMinerSolution,
-                CuckooMinerImplType};
+                CuckooPluginCapabilities};

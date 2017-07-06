@@ -19,6 +19,8 @@
 // the called C functions
 
 use std::{fmt,cmp};
+use std::io;
+use std::string;
 
 const CUCKOO_SOLUTION_SIZE:usize = 42;
 
@@ -26,37 +28,61 @@ const CUCKOO_SOLUTION_SIZE:usize = 42;
 #[derive(Debug)]
 pub enum CuckooMinerError {
     // Error when requested miner is not loaded
-    MinerNotLoadedError(String),
+    PluginNotLoadedError(String),
 
     // Error when requested miner is not implemented
-    NotImplementedError(String),
+    PluginNotFoundError(String),
 
     // Unexpected return code from miner call
     UnexpectedResultError(u32),
 
+    // IO Error
+    PluginIOError(String)
 }
+
+impl From<io::Error> for CuckooMinerError {
+    fn from(error: io::Error) -> Self {
+        CuckooMinerError::PluginIOError(String::from(format!("Error loading plugin: {}",error)))
+    }
+}
+
+impl From<string::FromUtf8Error> for CuckooMinerError {
+    fn from(error: string::FromUtf8Error) -> Self {
+        CuckooMinerError::PluginIOError(String::from(format!("Error loading plugin description: {}",error)))
+    }
+}
+
 
 #[derive(Debug)]
-pub enum CuckooMinerImplType {
-    // Represents the miner in simple_miner.cpp
-	Simple,
+pub struct CuckooPluginCapabilities {
+    // The plugin's descriptive name
+    // As reported by the plugin
+    pub name: String,
 
-    // The base miner, from cucko_main.cpp
-    Base,
+    // The plugin's reported description
+    pub description: String,
 
-    // Time/Memory Trade-off miner, tomato_miner.cpp
-    Tomato,
+    // The full path to the plugin
+    pub full_path: String,
 
-    // Mean miner, mean_miner.ccp
-    Mean,
-
-    // CUDA miner, cuda_miner.cu
-    CUDA,
+    // The plugin's file name
+    pub file_name: String,
 }
 
-impl fmt::Display for CuckooMinerImplType {
+impl Default for CuckooPluginCapabilities {
+	fn default() -> CuckooPluginCapabilities {
+		CuckooPluginCapabilities{
+            name: String::from(""),
+            description: String::from(""),
+			full_path: String::from(""),
+            file_name: String::from(""),
+		}
+	}
+}
+
+impl fmt::Display for CuckooPluginCapabilities{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,"{:?}", self)
+        write!(f,"Name: {}\nDescription:{}\nPath:{}\n", self.name, self.description, self.full_path)
     }
 }
 
@@ -110,11 +136,17 @@ impl cmp::PartialEq for CuckooMinerSolution {
 /// of a miner.
 
 pub struct CuckooMinerConfig {
-    // The implementation of the miner to use
-    pub miner_impl: CuckooMinerImplType,
+    // The directory in which mining plugins are found
+    pub plugin_dir: String,
 
-    // Edgebits, or cuckoo size (sizeshift) to use
-    pub cuckoo_size: u8,
+    // The implementation of the miner to use
+    pub plugin_name: String,
+
+    // Number of threads to use
+    pub num_threads: u32,
+
+    // Number of trims
+    pub num_trims: u32,
 
 
 }
@@ -122,8 +154,11 @@ pub struct CuckooMinerConfig {
 impl Default for CuckooMinerConfig {
 	fn default() -> CuckooMinerConfig {
 		CuckooMinerConfig{
-            miner_impl: CuckooMinerImplType::Base,
-			cuckoo_size: 12,
+            plugin_dir: String::from("target/debug"),
+            plugin_name: String::from("cuckoo_basic_12"),
+            num_threads: 1,
+            //0 = let the plugin decide
+            num_trims: 0,
 		}
 	}
 }

@@ -8,7 +8,7 @@ workspace = ".."
 env_logger="^0.3.5"
 log = "^0.3"
 cuckoo-sys = { path = "../cuckoo-sys" }
-cuckoo_config = { path = "../cuckoo-config" }
+cuckoo_config = { path = "../cuckoo-config", version="0.1.0" }
 
 
 
