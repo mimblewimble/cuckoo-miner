@@ -31,8 +31,6 @@ extern crate config;
 extern crate regex;
 
 pub mod miner;
-pub mod plugin_manager;
-
 pub use miner::CuckooMiner;
-pub use plugin_manager::CuckooPluginManager;
+
 

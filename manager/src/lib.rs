@@ -23,17 +23,13 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
+#[macro_use]
+extern crate log;
+extern crate env_logger;
+extern crate cuckoo_sys;
 extern crate config;
-extern crate miner;
-extern crate manager;
+extern crate regex;
 
-pub use config::{CuckooMinerConfig, 
-                CuckooMinerError,
-                CuckooMinerSolution,
-                CuckooPluginCapabilities};
-
-pub use miner::CuckooMiner;
+pub mod manager;
 pub use manager::CuckooPluginManager;
-
-
 
