@@ -28,10 +28,11 @@ extern crate log;
 extern crate env_logger;
 extern crate cuckoo_sys;
 extern crate config;
+extern crate regex;
 
 pub mod miner;
-pub mod pluginmanager;
+pub mod plugin_manager;
 
 pub use miner::CuckooMiner;
-pub use pluginmanager::CuckooPluginManager;
+pub use plugin_manager::CuckooPluginManager;
 

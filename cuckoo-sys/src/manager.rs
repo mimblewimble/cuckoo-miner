@@ -87,7 +87,7 @@ fn get_plugin_caps(full_path:String)
         }
         
         let mut desc_vec:Vec<u8> = Vec::new();
-        for i in 0..desc_len-1 {
+        for i in 0..desc_len {
             desc_vec.push(description_bytes[i as usize].clone());
         }
         

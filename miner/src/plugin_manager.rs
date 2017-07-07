@@ -19,6 +19,8 @@
 use cuckoo_sys::{get_available_plugins};
 use config::{CuckooMinerError, CuckooPluginCapabilities};
 
+use regex::Regex;
+
 pub struct CuckooPluginManager {
     // The directory in which to look for plugins
     plugin_dir: String,
@@ -50,8 +52,24 @@ impl CuckooPluginManager {
         Ok(())
     }
 
-    pub fn get_available_plugins(&mut self) -> 
-        Result<&Vec<CuckooPluginCapabilities>, CuckooMinerError>{
-        Ok(&self.current_plugin_caps.as_ref().unwrap())
+    pub fn get_available_plugins(&mut self, filter:&str) -> 
+        Result<Vec<CuckooPluginCapabilities>, CuckooMinerError>{
+            if filter.len()==0 {
+                return Ok(self.current_plugin_caps.as_mut().unwrap().clone());
+            } else {
+                let result = self.current_plugin_caps.as_mut().unwrap().clone().into_iter().filter(
+                    |ref i| {
+                        let re = Regex::new(&format!(r"{}",filter)).unwrap();
+                        let caps = re.captures(&i.full_path);
+                        match caps {
+                            Some(e) => return true,
+                            None => return false,
+                        }
+                    }).collect::<Vec<_>>();
+                if (result.len()==0){
+                    return Err(CuckooMinerError::NoPluginsFoundError(format!("For given filter: {}", filter)));
+                }
+                return Ok(result);
+            }
     }
 }

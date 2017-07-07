@@ -1,9 +1,9 @@
 [package]
-name = "cuckoo_basic_12"
+name = "cuckoo_edgetrim_30"
 version = "0.1.0"
 authors = ["yeastplume"]
 license = "MIT/Apache-2.0/BSD-3-Clause"
-description = "Cuckoo 12 Build"
+description = "Cuckoo 30 Build"
 
 build = "build.rs"
 
