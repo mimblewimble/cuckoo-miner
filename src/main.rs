@@ -17,11 +17,13 @@
 
 extern crate miner;
 extern crate config;
+extern crate manager;
 extern crate env_logger;
 
 
 use config::*;
-use miner::{CuckooMiner,CuckooPluginManager};
+use miner::CuckooMiner;
+use manager::CuckooPluginManager;
 
 fn main() {
 
