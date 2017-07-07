@@ -14,5 +14,9 @@ manager = { path = "manager", version="0.1.0" }
 env_logger="^0.3.5"
 log = "^0.3"
 
+[[bin]]
+name = "cuckoo_miner_test"
+path = "src/main.rs"
+
 
 
