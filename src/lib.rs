@@ -34,6 +34,7 @@ pub use config::{CuckooMinerConfig,
                 CuckooMinerSolution,
                 CuckooPluginCapabilities};
 
-pub use miner::CuckooMiner;
-pub use miner::pluginmanager::CuckooPluginManager;
+pub use miner::{CuckooMiner, CuckooPluginManager};
+
+
 

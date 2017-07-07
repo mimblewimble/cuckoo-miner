@@ -56,7 +56,7 @@ impl From<string::FromUtf8Error> for CuckooMinerError {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CuckooPluginCapabilities {
     // The plugin's descriptive name
     // As reported by the plugin

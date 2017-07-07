@@ -43,7 +43,7 @@ static TEST_SOLUTION_1:[u32;42] = [1, 17, 122, 171, 238, 289, 340,
 
 // Performs a basic test on cuckoo12 for a known hash and solution set
 #[test]
-fn mine_basic_cuckoo_12() {
+fn mine_simple_cuckoo_12() {
 
     env_logger::init();
 
@@ -51,10 +51,10 @@ fn mine_basic_cuckoo_12() {
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
     let result=plugin_manager.load_plugin_dir(String::from("../target/debug")).expect("");
     //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins().unwrap();
+    let caps = plugin_manager.get_available_plugins("simple_12").unwrap();
 
     //Print all available plugins
-    for c in caps {
+    for c in &caps {
         println!("Found plugin: [{}]", c);
     }
 
@@ -69,7 +69,6 @@ fn mine_basic_cuckoo_12() {
 
     //set the number of trimes, 0 lets the plugin decide
     config.num_trims=0;
-
 
     //Build a new miner with this info, which will load
     //the associated plugin and 
@@ -105,6 +104,5 @@ fn mine_basic_cuckoo_12() {
         i+=1;
 
     }
-    panic!("panic");
 
 }
