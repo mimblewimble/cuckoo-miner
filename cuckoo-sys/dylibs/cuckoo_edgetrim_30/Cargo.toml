@@ -3,7 +3,7 @@ name = "cuckoo_edgetrim_30"
 version = "0.1.0"
 authors = ["yeastplume"]
 license = "MIT/Apache-2.0/BSD-3-Clause"
-description = "Cuckoo 30 Build"
+description = "Plugin implementing Cuckoo Cycle with edge trimming, Cuckoo size 30"
 
 build = "build.rs"
 
