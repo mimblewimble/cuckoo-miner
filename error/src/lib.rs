@@ -12,20 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! A crate containing all of the types used by the cuckoo-miner's crates,
-//! all of which which will also be exposed to external consumers of the 
-//! cuckoo-miner crate.
-//!
+//! Simple crate which just contains cuckoo-miner's error enum, used by
+//! all other internal crates.
 
 #![deny(non_upper_case_globals)]
 #![deny(non_camel_case_types)]
 #![deny(non_snake_case)]
 #![deny(unused_mut)]
 #![warn(missing_docs)]
-
-#[macro_use]
-extern crate log;
-extern crate env_logger;
 
 pub mod error;
 

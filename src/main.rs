@@ -18,10 +18,7 @@
 extern crate miner;
 extern crate error;
 extern crate manager;
-extern crate env_logger;
 
-
-use error::CuckooMinerError;
 use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution};
 use manager::CuckooPluginManager;
 
@@ -31,11 +28,10 @@ fn main() {
                        0x49, 0xC7, 0xFA, 0xA3, 0x87, 0x6E, 0x7A, 0xB8, 
                        0x9B, 0xA6, 0x87, 0x91, 0x8C, 0xB0, 0x0C, 0x4C, 
                        0x10, 0xD6, 0x62, 0x5E, 0x3A, 0x2E, 0x7B, 0xCC];
-    env_logger::init();
 
     //First, load and query the plugins in the given directory
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
-    let result=plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
+    plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
     //Get a list of installed plugins and capabilities
     let caps = plugin_manager.get_available_plugins("").unwrap();
 
@@ -59,7 +55,7 @@ fn main() {
     //Build a new miner with this info, which will load
     //the associated plugin and 
     
-    let mut miner = CuckooMiner::new(config).expect("");
+    let miner = CuckooMiner::new(config).expect("");
 
     //Keep a structure to hold the solution.. this will be
     //filled out by the plugin

@@ -20,11 +20,12 @@ use std::io::prelude::*;
 use std::fs;
 use std::fs::File;
 
-use std::process::Command;
 use std::path::Path;
 
 use std::env;
 
+/// Just a simple top level struct to hold an instance of the 
+/// a plugin build environment
 
 pub struct CuckooBuildEnv {
 
@@ -32,11 +33,19 @@ pub struct CuckooBuildEnv {
 
 impl CuckooBuildEnv {
 
+    /// Returns a new CuckooBuildEnv
+    ///
+    ///
+
     pub fn new()->CuckooBuildEnv{
         CuckooBuildEnv {
 
         }
     }
+
+    /// Tests whether the source directory exists
+    /// 
+    ///
 
     pub fn fail_on_empty_directory(&mut self, name: &str) {
         if fs::read_dir(name).unwrap().count() == 0 {
@@ -45,6 +54,10 @@ impl CuckooBuildEnv {
             panic!();
         }
     }
+
+    /// Builds a cuckoo plugin with a particular variation and size, by setting
+    /// The size preprocessor definition in the source
+    ///
 
     pub fn build_cuckoo(&mut self, sources:String, variation: &str, size:u16) {
 

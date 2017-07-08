@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! lib_cuckoo_miner is a Rust wrapper around John Tromp's Cuckoo Miner 
-//! C implementations, intended primarily for use in the Grin MimbleWimble
-//! blockhain development project.
+//! Cuckoo-miner's manager manages the loading, unloading, and querying
+//! of mining plugins installed on the system. It is meant as a helper
+//! to users of cuckoo-miner, to allow quick enumeration of all mining plugins,
+//! and return information about whether a particular plugin can be run
+//! on the host system. 
+//!
+//! Although a plugin can only return its name and description at the moment,
+//! it will be extended in future to allow for other information such as
+//! version, and whether it can be run on a particular system.
 //!
 
 #![deny(non_upper_case_globals)]
