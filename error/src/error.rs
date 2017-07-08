@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Common types used by all cuckoo-miner modules, as well as any exernal
+//! Common error type used by all cuckoo-miner modules, as well as any exernal
 //! consumers of the cuckoo-miner crate.
 
 use std::io;
@@ -20,27 +20,29 @@ use std::string;
 
 /// #Description 
 ///
-/// Top level enum for all errors that the cuckoo-miner can return.
+/// Top level enum for all errors that the cuckoo-miner crate can return.
 /// 
 
 #[derive(Debug)]
 pub enum CuckooMinerError {
     
     /// Occurs when trying to call a plugin function when a 
-    /// mining plugin is not loaded.
+    /// mining plugin is not loaded. 
 
     PluginNotLoadedError(String),
 
     /// Occurs when attempting to load a plugin that doesn't exist
+
     PluginNotFoundError(String),
 
-    // Error when no plugins exist in target directory
+    /// Occurs when trying to load a plugin directory that doesn't
+    /// contain any plugins
     NoPluginsFoundError(String),
 
-    // Unexpected return code from miner call
+    /// Unexpected return code from a plugin 
     UnexpectedResultError(u32),
 
-    // IO Error
+    /// IO Error
     PluginIOError(String)
 }
 

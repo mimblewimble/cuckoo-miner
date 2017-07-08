@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! lib_cuckoo_miner is a Rust wrapper around John Tromp's Cuckoo Miner 
-//! C implementations, intended primarily for use in the Grin MimbleWimble
-//! blockhain development project.
-//!
+//! The main miner module of cuckoo-miner, which provides an interface
+//! for loading a mining plugin and performing a cuckoo mining call.
 
 #![deny(non_upper_case_globals)]
 #![deny(non_camel_case_types)]

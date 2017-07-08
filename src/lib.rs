@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! lib_cuckoo_miner is a Rust wrapper around John Tromp's Cuckoo Miner 
+//! cuckoo-miner is a Rust wrapper around John Tromp's Cuckoo Miner 
 //! C implementations, intended primarily for use in the Grin MimbleWimble
 //! blockhain development project.
 //!

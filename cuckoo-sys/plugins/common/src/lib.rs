@@ -18,6 +18,9 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
+//! Common internal module used to build cuckoo miner plugins
+//!
+
 pub mod build;
 
 pub use build::CuckooBuildEnv;

@@ -31,8 +31,9 @@ extern crate error;
 #[macro_use]
 extern crate log;
 
-pub mod plugin_manager;
+pub mod manager;
 
-pub use plugin_manager::{load_cuckoo_lib,
+pub use manager::{load_cuckoo_lib,
+                  unload_cuckoo_lib,
                   call_cuckoo,
                   call_cuckoo_description};
