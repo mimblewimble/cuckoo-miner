@@ -28,8 +28,8 @@ extern crate log;
 
 extern crate glob;
 
-pub mod dylib_manager;
+pub mod plugin_manager;
 
-pub use dylib_manager::{load_cuckoo_lib,
+pub use plugin_manager::{load_cuckoo_lib,
                   call_cuckoo,
                   get_available_plugins};

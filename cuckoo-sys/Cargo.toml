@@ -20,13 +20,13 @@ log = "^0.3"
 
 config = { path = "../config" }
 
-cuckoo_simple_12 = { path = "dylibs/cuckoo_simple_12" }
-cuckoo_edgetrim_12 = { path = "dylibs/cuckoo_edgetrim_12" }
-cuckoo_edgetrim_30 = { path = "dylibs/cuckoo_edgetrim_30" }
-#cuckoo_tomato_12 = { path = "dylibs/cuckoo_tomato_12" }
-#cuckoo_tomato_30 = { path = "dylibs/cuckoo_tomato_30" }
-#cuckoo_mean_28 = { path = "dylibs/cuckoo_mean_28" }
-#cuckoo_mean_30 = { path = "dylibs/cuckoo_mean_30" }
+#cuckoo_simple_12 = { path = "plugins/cuckoo_simple_12" }
+cuckoo_edgetrim_12 = { path = "plugins/cuckoo_edgetrim_12" }
+cuckoo_edgetrim_30 = { path = "plugins/cuckoo_edgetrim_30" }
+#cuckoo_tomato_12 = { path = "plugins/cuckoo_tomato_12" }
+#cuckoo_tomato_30 = { path = "plugins/cuckoo_tomato_30" }
+#cuckoo_mean_28 = { path = "plugins/cuckoo_mean_28" }
+#cuckoo_mean_30 = { path = "plugins/cuckoo_mean_30" }
 
 
 [dev-dependencies]
