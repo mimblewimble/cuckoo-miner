@@ -23,17 +23,18 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
-extern crate config;
+extern crate error;
 extern crate miner;
 extern crate manager;
 
-pub use config::{CuckooMinerConfig, 
-                CuckooMinerError,
-                CuckooMinerSolution,
-                CuckooPluginCapabilities};
+pub use error::CuckooMinerError;
 
-pub use miner::CuckooMiner;
-pub use manager::CuckooPluginManager;
+pub use miner::{CuckooMinerConfig,
+                CuckooMiner,
+                CuckooMinerSolution};
+
+pub use manager::{CuckooPluginManager,
+                  CuckooPluginCapabilities};
 
 
 

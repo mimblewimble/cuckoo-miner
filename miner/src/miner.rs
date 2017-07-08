@@ -14,11 +14,97 @@
 
 //! Main interface for callers into cuckoo-miner
 
-use cuckoo_sys::{call_cuckoo, 
-                 load_cuckoo_lib,
-                 get_available_plugins};
+use std::{fmt,cmp};
 
-use config::*;
+use cuckoo_sys::{call_cuckoo, 
+                 load_cuckoo_lib};
+
+use error::CuckooMinerError;
+
+// Hardcoed assumption for now that the solution size will be 42 will be
+// maintained, to avoid having to allocate memory within the called C functions
+
+const CUCKOO_SOLUTION_SIZE:usize = 42;
+
+/// A struct to hold a cuckoo solution
+pub struct CuckooMinerSolution {
+    pub solution_nonces:[u32; CUCKOO_SOLUTION_SIZE],
+}
+
+impl Default for CuckooMinerSolution {
+	fn default() -> CuckooMinerSolution {
+        CuckooMinerSolution {
+		    solution_nonces: [0; CUCKOO_SOLUTION_SIZE],
+        }
+	}
+}
+
+impl CuckooMinerSolution{
+    pub fn new()->CuckooMinerSolution{
+        CuckooMinerSolution::default()
+    }
+
+    pub fn set_nonces(&mut self, nonce_in:[u32; CUCKOO_SOLUTION_SIZE]){
+        self.solution_nonces = nonce_in;
+    }
+}
+
+impl fmt::Display for CuckooMinerSolution {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,"{:?}", &self.solution_nonces[..])
+    }
+}
+
+impl fmt::Debug for CuckooMinerSolution {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,"{:?}", &self.solution_nonces[..])
+    }
+}
+
+impl cmp::PartialEq for CuckooMinerSolution {
+    fn eq(&self, other: &CuckooMinerSolution) -> bool {
+        for i in 0..CUCKOO_SOLUTION_SIZE {
+            if self.solution_nonces[i]!=other.solution_nonces[i]{
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+/// Structure containing the configuration values for an instnce
+/// of a miner.
+
+pub struct CuckooMinerConfig {
+
+    // The full path to the plugin to use
+    pub plugin_full_path: String,
+
+    // Number of threads to use
+    pub num_threads: u32,
+
+    // Number of trims
+    pub num_trims: u32,
+
+
+}
+
+impl Default for CuckooMinerConfig {
+	fn default() -> CuckooMinerConfig {
+		CuckooMinerConfig{
+            plugin_full_path: String::from(""),
+            num_threads: 1,
+            //0 = let the plugin decide
+            num_trims: 0,
+		}
+	}
+}
+
+impl CuckooMinerConfig{
+    pub fn new()->CuckooMinerConfig{
+        CuckooMinerConfig::default()
+    }
+}
 
 pub struct CuckooMiner{
     // Configuration

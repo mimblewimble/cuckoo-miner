@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Crate containing the low level calls to cuckoo-miner plugins, including functions
+//! for loading and unloading plugins, querying what plugins are installed on the system,
+//! as well as the actual mining calls to a plugin. This crate should be used by other
+//! cuckoo-miner crates, but should not be exposed to external consumers of the crate.
+
 #![deny(non_upper_case_globals)]
 #![deny(non_camel_case_types)]
 #![deny(non_snake_case)]
@@ -22,14 +27,12 @@
 extern crate lazy_static;
 extern crate libloading as libloading;
 extern crate libc;
-extern crate config;
+extern crate error;
 #[macro_use]
 extern crate log;
-
-extern crate glob;
 
 pub mod plugin_manager;
 
 pub use plugin_manager::{load_cuckoo_lib,
                   call_cuckoo,
-                  get_available_plugins};
+                  call_cuckoo_description};

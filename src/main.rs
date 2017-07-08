@@ -16,13 +16,13 @@
 //!
 
 extern crate miner;
-extern crate config;
+extern crate error;
 extern crate manager;
 extern crate env_logger;
 
 
-use config::*;
-use miner::CuckooMiner;
+use error::CuckooMinerError;
+use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution};
 use manager::CuckooPluginManager;
 
 fn main() {
@@ -37,7 +37,7 @@ fn main() {
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
     let result=plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
     //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins("simple_12").unwrap();
+    let caps = plugin_manager.get_available_plugins("").unwrap();
 
     //Print all available plugins
     for c in &caps {

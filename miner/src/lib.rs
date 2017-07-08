@@ -27,10 +27,12 @@
 extern crate log;
 extern crate env_logger;
 extern crate cuckoo_sys;
-extern crate config;
+extern crate error;
 extern crate regex;
 
 pub mod miner;
-pub use miner::CuckooMiner;
+pub use miner::{CuckooMiner,
+                CuckooMinerConfig,
+                CuckooMinerSolution};
 
 

@@ -1,5 +1,5 @@
 [package]
-name = "config"
+name = "error"
 version = "0.1.0"
 authors = ["yeastplume"]
 workspace = ".."
