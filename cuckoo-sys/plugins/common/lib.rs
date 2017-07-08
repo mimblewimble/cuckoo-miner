@@ -13,9 +13,10 @@
 // limitations under the License.
 
 
-//! The Rust interface side of the Cuckoo-Miner plugin. Any DLL wishing to implement
+//! A plugin implementing the Cuckoo-Miner plugin interface. Any DLL wishing to implement
 //! a cuckoo-miner needs to implement this interface and expose these functions
-//! (ensuring they're not name-mangled).
+//! (ensuring they're not name-mangled). The details of this specific plugin
+//! can be discovered at runtime by calling its cuckoo_description function.
 //!
 //! Descriptions of what the corresponding C function should look like follow
 //! in each function.
@@ -30,7 +31,7 @@ extern "C" {
 
     /// #Description 
     ///
-    /// Call to the cuckoo_basic_mine function in the library, which calls a base
+    /// Call to the call_cuckoo function in the library, which calls a base
     /// cuckoo miner implementation implemented within a plugin.
     ///
     /// #Arguments

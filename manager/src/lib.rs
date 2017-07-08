@@ -27,9 +27,12 @@
 extern crate log;
 extern crate env_logger;
 extern crate cuckoo_sys;
-extern crate config;
+extern crate error;
 extern crate regex;
 
+extern crate glob;
+
 pub mod manager;
-pub use manager::CuckooPluginManager;
+pub use manager::{CuckooPluginManager,
+                  CuckooPluginCapabilities};
 
