@@ -1,9 +1,9 @@
 [package]
-name = "cuckoo_edgetrim_12"
+name = "cuckoo_edgetrim_25"
 version = "0.1.0"
 authors = ["yeastplume"]
 license = "MIT/Apache-2.0/BSD-3-Clause"
-description = "Plugin implementing Cuckoo Cycle with edge trimming, Cuckoo size 12"
+description = "Plugin implementing Cuckoo Cycle with edge trimming, Cuckoo size 25"
 
 build = "build.rs"
 

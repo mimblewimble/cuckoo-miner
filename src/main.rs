@@ -33,7 +33,7 @@ fn main() {
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
     plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
     //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins("").unwrap();
+    let caps = plugin_manager.get_available_plugins("edgetrim_28").unwrap();
 
     //Print all available plugins
     for c in &caps {
@@ -47,7 +47,7 @@ fn main() {
     config.plugin_full_path = caps[0].full_path.clone();
     
     //set the number of threads for the miner to use
-    config.num_threads=2;
+    config.num_threads=8;
 
     //set the number of trimes, 0 lets the plugin decide
     config.num_trims=0;
