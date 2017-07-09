@@ -18,7 +18,10 @@ error = { path = "../error", version="0.1.0" }
 #Plugins
 
 #cuckoo_simple_12 = { path = "plugins/cuckoo_simple_12" }
-cuckoo_edgetrim_12 = { path = "plugins/cuckoo_edgetrim_12" }
+cuckoo_edgetrim_16 = { path = "plugins/cuckoo_edgetrim_16" }
+cuckoo_edgetrim_20 = { path = "plugins/cuckoo_edgetrim_20" }
+cuckoo_edgetrim_25 = { path = "plugins/cuckoo_edgetrim_25" }
+cuckoo_edgetrim_28 = { path = "plugins/cuckoo_edgetrim_28" }
 cuckoo_edgetrim_30 = { path = "plugins/cuckoo_edgetrim_30" }
 #cuckoo_tomato_12 = { path = "plugins/cuckoo_tomato_12" }
 #cuckoo_tomato_30 = { path = "plugins/cuckoo_tomato_30" }
