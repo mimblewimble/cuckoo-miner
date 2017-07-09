@@ -11,8 +11,5 @@ regex = "0.1.80"
 cuckoo-sys = { path = "../cuckoo-sys" }
 error = { path = "../error", version="0.1.0" }
 
-[dev-dependencies]
-rust-crypto = "0.2.36"
-
 
 
