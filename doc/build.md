@@ -37,7 +37,16 @@ Cuckoo-miner is not enabled by default. In Grin's root Cargo.toml file, you shou
     #features = ["cuckoo_miner", "use-cuckoo-miner"]
 ```
 
-To enable the inclusion of cuckoo-miner in Grin, comment in the last #features line and rebuild.
+To enable the inclusion of cuckoo-miner in Grin, comment in the last #features line. Then, in 
+grin/Cargo.toml, comment in the line:
+
+```
+#cuckoo_miner = { version = "*", optional=true, path = "../../cuckoo-miner"}
+```
+
+It's also recommended to set the test consensus value TEST_SIZESHIFT to 16, to correspond with the smallest viable cuckoo size that can be used by all miners. 
+
+Clean and rebuild, and cuckoo-miner will be used when mining with the server -m command.
 
 At the moment, cuckoo-plugin is integrated for experimentation via the file grin/src/plugin_miner.rs. A plugin is selected by giving
 its partial name in the lines:
@@ -48,4 +57,4 @@ its partial name in the lines:
     	let caps = plugin_manager.get_available_plugins(&filter).unwrap();
 ```
 
-With TEST_SIZESHIFT being read from the CONSENSUS.rs value, so that blocks mined using cuckoo-miner will validate.
+With TEST_SIZESHIFT being read from the CONSENSUS.rs value, so that blocks mined using cuckoo-miner will validate. 
