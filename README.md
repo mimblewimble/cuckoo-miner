@@ -26,9 +26,11 @@ Currently, the provided (and planned plugins are:)
 
 * cuckoo_simple (with Cuckoo Sizes ranging between 16-30), the basic implementation of the algorithm
 * cuckoo_edgetrim (with Cuckoo Sizes ranging between 16-30), the Cuckoo Cycle algorithm with edge trimming
+* cuckoo_cuda (with Cuckoo Sizes ranging between 16-30), Cuckoo algorithm optimised for NVidia GPUs 
+(not built by default, see [build docs](doc/build.md) for further information)
 * cuckoo_mean (planned)
 * cuckoo_tomato (planned)
-* cuckoo_gpu (planned)
+
 
 ## Installation and Building
 

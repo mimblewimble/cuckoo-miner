@@ -65,6 +65,19 @@ static KNOWN_SOLUTION_25:[u32;42] = [1300934, 1777326, 2387832, 2870554, 3228439
 9912285, 10064065, 10076572, 10397286, 11228343, 11261568, 11735542, 12212627, 12269888, 
 12284159, 13037702, 13543482, 13549661, 14269021, 15500440, 16267217];
 
+
+static KNOWN_SEED_28:[u8;32] = [0x16,0x18,0x5a,0x0b,0xa6,0x69,0x79,0xee,
+0x7b,0xbe,0x90,0x69,0xb2,0x59,0xa7,0x72,
+0x43,0x47,0x23,0x84,0x70,0x56,0x80,0xb0,
+0x41,0x16,0x25,0x9b,0x9a,0xda,0x8a,0xa7];
+
+static KNOWN_SOLUTION_28:[u32;42] = [2053444, 6783171, 7967041, 12789270, 13395794, 13771078, 
+16986929, 19950826, 23430950, 24098180, 28738520, 32416841, 34750211, 37910068, 39346098, 
+45710505, 48966978, 49092338, 51201247, 53197413, 56395283, 59614723, 73017231, 73602630, 
+75080794, 76514134, 78668221, 84999426, 87359028, 87607101, 87906374, 88966031,
+94069571, 96282504, 98112159, 106275507, 117538021, 119734709, 120246550, 127011166, 
+130229154, 132524931];
+
 // Helper function, tests a particular miner implementation against a known set
 // that should have a result
 fn test_for_known_set(plugin_filter:&str, 
@@ -190,6 +203,10 @@ fn test_known_solutions() {
     solution = CuckooMinerSolution::new();
     solution.set_solution(KNOWN_SOLUTION_25);
     test_for_known_set("25", &KNOWN_SEED_25, solution, 1);
+
+    /*solution = CuckooMinerSolution::new();
+    solution.set_solution(KNOWN_SOLUTION_20);
+    test_for_known_set("cuda_20", &KNOWN_SEED_20, solution, 8);*/
 }
 
 // Performs basic test mining on plugins, finding a solution
@@ -198,8 +215,8 @@ fn test_known_solutions() {
 fn mine_plugins_until_found() {
 
     env_logger::init();
-    mine_until_solution_found("edgetrim_16", 2);
-    mine_until_solution_found("simple_16", 4);
+    //mine_until_solution_found("cuda_28", 0);
+    //mine_until_solution_found("simple_16", 4);
     
     panic!("stop");
 }
