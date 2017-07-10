@@ -95,8 +95,13 @@ impl CuckooBuildEnv {
             config.flag("-march=native");
             config.flag("-m64");
 
-            //config.flag("-mavx2");
-            //config.flag("-DNSIPHASH=8");
+            if variation == "mean" {
+                config.flag("-DNSIPHASH=1");
+                config.flag("-mavx2");
+                //config.flag("-DBIG0SIZE=5");
+            } else {
+                config.flag("-DATOMIC");
+            }
         }
 
         for filename in lib_sources {
@@ -105,7 +110,7 @@ impl CuckooBuildEnv {
         }
 
         config.flag(format!("-DEDGEBITS={}",size-1).as_str());
-        config.flag("-DATOMIC");
+
 
         //Have to change the output dir, to ensure generated
         //object files from each build don't overwrite each other

@@ -40,11 +40,12 @@ Cuckoo-miner is not enabled by default. In Grin's root Cargo.toml file, you shou
 To enable the inclusion of cuckoo-miner in Grin, comment in the last #features line and rebuild.
 
 At the moment, cuckoo-plugin is integrated for experimentation via the file grin/src/plugin_miner.rs. A plugin is selected by giving
-its partial name in the line:
+its partial name in the lines:
 
 ```
-let caps = plugin_manager.get_available_plugins("edgetrim_25").unwrap();
+
+		let filter = format!("simple_{}", TEST_SIZESHIFT);
+    	let caps = plugin_manager.get_available_plugins(&filter).unwrap();
 ```
 
-This needs to correspond with the cuckoo size found in consensus.rs
-in order for blocks to validate correctly.
+With TEST_SIZESHIFT being read from the CONSENSUS.rs value, so that blocks mined using cuckoo-miner will validate.

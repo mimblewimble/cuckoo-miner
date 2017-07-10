@@ -35,17 +35,35 @@ use manager::{CuckooPluginManager, CuckooPluginCapabilities};
 
 use std::time::{Duration, SystemTime};
 
-static TEST_HEADER_1:[u8;32] = [0xA6, 0xC1, 0x64, 0x43, 0xFC, 0x82, 0x25, 0x0B, 
-                             0x49, 0xC7, 0xFA, 0xA3, 0x87, 0x6E, 0x7A, 0xB8, 
-                             0x9B, 0xA6, 0x87, 0x91, 0x8C, 0xB0, 0x0C, 0x4C, 
-                             0x10, 0xD6, 0x62, 0x5E, 0x3A, 0x2E, 0x7B, 0xCC];
-static TEST_SOLUTION_1:[u32;42] = [1, 17, 122, 171, 238, 289, 340, 
-                                   341, 478, 492, 513, 550, 555, 625, 
-                                   762, 792, 803, 811, 829, 830, 939, 
-                                   978, 1082, 1086, 1134, 1204, 1226,
-                                   1230, 1316, 1353, 1364, 1415, 1442,
-                                   1554, 1674, 1689, 1752, 1819, 1870,
-                                   1877, 1888, 1948];
+static KNOWN_SEED_16:[u8;32] = [0xd9, 0x93, 0xac, 0x4a, 0xe3, 0xc7, 0xf9, 0xeb, 
+                                0x34, 0xb2, 0x2e, 0x86, 0x85, 0x25, 0x64, 0xa9,
+                                0xc1, 0x67, 0x2a, 0x35, 0x7a, 0x0a, 0x81, 0x80,
+                                0x82, 0xc6, 0x0f, 0x2a, 0xb1, 0x5f, 0x6f, 0x67];
+static KNOWN_SOLUTION_16:[u32;42] = [671, 2624, 3044, 4429, 4682, 4734, 6727, 7250, 8589, 
+8717, 9718, 10192, 10458, 10504, 11294, 12699, 13143, 13147, 14170, 15805, 16197, 17322, 
+18523, 19892, 20277, 22231, 22964, 22965, 23993, 24624, 26735, 26874, 27312, 27502, 28637, 
+29606, 30616, 30674, 30727, 31162, 31466, 31706];
+
+static KNOWN_SEED_20:[u8;32] = [0xa7,0x02,0x9c,0xe6,0x70,0xe7,0x81,0xc3,
+                                0xa4,0xe7,0x55,0x68,0x3a,0x3b,0x6f,0xb9,
+                                0xaa,0x94,0x05,0x1b,0x33,0xd6,0x36,0x2a,
+                                0x3e,0x9e,0x55,0x90,0x09,0xb4,0xf4,0xfe];
+
+static KNOWN_SOLUTION_20:[u32;42] = [32076, 36881, 47709, 57359, 64750, 69514, 73241, 88561,
+ 102044, 104123, 116418, 122634, 142323, 142981, 158102, 159410, 162383, 190470, 201841, 
+ 251006, 251517, 332329, 332343, 342736, 353590, 354383, 371966, 377849, 396260, 405969, 
+ 409556, 410934, 431522, 439336, 446297, 446492, 466421, 477455, 477827, 481560, 497684, 503781];
+
+static KNOWN_SEED_25:[u8;32] = [0xae,0x71,0xf3,0x6d,0xe6,0x4c,0x2d,0xde,
+                                0x50,0xbb,0x29,0x93,0xb3,0x4e,0x61,0xd6,
+                                0xfb,0xa2,0xbe,0xe0,0xd0,0x52,0xcb,0x2d,
+                                0xc9,0x56,0x06,0x4f,0x8a,0x8a,0xcd,0x54];
+
+static KNOWN_SOLUTION_25:[u32;42] = [1300934, 1777326, 2387832, 2870554, 3228439, 3449448, 
+3538120, 3690741, 3793489, 3807270, 4077938, 4090426, 5013330, 5308734, 5387944, 5587565, 
+5694295, 5697872, 5890353, 5960490, 6095207, 7704889, 7758084, 7978579, 9034912, 9063269, 
+9912285, 10064065, 10076572, 10397286, 11228343, 11261568, 11735542, 12212627, 12269888, 
+12284159, 13037702, 13543482, 13549661, 14269021, 15500440, 16267217];
 
 // Helper function, tests a particular miner implementation against a known set
 // that should have a result
@@ -157,18 +175,33 @@ fn mine_until_solution_found(plugin_filter:&str,
 
 }
 
-// Performs basic test mining on plugins, exercising the number of threads
-// being passed in
+// Tests all versions of plugins against known seeds and solution sets
+
+#[test]
+fn test_known_solutions() {
+    let mut solution = CuckooMinerSolution::new();
+    solution.set_solution(KNOWN_SOLUTION_16);
+    test_for_known_set("16", &KNOWN_SEED_16, solution, 1);
+
+    solution = CuckooMinerSolution::new();
+    solution.set_solution(KNOWN_SOLUTION_20);
+    test_for_known_set("20", &KNOWN_SEED_20, solution, 1);
+
+    solution = CuckooMinerSolution::new();
+    solution.set_solution(KNOWN_SOLUTION_25);
+    test_for_known_set("25", &KNOWN_SEED_25, solution, 1);
+}
+
+// Performs basic test mining on plugins, finding a solution
 
 #[test]
 fn mine_plugins_until_found() {
 
     env_logger::init();
-    for i in 1..8 {
-        mine_until_solution_found("edgetrim_16", i);
-        mine_until_solution_found("edgetrim_20", i);
-        //mine_until_solution_found("edgetrim_25", i);
-    }
+    mine_until_solution_found("edgetrim_16", 2);
+    mine_until_solution_found("simple_16", 4);
+    
+    panic!("stop");
 }
 
 
@@ -179,9 +212,13 @@ fn abuse_lib_loading() {
         
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
     
-    for i in 0..10000 {
+    for i in 0..1000 {
         let result=plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
         //Get a list of installed plugins and capabilities
         let caps = plugin_manager.get_available_plugins("").unwrap();
+        for c in &caps {
+            println!("Found plugin: [{}]", c);
+        }
     }    
+
 }

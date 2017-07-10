@@ -24,16 +24,17 @@ use manager::CuckooPluginManager;
 
 fn main() {
 
-    let test_header = [0xA6, 0xC1, 0x64, 0x43, 0xFC, 0x82, 0x25, 0x0B, 
-                       0x49, 0xC7, 0xFA, 0xA3, 0x87, 0x6E, 0x7A, 0xB8, 
-                       0x9B, 0xA6, 0x87, 0x91, 0x8C, 0xB0, 0x0C, 0x4C, 
-                       0x10, 0xD6, 0x62, 0x5E, 0x3A, 0x2E, 0x7B, 0xCC];
+    //this should have a solution under cuckoo25
+    let test_header = [0xae,0x71,0xf3,0x6d,0xe6,0x4c,0x2d,0xde,
+                       0x50,0xbb,0x29,0x93,0xb3,0x4e,0x61,0xd6,
+                       0xfb,0xa2,0xbe,0xe0,0xd0,0x52,0xcb,0x2d,
+                       0xc9,0x56,0x06,0x4f,0x8a,0x8a,0xcd,0x54];
 
     //First, load and query the plugins in the given directory
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
     plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
     //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins("edgetrim_28").unwrap();
+    let caps = plugin_manager.get_available_plugins("edgetrim_25").unwrap();
 
     //Print all available plugins
     for c in &caps {
@@ -47,10 +48,10 @@ fn main() {
     config.plugin_full_path = caps[0].full_path.clone();
     
     //set the number of threads for the miner to use
-    config.num_threads=8;
+    config.num_threads=1;
 
     //set the number of trimes, 0 lets the plugin decide
-    config.num_trims=0;
+    config.num_trims=8;
 
     //Build a new miner with this info, which will load
     //the associated plugin and 
