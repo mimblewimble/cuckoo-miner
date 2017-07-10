@@ -1,9 +1,9 @@
 [package]
-name = "cuckoo_simple_16"
+name = "cuckoo_mean_25"
 version = "0.1.0"
 authors = ["yeastplume"]
 license = "MIT/Apache-2.0/BSD-3-Clause"
-description = "Plugin implementing Cuckoo Cycle Mean Algorithm, Cuckoo size 16"
+description = "Plugin implementing Cuckoo Cycle Mean Algorithm, Cuckoo size 25"
 
 build = "build.rs"
 

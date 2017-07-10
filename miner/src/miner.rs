@@ -89,6 +89,11 @@ impl CuckooMinerSolution{
     pub fn new()->CuckooMinerSolution{
         CuckooMinerSolution::default()
     }
+
+    /// Sets the solution, mostly for testing
+    pub fn set_solution(&mut self, nonces:[u32; CUCKOO_SOLUTION_SIZE]){
+        self.solution_nonces = nonces;
+    }
 }
 
 impl fmt::Display for CuckooMinerSolution {

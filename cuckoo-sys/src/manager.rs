@@ -184,6 +184,7 @@ pub fn load_cuckoo_lib(full_path:&str) -> Result<(), CuckooMinerError>{
 ///
 
 pub fn call_cuckoo(header: &[u8], num_threads: u32, num_trims:u32, solutions:&mut [u32; 42] ) -> Result<u32, CuckooMinerError> {
+    debug!("Calling loaded miner: header {:?}, num_threads: {}, num_trims: {}", header, num_threads, num_trims);
     let cuckoo_call_ref = CUCKOO_CALL.lock().unwrap(); 
     match *cuckoo_call_ref {
         None => return Err(CuckooMinerError::PluginNotLoadedError(

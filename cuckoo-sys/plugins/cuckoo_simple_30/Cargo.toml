@@ -1,5 +1,5 @@
 [package]
-name = "cuckoo_mean_30"
+name = "cuckoo_simple_30"
 version = "0.1.0"
 authors = ["yeastplume"]
 license = "MIT/Apache-2.0/BSD-3-Clause"
