@@ -36,4 +36,5 @@ pub mod manager;
 pub use manager::{load_cuckoo_lib,
                   unload_cuckoo_lib,
                   call_cuckoo,
-                  call_cuckoo_description};
+                  call_cuckoo_description,
+                  call_cuckoo_parameter_list};
