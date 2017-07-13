@@ -42,11 +42,6 @@ extern "C" {
     ///
     /// * `header_len` (IN) The length of the header, in bytes.
     ///
-    /// * `nthreads` (IN) If the miner implements multithreading, the number of threads to use
-    ///
-    /// * `ntrims` (IN) If the miner implements edge-trimming, the number of rounds to use. If
-    ///    this is 0, the plugin itself will decide.
-    ///
     /// * `sol_nonces` (OUT) A caller-allocated array of 42 unsigned bytes. This currently must
     ///    be of size 42, corresponding to a conventional cuckoo-cycle solution length. 
     ///    If a solution is found, the solution nonces will be stored in this array, otherwise,
@@ -63,8 +58,6 @@ extern "C" {
     /// ```
     ///  extern "C" int cuckoo_call(char* header_data, 
     ///                            int header_length,
-    ///                            int nthreads,
-    ///                            int ntrims, 
     ///                            uint_32* sol_nonces);
     /// ```
     /// All memory should be allocated on the caller side. The implementing plugin 
@@ -76,14 +69,13 @@ extern "C" {
     /// library symbol corresponding to this call.
     /// 
     /// ```
-    ///  pub fn call_cuckoo(header: &[u8], num_threads: u32, num_trims:u32, solutions:&mut [u32; 42] ) -> Result<u32, CuckooMinerError> {
+    ///  pub fn call_cuckoo(header: &[u8], solutions:&mut [u32; 42] ) -> Result<u32, CuckooMinerError> {
     ///      let cuckoo_call_ref = cuckoo_call.lock().unwrap(); 
     ///      match *cuckoo_call_ref {
     ///          None => return Err(CuckooMinerError::PluginNotLoadedError(
     ///               String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
     ///          Some(c) => unsafe {
-    ///               return Ok(c(header.as_ptr(), header.len(), num_threads, 
-    ///                   num_trims, solutions.as_mut_ptr()));
+    ///               return Ok(c(header.as_ptr(), header.len(), solutions.as_mut_ptr()));
     ///          },
     ///      };
     ///  }
@@ -92,8 +84,6 @@ extern "C" {
 
     pub fn cuckoo_call(header: *const c_uchar, 
                        header_len: size_t,
-                       num_threads: u32,
-                       num_trims: u32,
                        sol_nonces: *mut uint32_t) -> uint32_t;
 
     /// #Description 
@@ -163,6 +153,28 @@ extern "C" {
                               name_buf_len: *mut uint32_t,
                               description_buf: *mut c_uchar,
                               description_buf_len: *mut uint32_t);
+    
+    /// #Description 
+    ///
+    /// Initialises the cuckoo plugin, mostly allowing it to write a list of its accepted
+    /// parameters. This should be called just after the plugin is loaded
+    ///
+    /// #Arguments
+    ///
+    /// * None
+    ///
+    /// #Returns
+    ///
+    /// * Nothing
+    ///
+    /// #Corresponding C (Unix)
+    /// 
+    /// ```
+    ///  extern "C" void cuckoo_init();
+    /// ```
+
+    pub fn cuckoo_init();
+  
 
     /// #Description 
     ///
@@ -182,16 +194,16 @@ extern "C" {
     ///
     /// #Returns
     ///
-    /// 0 if the paramter was set correctly, a non-zero return code (TBD) if it could not be set,
-    /// outlining the reason.
+    /// 0 if the parameter was retrived, and the result is stored in `value`
+    /// 1 if the parameter does not exist
+    /// 2 if the parameter exists, but is outside the allowed range set by the plugin
     ///
     /// #Corresponding C (Unix)
     /// 
     /// ```
     ///  extern "C" int cuckoo_set_parameter(char *name,
     ///                                      int name_len,
-    ///                                      char *value,
-    ///                                      int value_len)
+    ///                                      int value);
     /// ```
     ///
     /// #Example
@@ -230,8 +242,8 @@ extern "C" {
     /// ```
     ///  extern "C" int cuckoo_get_parameter(char *name,
     ///                                      int name_len,
-    ///                                      char *value,
-    ///                                      int *value_len)
+    ///                                      int *value);
+    ///                                    
     /// ```
     ///
     /// #Example
@@ -283,14 +295,14 @@ extern "C" {
     ///
     /// #Returns
     ///
-    /// 0 if the the parameter list was successfully retrieved, another non-zero error code
-    /// if not, for any reason.
+    /// 0 if the the parameter list was successfully retrieved, 
+    /// 3 if there was not enough space in the buffer to write the list
     ///
     /// #Corresponding C (Unix)
     /// 
     /// ```
     ///  extern "C" int cuckoo_parameter_list(char *params_out_buf,
-    ///                                       int*  params_len);
+    ///                                       int* params_len);
     /// ```
     ///
     /// #Example
@@ -302,4 +314,6 @@ extern "C" {
 
     pub fn cuckoo_parameter_list(params_out_buf: *mut c_uchar, 
                                 params_len: *mut size_t) -> uint32_t;
+
+            
 }

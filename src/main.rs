@@ -34,7 +34,7 @@ fn main() {
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
     plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
     //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins("").unwrap();
+    let caps = plugin_manager.get_available_plugins("simple_25").unwrap();
 
     //Print all available plugins
     for c in &caps {
@@ -46,13 +46,9 @@ fn main() {
     
     let mut config = CuckooMinerConfig::new();
     config.plugin_full_path = caps[0].full_path.clone();
+    //config.parameter_list.insert(String::from("NUM_TRIMS"), 5);
+    //config.parameter_list.insert(String::from("NUM_THREADS"), 8);
     
-    //set the number of threads for the miner to use
-    config.num_threads=1;
-
-    //set the number of trimes, 0 lets the plugin decide
-    config.num_trims=8;
-
     //Build a new miner with this info, which will load
     //the associated plugin and 
     

@@ -33,11 +33,11 @@ use error::CuckooMinerError;
 // Type definitions corresponding to each function that the plugin implements
 
 type CuckooInit = unsafe extern fn();
-type CuckooCall = unsafe extern fn(*const c_uchar, size_t, uint32_t, uint32_t, *mut uint32_t) -> uint32_t;
+type CuckooCall = unsafe extern fn(*const c_uchar, uint32_t, *mut uint32_t) -> uint32_t;
 type CuckooDescription = unsafe extern fn(*mut c_uchar,*mut uint32_t,*mut c_uchar,*mut uint32_t);
 type CuckooParameterList = unsafe extern fn(*mut c_uchar,*mut uint32_t) -> uint32_t;
-type CuckooSetParameter = unsafe extern fn(c_uchar, uint32_t, uint32_t) -> uint32_t;
-type CuckooGetParameter = unsafe extern fn(c_uchar, uint32_t, *mut uint32_t) -> uint32_t;
+type CuckooSetParameter = unsafe extern fn(*const c_uchar, uint32_t, uint32_t) -> uint32_t;
+type CuckooGetParameter = unsafe extern fn(*const c_uchar, uint32_t, *mut uint32_t) -> uint32_t;
 
 // Keep static references to the library and each call that a plugin can expose
 // wrapped in mutex, for theoretical thread-safety, though it's unlikely that
@@ -102,7 +102,7 @@ fn load_lib(lib_full_path:&str) -> Result<(), CuckooMinerError> {
     }
     
     //automagically call the init
-    call_cuckoo_init();
+    call_cuckoo_init().unwrap();
     Ok(())
 }
 
@@ -177,6 +177,35 @@ pub fn load_cuckoo_lib(full_path:&str) -> Result<(), CuckooMinerError>{
 
 /// #Description 
 ///
+/// Initialises the cuckoo plugin, mostly allowing it to write a list of its accepted
+/// parameters. This should be called just after the plugin is loaded
+///
+/// #Arguments
+///
+/// * None
+///
+/// #Returns
+///
+/// * Nothing
+///
+///
+
+pub fn call_cuckoo_init() 
+    -> Result<(), CuckooMinerError>{
+    let cuckoo_init_ref = CUCKOO_INIT.lock().unwrap(); 
+    match *cuckoo_init_ref {
+        None => return Err(CuckooMinerError::PluginNotLoadedError(
+            String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
+        Some(c) => unsafe {
+                        c();
+                        return Ok(());
+                   },
+        
+    };
+}
+
+/// #Description 
+///
 /// Call to the cuckoo_call function of the currently loaded plugin, which will perform 
 /// a Cuckoo Cycle on the given seed, returning the first solution (a length 42 cycle)
 /// that is found. The implementation details are dependent on particular loaded plugin.
@@ -187,11 +216,6 @@ pub fn load_cuckoo_lib(full_path:&str) -> Result<(), CuckooMinerError>{
 ///    internal SIPHASH function which generates edge locations in the graph. In practice, 
 ///    this is a SHA3 hash of a Grin blockheader, but from the plugin's perspective this 
 ///    can be anything.
-///
-/// * `num_threads` (IN) If the miner implements multithreading, the number of threads to use.
-///
-/// * `num_trims` (IN) If the miner implements edge-trimming, the number of rounds to use. If
-///    this is 0, the plugin itself will decide.
 ///
 /// * `solutions` (OUT) A caller-allocated array of 42 unsigned bytes. This currently must
 ///    be of size 42, corresponding to a conventional cuckoo-cycle solution length. 
@@ -209,8 +233,6 @@ pub fn load_cuckoo_lib(full_path:&str) -> Result<(), CuckooMinerError>{
 /// 
 /// ```
 ///     match call_cuckoo(header, 
-///                       self.config.num_threads,
-///                       self.config.num_trims,
 ///                       &mut solution.solution_nonces) {
 ///         Ok(result) => {
 ///             match result {
@@ -224,15 +246,14 @@ pub fn load_cuckoo_lib(full_path:&str) -> Result<(), CuckooMinerError>{
 /// ```
 ///
 
-pub fn call_cuckoo(header: &[u8], num_threads: u32, num_trims:u32, solutions:&mut [u32; 42] ) -> Result<u32, CuckooMinerError> {
-    debug!("Calling loaded miner: header {:?}, num_threads: {}, num_trims: {}", header, num_threads, num_trims);
+pub fn call_cuckoo(header: &[u8], solutions:&mut [u32; 42] ) -> Result<u32, CuckooMinerError> {
+    debug!("Calling loaded miner: header {:?}", header);
     let cuckoo_call_ref = CUCKOO_CALL.lock().unwrap(); 
     match *cuckoo_call_ref {
         None => return Err(CuckooMinerError::PluginNotLoadedError(
             String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
         Some(c) => unsafe {
-                        return Ok(c(header.as_ptr(), header.len(), num_threads, 
-                            num_trims, solutions.as_mut_ptr()));
+                        return Ok(c(header.as_ptr(), header.len() as u32, solutions.as_mut_ptr()));
                    },
         
     };
@@ -296,6 +317,35 @@ pub fn call_cuckoo_description(name_bytes: &mut [u8;256], name_bytes_len:&mut u3
     };
 }
 
+/// #Description 
+///
+/// Call to the cuckoo_call_parameter_list function of the currently loaded plugin, 
+/// which will provide an informative JSON array of the parameters that the plugin supports, as well
+/// as their descriptions and range of values.
+///
+/// #Arguments
+///
+/// * `param_list_bytes` (OUT) A reference to a block of [u8] bytes to fill with the JSON
+///    result array
+///
+/// * `param_list_len` (IN-OUT) When called, this should contain the maximum number of bytes
+///    the plugin should write to `param_list_bytes`. Upon return, this is filled with the number
+///    of bytes that were written to `param_list_bytes`.
+///
+/// #Returns
+///
+/// 0 if the parameter list was retrived, and the result is stored in `param_list_bytes`
+/// 3 if the buffer and size given was too small to store the parameters
+///
+/// #Example
+/// 
+/// ```
+///   let mut param_list_bytes:[u8;1024]=[0;1024];
+///   let mut param_list_len=param_list_bytes.len() as u32;
+///   //get a list of parameters
+///   let parameter_list=call_cuckoo_parameter_list(&mut param_list_bytes, &mut param_list_len);
+/// ```
+///
 
 pub fn call_cuckoo_parameter_list(param_list_bytes: &mut [u8], param_list_len:&mut u32) 
     -> Result<u32, CuckooMinerError>{
@@ -310,19 +360,29 @@ pub fn call_cuckoo_parameter_list(param_list_bytes: &mut [u8], param_list_len:&m
     };
 }
 
-pub fn call_cuckoo_init() 
-    -> Result<(), CuckooMinerError>{
-    let cuckoo_init_ref = CUCKOO_INIT.lock().unwrap(); 
-    match *cuckoo_init_ref {
-        None => return Err(CuckooMinerError::PluginNotLoadedError(
-            String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
-        Some(c) => unsafe {
-                        c();
-                        return Ok(());
-                   },
-        
-    };
-}
+/// #Description 
+///
+/// Retrieves the value of a parameter from the currently loaded plugin
+///
+/// #Arguments
+///
+/// * `name_bytes` (IN) A reference to a block of [u8] bytes storing the parameter name
+///
+/// * `value` (OUT) A reference where the parameter value will be stored
+///
+/// #Returns
+///
+/// 0 if the parameter was retrived, and the result is stored in `value`
+/// 1 if the parameter does not exist
+///
+/// #Example
+/// 
+/// ```
+///   let String name = "NUM_THREADS";
+///   let mut value:u32 = 0;
+///   let return_code = call_cuckoo_get_parameter(name.as_bytes(), &value)?;
+/// ```
+///
 
 pub fn call_cuckoo_get_parameter(name_bytes: &[u8], value:&mut u32) 
     -> Result<u32, CuckooMinerError>{
@@ -331,11 +391,35 @@ pub fn call_cuckoo_get_parameter(name_bytes: &[u8], value:&mut u32)
         None => return Err(CuckooMinerError::PluginNotLoadedError(
             String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
         Some(c) => unsafe {
-                        return Ok(c(name_bytes.as_ptr(), name_bytes.len(), value.as_mut_ptr()));
+                        return Ok(c(name_bytes.as_ptr(), name_bytes.len() as u32, value));
                    },
         
     };
 }
+
+/// #Description 
+///
+/// Sets the value of a parameter in the currently loaded plugin
+///
+/// #Arguments
+///
+/// * `name_bytes` (IN) A reference to a block of [u8] bytes storing the parameter name
+///
+/// * `value` (IN) The value to which to set the parameter
+///
+/// #Returns
+///
+/// 0 if the parameter was retrived, and the result is stored in `value`
+/// 1 if the parameter does not exist
+/// 2 if the parameter exists, but is outside the allowed range set by the plugin
+///
+/// #Example
+/// 
+/// ```
+///   let String name = "NUM_THREADS";
+///   let return_code = call_cuckoo_set_parameter(name.as_bytes(), 8)?;
+/// ```
+///
 
 pub fn call_cuckoo_set_parameter(name_bytes: &[u8], value:u32) 
     -> Result<u32, CuckooMinerError>{
@@ -344,7 +428,7 @@ pub fn call_cuckoo_set_parameter(name_bytes: &[u8], value:u32)
         None => return Err(CuckooMinerError::PluginNotLoadedError(
             String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
         Some(c) => unsafe {
-                        return Ok(c(name_bytes.as_ptr(), name_bytes.len(), value));
+                        return Ok(c(name_bytes.as_ptr(), name_bytes.len() as u32, value));
                    },
         
     };

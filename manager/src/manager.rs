@@ -103,12 +103,26 @@ impl fmt::Display for CuckooPluginCapabilities{
     }
 }
 
+/// Holds a set of plugin parameter descriptions returned from a plugin
+/// as deserialised from json
+/// 
+///
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CuckooPluginParameter {
+    /// The name of the parameter
     pub name:String,
+
+    /// Description of the parameter
     pub description:String,
+
+    /// The default value of the parameter, used if none is provided
     pub default_value:u32,
+
+    /// The minimum allowed value for the parameter
     pub min_value: u32,
+
+    /// The maximum allowed value for the parameter
     pub max_value: u32,
 }
 
@@ -278,7 +292,7 @@ impl CuckooPluginManager {
             let mut param_list_bytes:[u8;1024]=[0;1024];
             let mut param_list_len=param_list_bytes.len() as u32;
             //get a list of parameters
-            let parameter_list=call_cuckoo_parameter_list(&mut param_list_bytes, &mut param_list_len);
+            call_cuckoo_parameter_list(&mut param_list_bytes, &mut param_list_len)?;
             let mut param_list_vec:Vec<u8> = Vec::new();
             //result contains null zero
             for i in 0..param_list_len {

@@ -103,11 +103,10 @@ fn test_for_known_set(plugin_filter:&str,
     let mut config = CuckooMinerConfig::new();
     config.plugin_full_path = caps[0].full_path.clone();
     
-    //set the number of threads for the miner to use
-    config.num_threads=num_threads;
-
-    //set the number of trimes, 0 lets the plugin decide
-    config.num_trims=0;
+    let mut config = CuckooMinerConfig::new();
+    config.plugin_full_path = caps[0].full_path.clone();
+    //config.parameter_list.insert(String::from("NUM_TRIMS"), 5);
+    //config.parameter_list.insert(String::from("NUM_THREADS"), 8);
 
     //Build a new miner with this info, which will load
     //the associated plugin and 
@@ -148,11 +147,6 @@ fn mine_until_solution_found(plugin_filter:&str,
     let mut config = CuckooMinerConfig::new();
     config.plugin_full_path = caps[0].full_path.clone();
     
-    //set the number of threads for the miner to use
-    config.num_threads=num_threads;
-
-    //set the number of trimes, 0 lets the plugin decide
-    config.num_trims=0;
 
     //Build a new miner with this info, which will load
     //the associated plugin and 
@@ -216,7 +210,7 @@ fn mine_plugins_until_found() {
 
     env_logger::init();
     //mine_until_solution_found("cuda_28", 0);
-    //mine_until_solution_found("simple_16", 4);
+    mine_until_solution_found("simple_16", 4);
     
     panic!("stop");
 }
