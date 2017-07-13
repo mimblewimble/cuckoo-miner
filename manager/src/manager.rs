@@ -36,10 +36,15 @@ use std::path::{Path};
 use regex::Regex;
 use glob::glob;
 
+use serde_json;
+
 use cuckoo_sys::{call_cuckoo_description, 
+                 call_cuckoo_parameter_list,
                  load_cuckoo_lib,
                  unload_cuckoo_lib};
 use error::CuckooMinerError;
+
+
 
 
 // OS-specific library extensions
@@ -74,6 +79,9 @@ pub struct CuckooPluginCapabilities {
 
     /// The plugin's file name
     pub file_name: String,
+
+    /// The plugin's reported parameters
+    pub parameters: Vec<CuckooPluginParameter>,
 }
 
 impl Default for CuckooPluginCapabilities {
@@ -83,14 +91,25 @@ impl Default for CuckooPluginCapabilities {
             description: String::from(""),
 			full_path: String::from(""),
             file_name: String::from(""),
+            parameters: Vec::new(),
 		}
 	}
 }
 
 impl fmt::Display for CuckooPluginCapabilities{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,"Name: {}\nDescription:{}\nPath:{}\n", self.name, self.description, self.full_path)
+        write!(f,"Name: {}\nDescription:{}\nPath:{}\nParameters:{}\n", self.name, self.description, self.full_path,
+            serde_json::to_string(&self.parameters).unwrap())
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CuckooPluginParameter {
+    pub name:String,
+    pub description:String,
+    pub default_value:u32,
+    pub min_value: u32,
+    pub max_value: u32,
 }
 
 /// A structure that loads and queries all of the plugins in a particular directory via their
@@ -255,6 +274,18 @@ impl CuckooPluginManager {
             caps.description=String::from_utf8(desc_vec)?;
             caps.full_path=full_path.clone();
             caps.file_name=String::from("");
+
+            let mut param_list_bytes:[u8;1024]=[0;1024];
+            let mut param_list_len=param_list_bytes.len() as u32;
+            //get a list of parameters
+            let parameter_list=call_cuckoo_parameter_list(&mut param_list_bytes, &mut param_list_len);
+            let mut param_list_vec:Vec<u8> = Vec::new();
+            //result contains null zero
+            for i in 0..param_list_len {
+                param_list_vec.push(param_list_bytes[i as usize].clone());
+            }
+            let param_list_json=String::from_utf8(param_list_vec)?;
+            caps.parameters = serde_json::from_str(&param_list_json).unwrap();
 
             unload_cuckoo_lib();
 

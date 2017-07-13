@@ -163,4 +163,143 @@ extern "C" {
                               name_buf_len: *mut uint32_t,
                               description_buf: *mut c_uchar,
                               description_buf_len: *mut uint32_t);
+
+    /// #Description 
+    ///
+    /// Sets a parameter on the loaded mining plugin. The list of parameters that a plugin accepts
+    /// can be retrieved from the cuckoo_get_parameters function. All arguments and values
+    /// are represented as uchar strings.
+    ///
+    /// #Arguments
+    ///
+    /// * `name` (IN) The name of the parameter to set.
+    ///
+    /// * `name_len` (IN) The length, in bytes, of the `name` argument.
+    ///
+    /// * `value` (IN) The value of the parameter to set, represented as a simple ASCII string.
+    ///
+    /// * `value_len` (IN) The length, in bytes, of the `value` argument.
+    ///
+    /// #Returns
+    ///
+    /// 0 if the paramter was set correctly, a non-zero return code (TBD) if it could not be set,
+    /// outlining the reason.
+    ///
+    /// #Corresponding C (Unix)
+    /// 
+    /// ```
+    ///  extern "C" int cuckoo_set_parameter(char *name,
+    ///                                      int name_len,
+    ///                                      char *value,
+    ///                                      int value_len)
+    /// ```
+    ///
+    /// #Example
+    ///
+    /// 
+    /// ```
+    /// ```
+    ///
+
+    pub fn cuckoo_set_parameter(name: *const c_uchar, 
+                                name_len: uint32_t,
+                                value: uint32_t) -> uint32_t;
+
+    /// #Description 
+    ///
+    /// Retrieves a parameter from the loaded cuckoo plugin.
+    ///
+    /// #Arguments
+    ///
+    /// * `name` (IN) The name of the parameter to set.
+    ///
+    /// * `name_len` (IN) The length, in bytes, of the `name` argument.
+    ///
+    /// * `value` (out) The value of the parameter, represented by a simple ascii string
+    ///
+    /// * `value_len` (IN-OUT) Coming in, the maximum number of bytes to write to `value`,
+    /// coming out, the number of bytes written to `value`
+    ///
+    /// #Returns
+    ///
+    /// 0 if the paramter was set correctly, a non-zero return code (TBD) if the parameter
+    /// could not be found, for any reason.
+    ///
+    /// #Corresponding C (Unix)
+    /// 
+    /// ```
+    ///  extern "C" int cuckoo_get_parameter(char *name,
+    ///                                      int name_len,
+    ///                                      char *value,
+    ///                                      int *value_len)
+    /// ```
+    ///
+    /// #Example
+    ///
+    /// 
+    /// ```
+    /// ```
+    ///
+
+    pub fn cuckoo_get_parameter(name: *const c_uchar, 
+                                name_len: uint32_t,
+                                value: *mut uint32_t) -> uint32_t;
+
+    /// #Description 
+    ///
+    /// Retrieves a JSON list of the plugin's available parameters, their
+    /// description and their defaults. e.g:
+    /// ```
+    ///   [{
+    ///      name:"num_threads",
+    ///      type:"int",
+    ///      description: "Number of worker threads",
+    ///      default_value: "1",
+    ///      min_value: "1",
+    ///      max_value: "32"
+    ///    },
+    ///    {
+    ///      name:"num_trims",
+    ///      type:"int",
+    ///      description: "Maximum number of trimming rounds",
+    ///      default_value: "7",
+    ///      min_value: "0",
+    ///      max_value: "50"
+    ///    }]
+    ///
+    /// ```
+    /// This should correspond to an easily deserialised structure on the 
+    /// rust side.
+    ///
+    /// #Arguments
+    ///
+    /// * `params_out_buf` (OUT) The name of the parameter to set.
+    ///
+    /// * `params_len` (IN-OUT) Coming in, the maximum number of bytes to write to `params_out_buf`,
+    /// coming out, the number of bytes written to `params_out_buf`
+    ///
+    /// The implementing function should take care not to write more than `params_len` to
+    /// the `params_out` buffer, and should not allocate any memory
+    ///
+    /// #Returns
+    ///
+    /// 0 if the the parameter list was successfully retrieved, another non-zero error code
+    /// if not, for any reason.
+    ///
+    /// #Corresponding C (Unix)
+    /// 
+    /// ```
+    ///  extern "C" int cuckoo_parameter_list(char *params_out_buf,
+    ///                                       int*  params_len);
+    /// ```
+    ///
+    /// #Example
+    ///
+    /// 
+    /// ```
+    /// ```
+    ///
+
+    pub fn cuckoo_parameter_list(params_out_buf: *mut c_uchar, 
+                                params_len: *mut size_t) -> uint32_t;
 }
