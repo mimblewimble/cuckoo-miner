@@ -37,4 +37,6 @@ pub use manager::{load_cuckoo_lib,
                   unload_cuckoo_lib,
                   call_cuckoo,
                   call_cuckoo_description,
-                  call_cuckoo_parameter_list};
+                  call_cuckoo_parameter_list,
+                  call_cuckoo_get_parameter,
+                  call_cuckoo_set_parameter};

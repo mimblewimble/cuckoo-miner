@@ -47,9 +47,11 @@
 /// ```
 
 use std::{fmt,cmp};
+use std::collections::HashMap;
 
 use cuckoo_sys::{call_cuckoo, 
-                 load_cuckoo_lib};
+                 load_cuckoo_lib,
+                 call_cuckoo_set_parameter};
 
 use error::CuckooMinerError;
 
@@ -129,15 +131,9 @@ pub struct CuckooMinerConfig {
     /// before use.
     pub plugin_full_path: String,
 
-    /// If the plugin supports threads, the number of threads to use
-    /// Defaults to 1.
-    pub num_threads: u32,
-
-    /// If the plugin supports edge trimming, the number of trim
-    /// rounds to perform. If this is set to zero, the plugin
-    /// will decide. Defaults to 0
-    pub num_trims: u32,
-
+    /// A parameter list, which differs depending on which 
+    /// plugin is being called
+    pub parameter_list: HashMap<String, u32>,
 
 }
 
@@ -145,9 +141,7 @@ impl Default for CuckooMinerConfig {
 	fn default() -> CuckooMinerConfig {
 		CuckooMinerConfig{
             plugin_full_path: String::from(""),
-            num_threads: 1,
-            //0 = let the plugin decide
-            num_trims: 0,
+            parameter_list: HashMap::new(),
 		}
 	}
 }
@@ -184,10 +178,12 @@ impl CuckooMiner {
     /// #Description 
     ///
     /// Creates a new instance of a CuckooMiner with the given configuration.
+    ///
     /// #Arguments
     ///
-    /// `config` an instance of [CuckooMinerConfig](struct.CuckooMinerConfig.html), that
-    /// must be filled with the full path name of a valid mining plugin.
+    /// * `config` an instance of [CuckooMinerConfig](struct.CuckooMinerConfig.html), that
+    /// must be filled with the full path name of a valid mining plugin. It may also contain
+    /// values in its `parameter_list` field, which will be automatically set in the plugin
     ///
     /// #Returns
     ///
@@ -201,6 +197,11 @@ impl CuckooMiner {
             config: config,
         };
         return_val.init()?;
+        //set any parameters provided in the config
+        for (name, value) in return_val.config.parameter_list.clone() {
+           return_val.set_parameter(name.clone(), value.clone())?;
+        }
+
         Ok(return_val)
     }
 
@@ -210,39 +211,71 @@ impl CuckooMiner {
         load_cuckoo_lib(&self.config.plugin_full_path)
     }
 
-/// #Description 
-///
-/// Call to the cuckoo_call function of the currently loaded plugin, which will perform 
-/// a Cuckoo Cycle on the given seed, filling the first solution (a length 42 cycle)
-/// that is found in the provided [CuckooMinerSolution](struct.CuckooMinerSolution.html) structure.
-/// The implementation details are dependent on particular loaded plugin. Values provided
-/// to the loaded plugin are contained in the internal [CuckooMinerConfig](struct.CuckooMinerConfig.html) 
-///
-/// #Arguments
-///
-/// * `header` (IN) A reference to a block of [u8] bytes to use for the seed to the 
-///    internal SIPHASH function which generates edge locations in the graph. In practice, 
-///    this is a SHA3 hash of a Grin blockheader, but from the plugin's perspective this 
-///    can be anything.
-///
-/// * `solution` (OUT) An empty [CuckooMinerSolution](struct.CuckooMinerSolution.html). 
-///    If a solution is found, this structure will contain a list of solution nonces,
-///    otherwise, it will remain untouched.
-///
-/// #Returns
-///
-/// * Ok(true) if a solution is found, with the 42 solution nonces contained within
-/// the provided [CuckooMinerSolution](struct.CuckooMinerSolution.html).
-/// * Ok(false) if no solution is found and `solution` remains untouched.
-/// * A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
-/// if there is no plugin loaded, or if there is an error calling the function.
-///
+    /// #Description 
+    ///
+    /// Sets a parameter in the currently loaded plugin
+    ///
+    /// #Arguments
+    ///
+    /// * `name` The name of the parameter to set
+    ///
+    /// * `value` The value to set the parameter to
+    ///
+    /// #Returns
+    ///
+    /// If successful, Ok() is returned and the parameter has been set.
+    /// Otherwise a [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+    /// with specific detail is returned.
+    ///
+
+    pub fn set_parameter(&mut self, name: String, value:u32) -> Result<(), CuckooMinerError>{
+        let return_code = call_cuckoo_set_parameter(name.as_bytes(), value)?;
+        if return_code != 0 {
+            
+            let reason = match return_code {
+                1 => "Property doesn't exist for this plugin",
+                2 => "Property outside allowed range",
+                _ => "Unknown Error"
+            };
+
+            return Err(CuckooMinerError::ParameterError(String::from(
+                format!("Error setting parameter: {} to {} - {}", name, value, reason)
+                )));
+        }
+        Ok(())
+    }
+
+    /// #Description 
+    ///
+    /// Call to the cuckoo_call function of the currently loaded plugin, which will perform 
+    /// a Cuckoo Cycle on the given seed, filling the first solution (a length 42 cycle)
+    /// that is found in the provided [CuckooMinerSolution](struct.CuckooMinerSolution.html) structure.
+    /// The implementation details are dependent on particular loaded plugin. Values provided
+    /// to the loaded plugin are contained in the internal [CuckooMinerConfig](struct.CuckooMinerConfig.html) 
+    ///
+    /// #Arguments
+    ///
+    /// * `header` (IN) A reference to a block of [u8] bytes to use for the seed to the 
+    ///    internal SIPHASH function which generates edge locations in the graph. In practice, 
+    ///    this is a SHA3 hash of a Grin blockheader, but from the plugin's perspective this 
+    ///    can be anything.
+    ///
+    /// * `solution` (OUT) An empty [CuckooMinerSolution](struct.CuckooMinerSolution.html). 
+    ///    If a solution is found, this structure will contain a list of solution nonces,
+    ///    otherwise, it will remain untouched.
+    ///
+    /// #Returns
+    ///
+    /// * Ok(true) if a solution is found, with the 42 solution nonces contained within
+    /// the provided [CuckooMinerSolution](struct.CuckooMinerSolution.html).
+    /// * Ok(false) if no solution is found and `solution` remains untouched.
+    /// * A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+    /// if there is no plugin loaded, or if there is an error calling the function.
+    ///
 
     pub fn mine(&self, header: &[u8], solution:&mut CuckooMinerSolution) 
         -> Result<bool, CuckooMinerError> {    
             match call_cuckoo(header, 
-                              self.config.num_threads,
-                              self.config.num_trims,
                               &mut solution.solution_nonces) {
                 Ok(result) => {
                     match result {

@@ -42,6 +42,9 @@ pub enum CuckooMinerError {
     /// Unexpected return code from a plugin 
     UnexpectedResultError(u32),
 
+    /// Error setting a parameter
+    ParameterError(String),
+
     /// IO Error
     PluginIOError(String)
 }
