@@ -17,6 +17,7 @@ error = { path = "../error", version="0.1.0" }
 
 #Plugins
 
+cuckoo_simple_12 = { path = "plugins/cuckoo_simple_12" }
 cuckoo_simple_16 = { path = "plugins/cuckoo_simple_16" }
 cuckoo_simple_20 = { path = "plugins/cuckoo_simple_20" }
 cuckoo_simple_25 = { path = "plugins/cuckoo_simple_25" }
