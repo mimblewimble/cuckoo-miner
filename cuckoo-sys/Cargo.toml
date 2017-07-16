@@ -33,6 +33,7 @@ cuckoo_edgetrim_30 = { path = "plugins/cuckoo_edgetrim_30" }
 #cuckoo_mean_28 = { path = "plugins/cuckoo_mean_28" }
 #And tomato miner doesn't compile ATM
 #cuckoo_tomato_12 = { path = "plugins/cuckoo_tomato_12" }
+#cuckoo_tomato_25 = { path = "plugins/cuckoo_tomato_25" }
 #cuckoo_tomato_30 = { path = "plugins/cuckoo_tomato_30" }
 
 
