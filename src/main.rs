@@ -34,7 +34,7 @@ fn main() {
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
     plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
     //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins("simple_25").unwrap();
+    let caps = plugin_manager.get_available_plugins("edgetrim_25").unwrap();
 
     //Print all available plugins
     for c in &caps {
