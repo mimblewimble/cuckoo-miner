@@ -120,7 +120,7 @@ impl CuckooBuildEnv {
         config.out_dir(Path::new(&modded_out_dir));
 
         config.cpp(true);
-        config.shared_flag(true);
+        //config.shared_flag(true);
         config.compile(format!("libcuckoo_{}_{}.a",variation,size).as_str());
     }
 

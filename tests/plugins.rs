@@ -95,32 +95,22 @@ fn test_for_known_set(plugin_filter:&str,
     //Print all available plugins
     for c in &caps {
         println!("Found plugin: [{}]", c);
-    }
-
-    //Select a plugin somehow, and insert it into the miner configuration
-    //being created below
+        //Select a plugin somehow, and insert it into the miner configuration
+        //being created below
     
-    let mut config = CuckooMinerConfig::new();
-    config.plugin_full_path = caps[0].full_path.clone();
+        let mut config = CuckooMinerConfig::new();
+        config.plugin_full_path = c.full_path.clone();
     
-    let mut config = CuckooMinerConfig::new();
-    config.plugin_full_path = caps[0].full_path.clone();
-    //config.parameter_list.insert(String::from("NUM_TRIMS"), 5);
-    //config.parameter_list.insert(String::from("NUM_THREADS"), 8);
+        let mut miner = CuckooMiner::new(config).expect("");
 
-    //Build a new miner with this info, which will load
-    //the associated plugin and 
-    
-    let mut miner = CuckooMiner::new(config).expect("");
+        let mut solution = CuckooMinerSolution::new();
 
-    //Keep a structure to hold the solution.. this will be
-    //filled out by the plugin
-    let mut solution = CuckooMinerSolution::new();
+        let result = miner.mine(input_header, &mut solution).unwrap();
 
-    let result = miner.mine(input_header, &mut solution).unwrap();
+        println!("Solution found: {} - {}", c.name, solution);
 
-    assert!(solution == expected_result_nonces);
-   
+        assert!(solution == expected_result_nonces);
+    }   
 }
 
 // Helper function to mine using a semi random-hash until a solution
@@ -187,16 +177,16 @@ fn mine_until_solution_found(plugin_filter:&str,
 #[test]
 fn test_known_solutions() {
     let mut solution = CuckooMinerSolution::new();
-    solution.set_solution(KNOWN_SOLUTION_16);
-    test_for_known_set("16", &KNOWN_SEED_16, solution, 1);
+    solution.set_solution(KNOWN_SOLUTION_28);
+    test_for_known_set("tomato_28", &KNOWN_SEED_28, solution, 1);
 
-    solution = CuckooMinerSolution::new();
+    /*solution = CuckooMinerSolution::new();
     solution.set_solution(KNOWN_SOLUTION_20);
     test_for_known_set("20", &KNOWN_SEED_20, solution, 1);
 
     solution = CuckooMinerSolution::new();
     solution.set_solution(KNOWN_SOLUTION_25);
-    test_for_known_set("25", &KNOWN_SEED_25, solution, 1);
+    test_for_known_set("25", &KNOWN_SEED_25, solution, 1);*/
 
     /*solution = CuckooMinerSolution::new();
     solution.set_solution(KNOWN_SOLUTION_20);
