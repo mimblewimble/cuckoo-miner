@@ -22,6 +22,15 @@ extern crate manager;
 use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution};
 use manager::CuckooPluginManager;
 
+static KNOWN_SEED_16:[u8;32] = [0xd9, 0x93, 0xac, 0x4a, 0xe3, 0xc7, 0xf9, 0xeb, 
+                                0x34, 0xb2, 0x2e, 0x86, 0x85, 0x25, 0x64, 0xa9,
+                                0xc1, 0x67, 0x2a, 0x35, 0x7a, 0x0a, 0x81, 0x80,
+                                0x82, 0xc6, 0x0f, 0x2a, 0xb1, 0x5f, 0x6f, 0x67];
+static KNOWN_SOLUTION_16:[u32;42] = [671, 2624, 3044, 4429, 4682, 4734, 6727, 7250, 8589, 
+8717, 9718, 10192, 10458, 10504, 11294, 12699, 13143, 13147, 14170, 15805, 16197, 17322, 
+18523, 19892, 20277, 22231, 22964, 22965, 23993, 24624, 26735, 26874, 27312, 27502, 28637, 
+29606, 30616, 30674, 30727, 31162, 31466, 31706];
+
 fn main() {
 
     //this should have a solution under cuckoo25
@@ -34,7 +43,7 @@ fn main() {
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
     plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
     //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins("edgetrim_25").unwrap();
+    let caps = plugin_manager.get_available_plugins("simple_16").unwrap();
 
     //Print all available plugins
     for c in &caps {
@@ -59,7 +68,7 @@ fn main() {
     let mut solution = CuckooMinerSolution::new();
         
     //Mine with given header and check for result
-    let result = miner.mine(&test_header, &mut solution).unwrap();
+    let result = miner.mine(&KNOWN_SEED_16, &mut solution).unwrap();
 
     if result == true {
        println!("Solution found: {}", solution);
