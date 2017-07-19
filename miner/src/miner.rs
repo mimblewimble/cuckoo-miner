@@ -123,7 +123,7 @@ impl cmp::PartialEq for CuckooMinerSolution {
 
 /// Structure containing the configuration values to pass into an
 /// instance of a miner
-
+#[derive(Debug, Clone)]
 pub struct CuckooMinerConfig {
 
     /// The full path to the plugin to load and use to find a solution
