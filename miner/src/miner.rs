@@ -49,6 +49,7 @@
 use std::{fmt,cmp};
 use std::collections::HashMap;
 use std::thread;
+use std::sync::{Arc, Mutex};
 
 use cuckoo_sys::{call_cuckoo, 
                  load_cuckoo_lib,
@@ -165,14 +166,14 @@ impl CuckooMinerConfig{
 pub struct CuckooMiner{
     /// The internal Configuration object
     pub config: CuckooMinerConfig,
-    delegator: Delegator,
+    pub delegator:Arc<Mutex<Delegator>>,
 }
 
 impl Default for CuckooMiner {
 	fn default() -> CuckooMiner {
 		CuckooMiner {
             config: CuckooMinerConfig::default(),
-            delegator: Delegator::new(),
+            delegator: Arc::new(Mutex::new(Delegator::new())),
 		}
 	}
 }
@@ -199,6 +200,7 @@ impl CuckooMiner {
 
     pub fn new(config:CuckooMinerConfig)->Result<CuckooMiner, CuckooMinerError>{
         let mut return_val=CuckooMiner::default();
+        return_val.config=config;
         return_val.init()?;
         //set any parameters provided in the config
         for (name, value) in return_val.config.parameter_list.clone() {
@@ -299,16 +301,35 @@ impl CuckooMiner {
     /// potential block, mutates it and sends to the plugin to manage
     pub fn notify(&mut self, 
                   job_id: u32, //Job id
-                  pre_nonce: String, //Pre-nonce portion of header
-                  post_nonce: String, //Post-nonce portion of header
+                  pre_nonce: &str, //Pre-nonce portion of header
+                  post_nonce: &str, //Post-nonce portion of header
                   difficulty: u32, //Encoded network difficulty
                   clean_jobs: bool){
-        self.delegator.init_job(job_id, pre_nonce, post_nonce, difficulty);
 
-        /*thread::spawn(move || {
-			
-			
-		});*/
+        
+
+        let job_id=job_id;
+        let pre_nonce=String::from(pre_nonce);
+        let post_nonce=String::from(post_nonce);
+        let difficulty=difficulty;
+        let clean_jobs=clean_jobs;
+
+        let delegator = self.delegator.clone();
+        
+		thread::spawn(move || {
+            let mut d = delegator.lock().unwrap();
+            d.init_job(job_id, &pre_nonce, &post_nonce, difficulty);
+            d.job_loop();
+		});
+
+        let delegator = self.delegator.clone();
+
+        thread::spawn(move || {
+            println!("here too");
+            let mut d = delegator.lock().unwrap();
+            d.result_loop();
+		});
+
     }
                   
 }
