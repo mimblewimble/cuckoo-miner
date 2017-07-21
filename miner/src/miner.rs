@@ -48,12 +48,15 @@
 
 use std::{fmt,cmp};
 use std::collections::HashMap;
+use std::thread;
 
 use cuckoo_sys::{call_cuckoo, 
                  load_cuckoo_lib,
                  call_cuckoo_set_parameter};
 
 use error::CuckooMinerError;
+
+use delegator::Delegator;
 
 // Hardcoed assumption for now that the solution size will be 42 will be
 // maintained, to avoid having to allocate memory within the called C functions
@@ -162,12 +165,14 @@ impl CuckooMinerConfig{
 pub struct CuckooMiner{
     /// The internal Configuration object
     pub config: CuckooMinerConfig,
+    delegator: Delegator,
 }
 
 impl Default for CuckooMiner {
 	fn default() -> CuckooMiner {
 		CuckooMiner {
             config: CuckooMinerConfig::default(),
+            delegator: Delegator::new(),
 		}
 	}
 }
@@ -193,9 +198,7 @@ impl CuckooMiner {
     ///
 
     pub fn new(config:CuckooMinerConfig)->Result<CuckooMiner, CuckooMinerError>{
-        let mut return_val=CuckooMiner{
-            config: config,
-        };
+        let mut return_val=CuckooMiner::default();
         return_val.init()?;
         //set any parameters provided in the config
         for (name, value) in return_val.config.parameter_list.clone() {
@@ -291,4 +294,21 @@ impl CuckooMiner {
                     String::from("Please call init to load a miner plug-in"))),
             }
     }
+
+    /// stratum-esque version of the miner, which takes a job for a particular
+    /// potential block, mutates it and sends to the plugin to manage
+    pub fn notify(&mut self, 
+                  job_id: u32, //Job id
+                  pre_nonce: String, //Pre-nonce portion of header
+                  post_nonce: String, //Post-nonce portion of header
+                  difficulty: u32, //Encoded network difficulty
+                  clean_jobs: bool){
+        self.delegator.init_job(job_id, pre_nonce, post_nonce, difficulty);
+
+        /*thread::spawn(move || {
+			
+			
+		});*/
+    }
+                  
 }
