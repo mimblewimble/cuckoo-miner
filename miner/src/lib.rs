@@ -28,6 +28,8 @@ extern crate cuckoo_sys;
 extern crate error;
 extern crate regex;
 
+mod delegator;
+
 pub mod miner;
 pub use miner::{CuckooMiner,
                 CuckooMinerConfig,
