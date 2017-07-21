@@ -27,6 +27,9 @@ extern crate env_logger;
 extern crate cuckoo_sys;
 extern crate error;
 extern crate regex;
+extern crate rand;
+extern crate byteorder;
+extern crate tiny_keccak;
 
 mod delegator;
 

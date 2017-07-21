@@ -61,19 +61,31 @@ fn main() {
     //Build a new miner with this info, which will load
     //the associated plugin and 
     
-    let miner = CuckooMiner::new(config).expect("");
+    let mut miner = CuckooMiner::new(config).expect("");
 
     //Keep a structure to hold the solution.. this will be
     //filled out by the plugin
     let mut solution = CuckooMinerSolution::new();
+
+
+    let pre_header="00000000000000118e0fe6bcfaa76c6795592339f27b6d330d8f9c4ac8e86171a66357d1\
+    d0fce808000000005971f14f0000000000000000000000000000000000000000000000000000000000000000\
+    3e1fcdd453ce51ffbb16dd200aeb9ef7375aec196e97094868428a7325e4a19b00";
+    let post_header="010a020364";
+
+    miner.notify(1, pre_header, post_header, 10, false);
+
+    loop {
+
+    }
         
     //Mine with given header and check for result
-    let result = miner.mine(&KNOWN_SEED_16, &mut solution).unwrap();
+    /*let result = miner.mine(&KNOWN_SEED_16, &mut solution).unwrap();
 
     if result == true {
        println!("Solution found: {}", solution);
     } else {
        println!("No Solution found");
-    }
+    }*/
 
 }

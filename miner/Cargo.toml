@@ -7,6 +7,9 @@ workspace = ".."
 [dependencies]
 env_logger="^0.3.5"
 log = "^0.3"
+rand = "^0.3"
+byteorder = "^0.5"
+tiny-keccak = "1.1"
 regex = "0.1.80"
 cuckoo-sys = { path = "../cuckoo-sys" }
 error = { path = "../error", version="0.1.0" }
