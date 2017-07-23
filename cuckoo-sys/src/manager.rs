@@ -38,6 +38,11 @@ type CuckooDescription = unsafe extern fn(*mut c_uchar,*mut uint32_t,*mut c_ucha
 type CuckooParameterList = unsafe extern fn(*mut c_uchar,*mut uint32_t) -> uint32_t;
 type CuckooSetParameter = unsafe extern fn(*const c_uchar, uint32_t, uint32_t) -> uint32_t;
 type CuckooGetParameter = unsafe extern fn(*const c_uchar, uint32_t, *mut uint32_t) -> uint32_t;
+type CuckooIsQueueUnderLimit = unsafe extern fn()->uint32_t;
+type CuckooPushToInputQueue = unsafe extern fn(*const c_uchar, uint32_t) -> uint32_t;
+type CuckooReadFromOutputQueue = unsafe extern fn(*mut uint32_t) -> uint32_t;
+type CuckooStartProcessing = unsafe extern fn()->uint32_t;
+type CuckooStopProcessing = unsafe extern fn()->uint32_t;
 
 // Keep static references to the library and each call that a plugin can expose
 // wrapped in mutex, for theoretical thread-safety, though it's unlikely that
@@ -52,6 +57,11 @@ lazy_static!{
     static ref CUCKOO_PARAMETER_LIST: Mutex<Option<CuckooParameterList>> = Mutex::new(None);
     static ref CUCKOO_GET_PARAMETER: Mutex<Option<CuckooGetParameter>> = Mutex::new(None);
     static ref CUCKOO_SET_PARAMETER: Mutex<Option<CuckooSetParameter>> = Mutex::new(None);
+    static ref CUCKOO_IS_QUEUE_UNDER_LIMIT: Mutex<Option<CuckooIsQueueUnderLimit>> = Mutex::new(None);
+    static ref CUCKOO_PUSH_TO_INPUT_QUEUE: Mutex<Option<CuckooPushToInputQueue>> = Mutex::new(None);
+    static ref CUCKOO_READ_FROM_OUTPUT_QUEUE: Mutex<Option<CuckooReadFromOutputQueue>> = Mutex::new(None);
+    static ref CUCKOO_START_PROCESSING: Mutex<Option<CuckooStartProcessing>> = Mutex::new(None);
+    static ref CUCKOO_STOP_PROCESSING: Mutex<Option<CuckooStopProcessing>> = Mutex::new(None);
 }
 
 // Loads the library at lib_full_path into the LOADED_LIBRARY static,
@@ -80,6 +90,11 @@ fn load_lib(lib_full_path:&str) -> Result<(), CuckooMinerError> {
         let mut cuckoo_parameter_list_ref = CUCKOO_PARAMETER_LIST.lock().unwrap();
         let mut cuckoo_get_parameter_ref = CUCKOO_GET_PARAMETER.lock().unwrap();
         let mut cuckoo_set_parameter_ref = CUCKOO_SET_PARAMETER.lock().unwrap();
+        let mut cuckoo_is_queue_under_limit_ref = CUCKOO_IS_QUEUE_UNDER_LIMIT.lock().unwrap();
+        let mut cuckoo_push_to_input_queue_ref = CUCKOO_PUSH_TO_INPUT_QUEUE.lock().unwrap();
+        let mut cuckoo_read_from_output_queue_ref = CUCKOO_READ_FROM_OUTPUT_QUEUE.lock().unwrap();
+        let mut cuckoo_start_processing_ref = CUCKOO_START_PROCESSING.lock().unwrap();
+        let mut cuckoo_stop_processing_ref = CUCKOO_STOP_PROCESSING.lock().unwrap();
         unsafe {
             let fn_ref:CuckooCall = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_call\0")?;
             *cuckoo_call_ref = Some(fn_ref);
@@ -98,6 +113,22 @@ fn load_lib(lib_full_path:&str) -> Result<(), CuckooMinerError> {
 
             let fn_ref:CuckooSetParameter = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_set_parameter\0")?;
             *cuckoo_set_parameter_ref = Some(fn_ref);
+            
+            let fn_ref:CuckooIsQueueUnderLimit = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_is_queue_under_limit\0")?;
+            *cuckoo_is_queue_under_limit_ref = Some(fn_ref);
+    
+            let fn_ref:CuckooPushToInputQueue = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_push_to_input_queue\0")?;
+            *cuckoo_push_to_input_queue_ref = Some(fn_ref);
+
+            let fn_ref:CuckooReadFromOutputQueue = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_read_from_output_queue\0")?;
+            *cuckoo_read_from_output_queue_ref = Some(fn_ref);
+
+            let fn_ref:CuckooStartProcessing = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_start_processing\0")?;
+            *cuckoo_start_processing_ref = Some(fn_ref);
+        
+            let fn_ref:CuckooStopProcessing = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_stop_processing\0")?;
+            *cuckoo_stop_processing_ref = Some(fn_ref);
+
         }
     }
     
@@ -135,6 +166,21 @@ pub fn unload_cuckoo_lib(){
     
     let cuckoo_description_ref = CUCKOO_DESCRIPTION.lock().unwrap();
     drop(cuckoo_description_ref);
+
+    let cuckoo_is_queue_under_limit_ref = CUCKOO_IS_QUEUE_UNDER_LIMIT.lock().unwrap();
+    drop(cuckoo_is_queue_under_limit_ref);
+
+    let cuckoo_push_to_input_queue_ref = CUCKOO_PUSH_TO_INPUT_QUEUE.lock().unwrap();
+    drop(cuckoo_push_to_input_queue_ref);
+
+    let cuckoo_read_from_output_queue_ref = CUCKOO_READ_FROM_OUTPUT_QUEUE.lock().unwrap();
+    drop(cuckoo_read_from_output_queue_ref);
+
+    let cuckoo_start_processing_ref = CUCKOO_START_PROCESSING.lock().unwrap();
+    drop(cuckoo_start_processing_ref);
+
+    let cuckoo_stop_processing_ref = CUCKOO_STOP_PROCESSING.lock().unwrap();
+    drop(cuckoo_stop_processing_ref);
 
     let loaded_library_ref = LOADED_LIBRARY.lock().unwrap();
     drop(loaded_library_ref);
@@ -435,3 +481,69 @@ pub fn call_cuckoo_set_parameter(name_bytes: &[u8], value:u32)
 }
 
 
+pub fn call_cuckoo_is_queue_under_limit() 
+    -> Result<u32, CuckooMinerError>{
+    let cuckoo_is_queue_under_limit_ref = CUCKOO_IS_QUEUE_UNDER_LIMIT.lock().unwrap(); 
+    match *cuckoo_is_queue_under_limit_ref {
+        None => return Err(CuckooMinerError::PluginNotLoadedError(
+            String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
+        Some(c) => unsafe {
+                        return Ok(c());
+                   },
+        
+    };
+}
+
+
+pub fn call_cuckoo_push_to_input_queue(hash: &[u8]) 
+    -> Result<u32, CuckooMinerError>{
+    let cuckoo_push_to_input_queue_ref = CUCKOO_PUSH_TO_INPUT_QUEUE.lock().unwrap(); 
+    match *cuckoo_push_to_input_queue_ref {
+        None => return Err(CuckooMinerError::PluginNotLoadedError(
+            String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
+        Some(c) => unsafe {
+                        return Ok(c(hash.as_ptr(), hash.len() as u32));
+                   },
+        
+    };
+}
+
+
+pub fn call_cuckoo_read_from_output_queue(solutions:&mut [u32; 42] ) -> Result<u32, CuckooMinerError> {
+    let cuckoo_read_from_output_queue_ref = CUCKOO_READ_FROM_OUTPUT_QUEUE.lock().unwrap(); 
+    match *cuckoo_read_from_output_queue_ref {
+        None => return Err(CuckooMinerError::PluginNotLoadedError(
+            String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
+        Some(c) => unsafe {
+                        return Ok(c(solutions.as_mut_ptr()));
+                   },
+        
+    };
+
+}
+
+pub fn call_cuckoo_start_processing() 
+    -> Result<u32, CuckooMinerError>{
+    let cuckoo_start_processing_ref = CUCKOO_START_PROCESSING.lock().unwrap(); 
+    match *cuckoo_start_processing_ref {
+        None => return Err(CuckooMinerError::PluginNotLoadedError(
+            String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
+        Some(c) => unsafe {
+                        return Ok(c());
+                   },
+        
+    };
+}
+
+pub fn call_cuckoo_stop_processing() 
+    -> Result<u32, CuckooMinerError>{
+    let cuckoo_stop_processing_ref = CUCKOO_STOP_PROCESSING.lock().unwrap(); 
+    match *cuckoo_stop_processing_ref {
+        None => return Err(CuckooMinerError::PluginNotLoadedError(
+            String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
+        Some(c) => unsafe {
+                        return Ok(c());
+                   },
+        
+    };
+}

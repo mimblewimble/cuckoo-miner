@@ -39,4 +39,9 @@ pub use manager::{load_cuckoo_lib,
                   call_cuckoo_description,
                   call_cuckoo_parameter_list,
                   call_cuckoo_get_parameter,
-                  call_cuckoo_set_parameter};
+                  call_cuckoo_set_parameter,
+                  call_cuckoo_is_queue_under_limit,
+                  call_cuckoo_push_to_input_queue,
+                  call_cuckoo_read_from_output_queue,
+                  call_cuckoo_start_processing,
+                  call_cuckoo_stop_processing};

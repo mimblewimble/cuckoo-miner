@@ -57,9 +57,10 @@ use cuckoo_sys::{call_cuckoo,
 
 use error::CuckooMinerError;
 
-use delegator::Delegator;
+use delegator;
+use delegator::{JobSharedData, JobSharedDataType};
 
-// Hardcoed assumption for now that the solution size will be 42 will be
+// Hardcoded assumption for now that the solution size will be 42 will be
 // maintained, to avoid having to allocate memory within the called C functions
 
 const CUCKOO_SOLUTION_SIZE:usize = 42;
@@ -166,20 +167,19 @@ impl CuckooMinerConfig{
 pub struct CuckooMiner{
     /// The internal Configuration object
     pub config: CuckooMinerConfig,
-    pub delegator:Arc<Mutex<Delegator>>,
+    pub shared_data:JobSharedDataType,
 }
 
 impl Default for CuckooMiner {
 	fn default() -> CuckooMiner {
 		CuckooMiner {
             config: CuckooMinerConfig::default(),
-            delegator: Arc::new(Mutex::new(Delegator::new())),
+            shared_data: Arc::new(Mutex::new(JobSharedData::default())),
 		}
 	}
 }
 
 impl CuckooMiner {
-
 
     /// #Description 
     ///
@@ -304,32 +304,28 @@ impl CuckooMiner {
                   pre_nonce: &str, //Pre-nonce portion of header
                   post_nonce: &str, //Post-nonce portion of header
                   difficulty: u32, //Encoded network difficulty
-                  clean_jobs: bool){
+                  clean_jobs: bool) -> Result<(), CuckooMinerError>{
 
-        
+        //Load the shared data
+        self.shared_data=Arc::new(Mutex::new(JobSharedData::new(
+            job_id,
+            pre_nonce,
+            post_nonce,
+            difficulty
+        )));
 
-        let job_id=job_id;
-        let pre_nonce=String::from(pre_nonce);
-        let post_nonce=String::from(post_nonce);
-        let difficulty=difficulty;
-        let clean_jobs=clean_jobs;
+        delegator::start_job_loop(self.shared_data.clone());
+        Ok(())
+    }
 
-        let delegator = self.delegator.clone();
-        
-		thread::spawn(move || {
-            let mut d = delegator.lock().unwrap();
-            d.init_job(job_id, &pre_nonce, &post_nonce, difficulty);
-            d.job_loop();
-		});
+    pub fn is_solution_found(&self)->bool{
+        let s=self.shared_data.lock().unwrap();
+        s.solution_found
+    }
 
-        let delegator = self.delegator.clone();
-
-        thread::spawn(move || {
-            println!("here too");
-            let mut d = delegator.lock().unwrap();
-            d.result_loop();
-		});
-
+    pub fn stop_jobs(&self){
+        let mut s=self.shared_data.lock().unwrap();
+        s.running_flag=false;
     }
                   
 }
