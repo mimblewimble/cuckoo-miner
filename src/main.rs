@@ -19,6 +19,8 @@ extern crate miner;
 extern crate error;
 extern crate manager;
 
+use std::{thread, time};
+
 use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution};
 use manager::CuckooPluginManager;
 
@@ -78,6 +80,16 @@ fn main() {
     loop {
 
     }
+    /*
+    thread::sleep(time::Duration::from_millis(5000));
+
+    
+
+    miner.stop_jobs();
+
+    println!("Jobs should be stopped now");
+
+    thread::sleep(time::Duration::from_millis(10000));*/
         
     //Mine with given header and check for result
     /*let result = miner.mine(&KNOWN_SEED_16, &mut solution).unwrap();

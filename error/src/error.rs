@@ -46,7 +46,10 @@ pub enum CuckooMinerError {
     ParameterError(String),
 
     /// IO Error
-    PluginIOError(String)
+    PluginIOError(String),
+
+    /// Plugin processing can't start
+    PluginProcessingError(String),
 }
 
 impl From<io::Error> for CuckooMinerError {
