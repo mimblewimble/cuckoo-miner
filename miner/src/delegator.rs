@@ -18,7 +18,7 @@ use std::mem::transmute;
 
 use rand::{self, Rng};
 use byteorder::{ByteOrder, ReadBytesExt, BigEndian};
-use tiny_keccak::Keccak;
+use blake2::blake2b::Blake2b;
 use bigint::BigUint;
 
 use cuckoo_sys::{call_cuckoo_is_queue_under_limit,
@@ -113,25 +113,25 @@ fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
     pre_vec.append(&mut post_vec);
 
     //Hash
-    let mut sha3 = Keccak::new_sha3_256();
-	sha3.update(&pre_vec);
+    let mut blake2b = Blake2b::new(32);
+    blake2b.update(&pre_vec);
        
     let mut ret = [0; 32];
-    sha3.finalize(&mut ret);
+    ret.copy_from_slice(blake2b.finalize().as_bytes());
     (nonce, ret)
 }
 
 pub fn meets_target_difficulty(target: u32, solution:&CuckooMinerSolution)->bool{
     //get hashed solution target
     let max_target = BigUint::from_bytes_be(&MAX_TARGET);    
-    let mut sha3 = Keccak::new_sha3_256();
+    let mut blake2b = Blake2b::new(32);
     for n in 0..solution.solution_nonces.len() {
         let mut bytes = [0; 4];
 	    BigEndian::write_u32(&mut bytes, solution.solution_nonces[n]);
-        sha3.update(bytes.as_ref());
+        blake2b.update(bytes.as_ref());
     }
     let mut ret = [0; 32];
-    sha3.finalize(&mut ret);
+    ret.copy_from_slice(blake2b.finalize().as_bytes());
 
     let h_num = BigUint::from_bytes_be(&ret[..]);
 
