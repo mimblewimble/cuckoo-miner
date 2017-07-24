@@ -60,7 +60,8 @@ use cuckoo_sys::{call_cuckoo,
 use error::CuckooMinerError;
 
 use delegator;
-use delegator::{JobSharedData, JobSharedDataType};
+use delegator::{JobSharedData, JobSharedDataType, get_hash};
+use cuckoo::Cuckoo;
 
 // Hardcoded assumption for now that the solution size will be 42 will be
 // maintained, to avoid having to allocate memory within the called C functions
@@ -122,6 +123,15 @@ impl CuckooMinerSolution{
     pub fn get_nonce_as_u64(&self)->u64{
         BigEndian::read_u64(&self.nonce)
     }
+
+    /// Converts the proof to a vector of u64s
+	pub fn to_u64s(&self) -> Vec<u64> {
+		let mut nonces = Vec::with_capacity(CUCKOO_SOLUTION_SIZE);
+		for n in self.solution_nonces.iter() {
+			nonces.push(*n as u64);
+		}
+		nonces
+	}
 }
 
 impl fmt::Display for CuckooMinerSolution {
@@ -343,7 +353,12 @@ impl CuckooMiner {
         thread::sleep(time::Duration::from_millis(100));
         let mut s=self.shared_data.lock().unwrap();
         if (s.solutions.len()>0){
-            return Some(s.solutions.pop().unwrap());
+            let sol = s.solutions.pop().unwrap();
+            let hash = get_hash(&s.pre_nonce, &s.post_nonce, sol.get_nonce_as_u64());
+            //verify
+            let verifies=Cuckoo::new(&hash, 16).verify(sol.clone(), 50);
+            println!("Verifies: {}", verifies);
+            return Some(sol);
         }
         None
     }
