@@ -60,8 +60,7 @@ use cuckoo_sys::{call_cuckoo,
 use error::CuckooMinerError;
 
 use delegator;
-use delegator::{JobSharedData, JobSharedDataType, get_hash};
-use cuckoo::Cuckoo;
+use delegator::{JobSharedData, JobSharedDataType};
 
 // Hardcoded assumption for now that the solution size will be 42 will be
 // maintained, to avoid having to allocate memory within the called C functions
@@ -354,10 +353,6 @@ impl CuckooMiner {
         let mut s=self.shared_data.lock().unwrap();
         if (s.solutions.len()>0){
             let sol = s.solutions.pop().unwrap();
-            let hash = get_hash(&s.pre_nonce, &s.post_nonce, sol.get_nonce_as_u64());
-            //verify
-            let verifies=Cuckoo::new(&hash, 16).verify(sol.clone(), 50);
-            //println!("Verifies: {}", verifies);
             return Some(sol);
         }
         None

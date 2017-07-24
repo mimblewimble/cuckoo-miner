@@ -88,7 +88,7 @@ fn from_hex_string(in_str:&str)->Vec<u8> {
 }
 
 //returns the nonce and the hash it generates
-pub fn get_hash(pre_nonce: &str, post_nonce: &str, nonce:u64)->[u8;32]{
+fn get_hash(pre_nonce: &str, post_nonce: &str, nonce:u64)->[u8;32]{
     //Turn input strings into vectors
     let mut pre_vec = from_hex_string(pre_nonce);
     let mut post_vec = from_hex_string(post_nonce);
