@@ -75,21 +75,35 @@ fn main() {
     3e1fcdd453ce51ffbb16dd200aeb9ef7375aec196e97094868428a7325e4a19b00";
     let post_header="010a020364";
 
-    miner.notify(1, pre_header, post_header, 10, false);
+    miner.notify(1, pre_header, post_header, 0, false);
 
     loop {
+        
+        if miner.is_solution_found() {
+            miner.stop_jobs();
+            break;
+        }
 
     }
-    /*
-    thread::sleep(time::Duration::from_millis(5000));
 
+     thread::sleep(time::Duration::from_millis(500));
+
+    miner.notify(1, pre_header, post_header, 0, false);
+
+    loop {
+        
+        if miner.is_solution_found() {
+            miner.stop_jobs();
+            break;
+        }
+
+    }
     
-
-    miner.stop_jobs();
+    thread::sleep(time::Duration::from_millis(2000));
 
     println!("Jobs should be stopped now");
 
-    thread::sleep(time::Duration::from_millis(10000));*/
+    //thread::sleep(time::Duration::from_millis(5000));
         
     //Mine with given header and check for result
     /*let result = miner.mine(&KNOWN_SEED_16, &mut solution).unwrap();

@@ -39,8 +39,8 @@ type CuckooParameterList = unsafe extern fn(*mut c_uchar,*mut uint32_t) -> uint3
 type CuckooSetParameter = unsafe extern fn(*const c_uchar, uint32_t, uint32_t) -> uint32_t;
 type CuckooGetParameter = unsafe extern fn(*const c_uchar, uint32_t, *mut uint32_t) -> uint32_t;
 type CuckooIsQueueUnderLimit = unsafe extern fn()->uint32_t;
-type CuckooPushToInputQueue = unsafe extern fn(*const c_uchar, uint32_t) -> uint32_t;
-type CuckooReadFromOutputQueue = unsafe extern fn(*mut uint32_t) -> uint32_t;
+type CuckooPushToInputQueue = unsafe extern fn(*const c_uchar, uint32_t, *const c_uchar) -> uint32_t;
+type CuckooReadFromOutputQueue = unsafe extern fn(*mut uint32_t, *mut c_uchar) -> uint32_t;
 type CuckooStartProcessing = unsafe extern fn()->uint32_t;
 type CuckooStopProcessing = unsafe extern fn()->uint32_t;
 
@@ -495,27 +495,27 @@ pub fn call_cuckoo_is_queue_under_limit()
 }
 
 
-pub fn call_cuckoo_push_to_input_queue(hash: &[u8]) 
+pub fn call_cuckoo_push_to_input_queue(hash: &[u8], nonce:&[u8]) 
     -> Result<u32, CuckooMinerError>{
     let cuckoo_push_to_input_queue_ref = CUCKOO_PUSH_TO_INPUT_QUEUE.lock().unwrap(); 
     match *cuckoo_push_to_input_queue_ref {
         None => return Err(CuckooMinerError::PluginNotLoadedError(
             String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
         Some(c) => unsafe {
-                        return Ok(c(hash.as_ptr(), hash.len() as u32));
+                        return Ok(c(hash.as_ptr(), hash.len() as u32, nonce.as_ptr()));
                    },
         
     };
 }
 
 
-pub fn call_cuckoo_read_from_output_queue(solutions:&mut [u32; 42] ) -> Result<u32, CuckooMinerError> {
+pub fn call_cuckoo_read_from_output_queue(solutions:&mut [u32; 42], nonce:&mut[u8; 8] ) -> Result<u32, CuckooMinerError> {
     let cuckoo_read_from_output_queue_ref = CUCKOO_READ_FROM_OUTPUT_QUEUE.lock().unwrap(); 
     match *cuckoo_read_from_output_queue_ref {
         None => return Err(CuckooMinerError::PluginNotLoadedError(
             String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
         Some(c) => unsafe {
-                        return Ok(c(solutions.as_mut_ptr()));
+                        return Ok(c(solutions.as_mut_ptr(), nonce.as_mut_ptr()));
                    },
         
     };

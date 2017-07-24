@@ -14,10 +14,12 @@
 
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
+use std::mem::transmute;
 
 use rand::{self, Rng};
 use byteorder::{ByteOrder, ReadBytesExt, BigEndian};
 use tiny_keccak::Keccak;
+use bigint::BigUint;
 
 use cuckoo_sys::{call_cuckoo_is_queue_under_limit,
                  call_cuckoo_push_to_input_queue,
@@ -26,6 +28,12 @@ use cuckoo_sys::{call_cuckoo_is_queue_under_limit,
                  call_cuckoo_stop_processing};
 use error::CuckooMinerError;
 use CuckooMinerSolution;
+
+/// From grin
+/// The target is the 32-bytes hash block hashes must be lower than.
+pub const MAX_TARGET: [u8; 32] = [0xf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                                  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                                  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 
 
 // Struct intended to be shared across threads
@@ -36,6 +44,7 @@ pub struct JobSharedData {
     pub difficulty: u32,
     pub running_flag: bool,
     pub solution_found: bool,
+    pub solution: CuckooMinerSolution,
 }
 
 impl Default for JobSharedData {
@@ -47,6 +56,7 @@ impl Default for JobSharedData {
             difficulty:0,
             solution_found: false,
             running_flag:true,
+            solution:CuckooMinerSolution::new(),
 		}
 	}
 }
@@ -60,9 +70,10 @@ impl JobSharedData {
             job_id: job_id,
             pre_nonce: String::from(pre_nonce),
             post_nonce: String::from(post_nonce),
-            difficulty: 0,
+            difficulty: difficulty,
             running_flag: true,
             solution_found: false,
+            solution:CuckooMinerSolution::new(),
         }
     }
 
@@ -92,7 +103,7 @@ fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
         
     //Generate new nonce
     let nonce:u64 = rand::OsRng::new().unwrap().gen();
-    println!("nonce: {}", nonce);
+    //println!("nonce: {}", nonce);
     let mut nonce_bytes = [0; 8];
     BigEndian::write_u64(&mut nonce_bytes, nonce);
     let mut nonce_vec = nonce_bytes.to_vec();
@@ -110,9 +121,38 @@ fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
     (nonce, ret)
 }
 
+pub fn meets_target_difficulty(target: u32, solution:&CuckooMinerSolution)->bool{
+    //get hashed solution target
+    let max_target = BigUint::from_bytes_be(&MAX_TARGET);    
+    let mut sha3 = Keccak::new_sha3_256();
+    for n in 0..solution.solution_nonces.len() {
+        let mut bytes = [0; 4];
+	    BigEndian::write_u32(&mut bytes, solution.solution_nonces[n]);
+        sha3.update(bytes.as_ref());
+    }
+    let mut ret = [0; 32];
+    sha3.finalize(&mut ret);
+
+    let h_num = BigUint::from_bytes_be(&ret[..]);
+
+    let num=max_target / h_num;
+    //println!("Difficulty is: {}", num);
+    if num>=BigUint::from(target) {
+        return true;
+    }
+    false
+
+}
+
 pub fn start_job_loop (shared_data: Arc<Mutex<JobSharedData>>){
     thread::spawn(move || {
         job_loop(shared_data);
+    });
+}
+
+pub fn start_result_loop (shared_data: Arc<Mutex<JobSharedData>>){
+    thread::spawn(move || {
+        result_loop(shared_data);
     });
 }
 
@@ -131,8 +171,6 @@ fn job_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerErr
         return Err(CuckooMinerError::PluginProcessingError(
                 String::from("Error starting processing plugin.")));
     }
-
-    let mut sols_found=0;
         
     loop {
          //Check if it's time to stop
@@ -140,8 +178,9 @@ fn job_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerErr
             let s = shared_data.lock().unwrap();
             if !s.running_flag {
                 //Do any cleanup
+                print!("Telling job thread to stop... ");
                 call_cuckoo_stop_processing(); //should be a synchronous cleanup call
-                println!("Exiting job thread.");
+                println!("stopped.");
                 break;
             }
         }
@@ -149,21 +188,41 @@ fn job_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerErr
         while(call_cuckoo_is_queue_under_limit().unwrap()==1){
             let (nonce, hash) = get_next_hash(&pre_nonce, &post_nonce);
             //println!("Hash thread 1: {:?}", hash);
-            call_cuckoo_push_to_input_queue(&hash)?;
-        }
-
-        let mut solution = CuckooMinerSolution::new();
-        while call_cuckoo_read_from_output_queue(&mut solution.solution_nonces).unwrap()!=0 {
-            println!("Solution Found ({}), {:?}", sols_found, solution);
-            sols_found+=1;
-            //check difficulty
-            /*check_difficulty(solution)
-            if it's > difficulty {
-                write solution to shared data structure
-                flag we have a solution
-                set stop signal in shared data
-            }*/
+            //TODO: make this a serialise operation instead
+            let nonce_bytes:[u8;8] = unsafe{transmute(nonce.to_be())};
+            call_cuckoo_push_to_input_queue(&hash, &nonce_bytes)?;
         }
     }
     Ok(())
+}
+
+fn result_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerError>{
+    let mut target_difficulty=0;
+    {
+        let s = shared_data.lock().unwrap();
+        target_difficulty=s.difficulty;
+    }
+    loop {
+        let mut solution = CuckooMinerSolution::new();
+        while call_cuckoo_read_from_output_queue(&mut solution.solution_nonces, &mut solution.nonce).unwrap()!=0 {
+            {
+                let s = shared_data.lock().unwrap();
+                if !s.running_flag {
+                    //println!("Exiting job thread.");
+                    break;
+                }
+            }
+            //TODO: make this a serialise operation instead
+            let nonce = unsafe{transmute::<[u8;8], u64>(solution.nonce)}.to_be();
+            
+            if meets_target_difficulty(target_difficulty, &solution){
+                println!("Solution Found for Nonce:({}), {:?}", nonce, solution);
+                let mut s = shared_data.lock().unwrap();
+                target_difficulty=s.difficulty;
+                s.solution_found=true;
+                s.solution = solution.clone();
+            }
+            
+        }
+    }
 }

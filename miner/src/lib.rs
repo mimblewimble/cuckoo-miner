@@ -18,7 +18,7 @@
 #![deny(non_upper_case_globals)]
 #![deny(non_camel_case_types)]
 #![deny(non_snake_case)]
-#![deny(unused_mut)]
+//#![deny(unused_mut)]
 #![warn(missing_docs)]
 
 #[macro_use]
@@ -29,6 +29,7 @@ extern crate error;
 extern crate regex;
 extern crate rand;
 extern crate byteorder;
+extern crate num_bigint as bigint;
 extern crate tiny_keccak;
 
 mod delegator;

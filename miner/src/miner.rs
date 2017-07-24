@@ -48,7 +48,7 @@
 
 use std::{fmt,cmp};
 use std::collections::HashMap;
-use std::thread;
+use std::{thread,time};
 use std::sync::{Arc, Mutex};
 
 use cuckoo_sys::{call_cuckoo, 
@@ -71,21 +71,34 @@ const CUCKOO_SOLUTION_SIZE:usize = 42;
 /// by a plugin upon finding a solution.
 ///
 
+#[derive(Copy)]
 pub struct CuckooMinerSolution {
     /// An array allocated in rust that will be filled
     /// by the called plugin upon successfully finding
     /// a solution
 
     pub solution_nonces:[u32; CUCKOO_SOLUTION_SIZE],
+
+    /// The nonce that was used to generate the
+    /// hash for which a solution was found
+    pub nonce:[u8;8],
 }
 
 impl Default for CuckooMinerSolution {
 	fn default() -> CuckooMinerSolution {
         CuckooMinerSolution {
 		    solution_nonces: [0; CUCKOO_SOLUTION_SIZE],
+            nonce: [0;8],
         }
 	}
 }
+
+impl Clone for CuckooMinerSolution {
+	fn clone(&self) -> CuckooMinerSolution {
+		*self
+	}
+}
+
 
 impl CuckooMinerSolution{
 
@@ -315,10 +328,13 @@ impl CuckooMiner {
         )));
 
         delegator::start_job_loop(self.shared_data.clone());
+        delegator::start_result_loop(self.shared_data.clone());
         Ok(())
     }
 
     pub fn is_solution_found(&self)->bool{
+        //just to prevent endless needless locking of this
+        thread::sleep(time::Duration::from_millis(1));
         let s=self.shared_data.lock().unwrap();
         s.solution_found
     }
