@@ -88,14 +88,11 @@ fn from_hex_string(in_str:&str)->Vec<u8> {
 }
 
 //returns the nonce and the hash it generates
-
-fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
+pub fn get_hash(pre_nonce: &str, post_nonce: &str, nonce:u64)->[u8;32]{
     //Turn input strings into vectors
     let mut pre_vec = from_hex_string(pre_nonce);
     let mut post_vec = from_hex_string(post_nonce);
         
-    //Generate new nonce
-    let nonce:u64 = rand::OsRng::new().unwrap().gen();
     //println!("nonce: {}", nonce);
     let mut nonce_bytes = [0; 8];
     BigEndian::write_u64(&mut nonce_bytes, nonce);
@@ -111,7 +108,13 @@ fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
        
     let mut ret = [0; 32];
     ret.copy_from_slice(blake2b.finalize().as_bytes());
-    (nonce, ret)
+    ret
+}
+
+fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
+    //Generate new nonce
+    let nonce:u64 = rand::OsRng::new().unwrap().gen();
+    (nonce, get_hash(pre_nonce, post_nonce, nonce))
 }
 
 pub fn start_job_loop (shared_data: Arc<Mutex<JobSharedData>>){

@@ -19,9 +19,12 @@ extern crate miner;
 extern crate error;
 extern crate manager;
 
+
 use std::{thread, time};
 
 use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution};
+use miner::cuckoo::Cuckoo;
+use miner::delegator::get_hash;
 use manager::CuckooPluginManager;
 
 static KNOWN_SEED_16:[u8;32] = [0xd9, 0x93, 0xac, 0x4a, 0xe3, 0xc7, 0xf9, 0xeb, 
@@ -81,6 +84,11 @@ fn main() {
         
         if let Some(s) = miner.get_solution()  {
             miner.stop_jobs();
+            let hash = get_hash(pre_header, post_header, s.get_nonce_as_u64());
+            //verify
+            let verifies=Cuckoo::new(&hash, 16).verify(s.clone(), 50);
+            println!("Verifies: {}", verifies);
+
             //up to you to read it and check difficulty
             break;
         }
