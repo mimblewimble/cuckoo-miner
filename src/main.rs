@@ -18,15 +18,11 @@
 extern crate miner;
 extern crate error;
 extern crate manager;
-extern crate num_bigint as bigint;
-
 
 use std::{thread, time};
 
 use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution};
 use manager::CuckooPluginManager;
-
-use bigint::BigUint;
 
 static KNOWN_SEED_16:[u8;32] = [0xd9, 0x93, 0xac, 0x4a, 0xe3, 0xc7, 0xf9, 0xeb, 
                                 0x34, 0xb2, 0x2e, 0x86, 0x85, 0x25, 0x64, 0xa9,
@@ -79,12 +75,13 @@ fn main() {
     3e1fcdd453ce51ffbb16dd200aeb9ef7375aec196e97094868428a7325e4a19b00";
     let post_header="010a020364";
 
-    miner.notify(1, pre_header, post_header, BigUint::new(vec![1]), false);
+    miner.notify(1, pre_header, post_header, false);
 
     loop {
         
-        if miner.is_solution_found() {
+        if let Some(s) = miner.get_solution()  {
             miner.stop_jobs();
+            //up to you to read it and check difficulty
             break;
         }
 
@@ -92,12 +89,13 @@ fn main() {
 
      thread::sleep(time::Duration::from_millis(500));
 
-    miner.notify(1, pre_header, post_header, BigUint::new(vec![1]), false);
+    miner.notify(1, pre_header, post_header, false);
 
     loop {
         
-        if miner.is_solution_found() {
+        if let Some(s) = miner.get_solution() {
             miner.stop_jobs();
+            //up to you to read it and check difficulty
             break;
         }
 
