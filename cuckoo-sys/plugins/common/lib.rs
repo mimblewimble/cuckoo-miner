@@ -318,7 +318,8 @@ extern "C" {
 
 
     pub fn cuckoo_push_to_input_queue(hash: *const c_uchar, 
-                       hash_len: size_t) -> uint32_t;
+                       hash_len: size_t,
+                       nonce: *const c_uchar) -> uint32_t;
 
     pub fn cuckoo_start_processing() -> uint32_t;
     
@@ -326,12 +327,9 @@ extern "C" {
 
     pub fn cuckoo_is_queue_under_limit() -> uint32_t;
 
-
-
-
-
     // Returns whether the plugin is ready for another job (there's space in the queue)
-    pub fn cuckoo_read_from_output_queue(sol_nonces: *mut uint32_t) -> uint32_t; 
+    pub fn cuckoo_read_from_output_queue(sol_nonces: *mut uint32_t, 
+                                         nonce: *mut c_uchar) -> uint32_t; 
 
     
 }
