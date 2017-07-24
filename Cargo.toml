@@ -10,6 +10,7 @@ members = ["miner", "error", "manager", "cuckoo-sys"]
 miner = { path = "miner", version="0.1.0" }
 error = { path = "error", version="0.1.0" }
 manager = { path = "manager", version="0.1.0" }
+num-bigint = "^0.1.35"
 
 [dev-dependencies]
 rust-crypto = "0.2.36"
