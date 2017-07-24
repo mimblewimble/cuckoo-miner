@@ -51,7 +51,7 @@ use std::collections::HashMap;
 use std::{thread,time};
 use std::sync::{Arc, Mutex};
 
-use bigint::BigUint;
+use byteorder::{ByteOrder, BigEndian};
 
 use cuckoo_sys::{call_cuckoo, 
                  load_cuckoo_lib,
@@ -84,6 +84,7 @@ pub struct CuckooMinerSolution {
     /// The nonce that was used to generate the
     /// hash for which a solution was found
     pub nonce:[u8;8],
+
 }
 
 impl Default for CuckooMinerSolution {
@@ -115,6 +116,11 @@ impl CuckooMinerSolution{
     /// Sets the solution, mostly for testing
     pub fn set_solution(&mut self, nonces:[u32; CUCKOO_SOLUTION_SIZE]){
         self.solution_nonces = nonces;
+    }
+
+    /// return the nonce as a u64, for convenience
+    pub fn get_nonce_as_u64(&self)->u64{
+        BigEndian::read_u64(&self.nonce)
     }
 }
 
@@ -318,7 +324,6 @@ impl CuckooMiner {
                   job_id: u32, //Job id
                   pre_nonce: &str, //Pre-nonce portion of header
                   post_nonce: &str, //Post-nonce portion of header
-                  difficulty: BigUint, //Encoded network difficulty
                   clean_jobs: bool) -> Result<(), CuckooMinerError>{
 
         //Load the shared data
@@ -326,7 +331,6 @@ impl CuckooMiner {
             job_id,
             pre_nonce,
             post_nonce,
-            difficulty
         )));
 
         delegator::start_job_loop(self.shared_data.clone());
@@ -334,11 +338,14 @@ impl CuckooMiner {
         Ok(())
     }
 
-    pub fn is_solution_found(&self)->bool{
+    pub fn get_solution(&self)->Option<CuckooMinerSolution>{
         //just to prevent endless needless locking of this
-        thread::sleep(time::Duration::from_millis(1));
-        let s=self.shared_data.lock().unwrap();
-        s.solution_found
+        thread::sleep(time::Duration::from_millis(100));
+        let mut s=self.shared_data.lock().unwrap();
+        if (s.solutions.len()>0){
+            return Some(s.solutions.pop().unwrap());
+        }
+        None
     }
 
     pub fn stop_jobs(&self){

@@ -41,10 +41,8 @@ pub struct JobSharedData {
     pub job_id: u32, 
     pub pre_nonce: String, 
     pub post_nonce: String, 
-    pub difficulty: BigUint,
     pub running_flag: bool,
-    pub solution_found: bool,
-    pub solution: CuckooMinerSolution,
+    pub solutions: Vec<CuckooMinerSolution>,
 }
 
 impl Default for JobSharedData {
@@ -53,10 +51,8 @@ impl Default for JobSharedData {
             job_id:0,
             pre_nonce:String::from(""),
             post_nonce:String::from(""),
-            difficulty:BigUint::new(vec![0]),
-            solution_found: false,
+            solutions: Vec::new(),
             running_flag:true,
-            solution:CuckooMinerSolution::new(),
 		}
 	}
 }
@@ -64,16 +60,13 @@ impl Default for JobSharedData {
 impl JobSharedData {
     pub fn new(job_id: u32, 
                pre_nonce: &str, 
-               post_nonce: &str, 
-               difficulty: BigUint) -> JobSharedData {
+               post_nonce: &str) -> JobSharedData {
         JobSharedData {
             job_id: job_id,
             pre_nonce: String::from(pre_nonce),
             post_nonce: String::from(post_nonce),
-            difficulty: difficulty,
             running_flag: true,
-            solution_found: false,
-            solution:CuckooMinerSolution::new(),
+            solutions: Vec::new(),
         }
     }
 
@@ -121,29 +114,6 @@ fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
     (nonce, ret)
 }
 
-pub fn meets_target_difficulty(target: &BigUint, solution:&CuckooMinerSolution)->bool{
-    //get hashed solution target
-    let max_target = BigUint::from_bytes_be(&MAX_TARGET);    
-    let mut blake2b = Blake2b::new(32);
-    for n in 0..solution.solution_nonces.len() {
-        let mut bytes = [0; 4];
-	    BigEndian::write_u32(&mut bytes, solution.solution_nonces[n]);
-        blake2b.update(bytes.as_ref());
-    }
-    let mut ret = [0; 32];
-    ret.copy_from_slice(blake2b.finalize().as_bytes());
-
-    let h_num = BigUint::from_bytes_be(&ret[..]);
-
-    let num=max_target / h_num;
-    //println!("Difficulty is: {}", num);
-    if num>=*target {
-        return true;
-    }
-    false
-
-}
-
 pub fn start_job_loop (shared_data: Arc<Mutex<JobSharedData>>){
     thread::spawn(move || {
         job_loop(shared_data);
@@ -178,9 +148,9 @@ fn job_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerErr
             let s = shared_data.lock().unwrap();
             if !s.running_flag {
                 //Do any cleanup
-                print!("Telling job thread to stop... ");
+                debug!("Telling job thread to stop... ");
                 call_cuckoo_stop_processing(); //should be a synchronous cleanup call
-                println!("stopped.");
+                debug!("stopped.");
                 break;
             }
         }
@@ -197,11 +167,7 @@ fn job_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerErr
 }
 
 fn result_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerError>{
-    let mut target_difficulty=BigUint::new(vec![0]);
-    {
-        let s = shared_data.lock().unwrap();
-        target_difficulty=s.difficulty.clone();
-    }
+
     loop {
         let mut solution = CuckooMinerSolution::new();
         while call_cuckoo_read_from_output_queue(&mut solution.solution_nonces, &mut solution.nonce).unwrap()!=0 {
@@ -215,12 +181,12 @@ fn result_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMiner
             //TODO: make this a serialise operation instead
             let nonce = unsafe{transmute::<[u8;8], u64>(solution.nonce)}.to_be();
             
-            if meets_target_difficulty(&target_difficulty, &solution){
-                println!("Solution Found for Nonce:({}), {:?}", nonce, solution);
+            //println!("Solution Found for Nonce:({}), {:?}", nonce, solution);
+            {
                 let mut s = shared_data.lock().unwrap();
-                s.solution_found=true;
-                s.solution = solution.clone();
+                s.solutions.push(solution.clone());
             }
+            
             
         }
     }

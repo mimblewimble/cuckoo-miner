@@ -177,14 +177,14 @@ fn mine_until_solution_found(plugin_filter:&str,
 #[test]
 fn test_known_solutions() {
     let mut solution = CuckooMinerSolution::new();
-    solution.set_solution(KNOWN_SOLUTION_28);
-    test_for_known_set("tomato_28", &KNOWN_SEED_28, solution, 1);
+    solution.set_solution(KNOWN_SOLUTION_16);
+    test_for_known_set("16", &KNOWN_SEED_16, solution, 1);
 
-    /*solution = CuckooMinerSolution::new();
+    solution = CuckooMinerSolution::new();
     solution.set_solution(KNOWN_SOLUTION_20);
     test_for_known_set("20", &KNOWN_SEED_20, solution, 1);
 
-    solution = CuckooMinerSolution::new();
+    /*solution = CuckooMinerSolution::new();
     solution.set_solution(KNOWN_SOLUTION_25);
     test_for_known_set("25", &KNOWN_SEED_25, solution, 1);*/
 

@@ -26,7 +26,6 @@
 extern crate error;
 extern crate miner;
 extern crate manager;
-extern crate num_bigint as bigint;
 
 pub use error::CuckooMinerError;
 
