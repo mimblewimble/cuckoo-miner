@@ -17,6 +17,8 @@
 //! simple miner is included, mostly for testing purposes. John Tromp's Tomato
 //! miner will be much faster in almost every environment.
 
+//! Copied from Grin, for testing support
+
 use std::collections::HashSet;
 use std::cmp;
 
