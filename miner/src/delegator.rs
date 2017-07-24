@@ -41,7 +41,7 @@ pub struct JobSharedData {
     pub job_id: u32, 
     pub pre_nonce: String, 
     pub post_nonce: String, 
-    pub difficulty: u32,
+    pub difficulty: BigUint,
     pub running_flag: bool,
     pub solution_found: bool,
     pub solution: CuckooMinerSolution,
@@ -53,7 +53,7 @@ impl Default for JobSharedData {
             job_id:0,
             pre_nonce:String::from(""),
             post_nonce:String::from(""),
-            difficulty:0,
+            difficulty:BigUint::new(vec![0]),
             solution_found: false,
             running_flag:true,
             solution:CuckooMinerSolution::new(),
@@ -65,7 +65,7 @@ impl JobSharedData {
     pub fn new(job_id: u32, 
                pre_nonce: &str, 
                post_nonce: &str, 
-               difficulty: u32) -> JobSharedData {
+               difficulty: BigUint) -> JobSharedData {
         JobSharedData {
             job_id: job_id,
             pre_nonce: String::from(pre_nonce),
@@ -121,7 +121,7 @@ fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
     (nonce, ret)
 }
 
-pub fn meets_target_difficulty(target: u32, solution:&CuckooMinerSolution)->bool{
+pub fn meets_target_difficulty(target: &BigUint, solution:&CuckooMinerSolution)->bool{
     //get hashed solution target
     let max_target = BigUint::from_bytes_be(&MAX_TARGET);    
     let mut blake2b = Blake2b::new(32);
@@ -137,7 +137,7 @@ pub fn meets_target_difficulty(target: u32, solution:&CuckooMinerSolution)->bool
 
     let num=max_target / h_num;
     //println!("Difficulty is: {}", num);
-    if num>=BigUint::from(target) {
+    if num>=*target {
         return true;
     }
     false
@@ -197,10 +197,10 @@ fn job_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerErr
 }
 
 fn result_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerError>{
-    let mut target_difficulty=0;
+    let mut target_difficulty=BigUint::new(vec![0]);
     {
         let s = shared_data.lock().unwrap();
-        target_difficulty=s.difficulty;
+        target_difficulty=s.difficulty.clone();
     }
     loop {
         let mut solution = CuckooMinerSolution::new();
@@ -215,10 +215,9 @@ fn result_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMiner
             //TODO: make this a serialise operation instead
             let nonce = unsafe{transmute::<[u8;8], u64>(solution.nonce)}.to_be();
             
-            if meets_target_difficulty(target_difficulty, &solution){
+            if meets_target_difficulty(&target_difficulty, &solution){
                 println!("Solution Found for Nonce:({}), {:?}", nonce, solution);
                 let mut s = shared_data.lock().unwrap();
-                target_difficulty=s.difficulty;
                 s.solution_found=true;
                 s.solution = solution.clone();
             }

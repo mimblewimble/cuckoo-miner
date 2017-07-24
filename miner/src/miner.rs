@@ -51,6 +51,8 @@ use std::collections::HashMap;
 use std::{thread,time};
 use std::sync::{Arc, Mutex};
 
+use bigint::BigUint;
+
 use cuckoo_sys::{call_cuckoo, 
                  load_cuckoo_lib,
                  call_cuckoo_set_parameter};
@@ -316,7 +318,7 @@ impl CuckooMiner {
                   job_id: u32, //Job id
                   pre_nonce: &str, //Pre-nonce portion of header
                   post_nonce: &str, //Post-nonce portion of header
-                  difficulty: u32, //Encoded network difficulty
+                  difficulty: BigUint, //Encoded network difficulty
                   clean_jobs: bool) -> Result<(), CuckooMinerError>{
 
         //Load the shared data
