@@ -357,7 +357,7 @@ impl CuckooMiner {
             let hash = get_hash(&s.pre_nonce, &s.post_nonce, sol.get_nonce_as_u64());
             //verify
             let verifies=Cuckoo::new(&hash, 16).verify(sol.clone(), 50);
-            println!("Verifies: {}", verifies);
+            //println!("Verifies: {}", verifies);
             return Some(sol);
         }
         None
