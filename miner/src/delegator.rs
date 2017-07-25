@@ -102,6 +102,8 @@ pub fn get_hash(pre_nonce: &str, post_nonce: &str, nonce:u64)->[u8;32]{
     pre_vec.append(&mut nonce_vec);
     pre_vec.append(&mut post_vec);
 
+    //println!("pre-vec: {:?}", pre_vec);
+
     //Hash
     let mut blake2b = Blake2b::new(32);
     blake2b.update(&pre_vec);
@@ -166,6 +168,7 @@ fn job_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerErr
             call_cuckoo_push_to_input_queue(&hash, &nonce_bytes)?;
         }
     }
+    debug!("Cuckoo-Miner: Job loop has exited.");
     Ok(())
 }
 
@@ -173,14 +176,14 @@ fn result_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMiner
 
     loop {
         let mut solution = CuckooMinerSolution::new();
-        while call_cuckoo_read_from_output_queue(&mut solution.solution_nonces, &mut solution.nonce).unwrap()!=0 {
-            {
-                let s = shared_data.lock().unwrap();
-                if !s.running_flag {
-                    //println!("Exiting job thread.");
-                    break;
-                }
+        {
+            let s = shared_data.lock().unwrap();
+            if !s.running_flag {
+                break;
             }
+        }
+        while call_cuckoo_read_from_output_queue(&mut solution.solution_nonces, &mut solution.nonce).unwrap()!=0 {
+            
             //TODO: make this a serialise operation instead
             let nonce = unsafe{transmute::<[u8;8], u64>(solution.nonce)}.to_be();
             
@@ -193,4 +196,7 @@ fn result_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMiner
             
         }
     }
+    debug!("Cuckoo-Miner: Result loop has exited.");
+    Ok(())
 }
+
