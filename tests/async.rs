@@ -57,7 +57,7 @@ fn mine_for_duration(plugin_filter:&str,
 
         loop {
             if let Some(s) = miner.get_solution()  {
-                println!("Sol found: {:?}", s);
+                println!("Sol found: {}, {:?}", s.get_nonce_as_u64(), s);
                 miner.stop_jobs();
                 //up to you to read it and check difficulty
                 break;    
@@ -73,5 +73,5 @@ fn mine_for_duration(plugin_filter:&str,
 #[test]
 fn mine_async(){
     env_logger::init();
-    mine_for_duration("simple_16", 10);
+    mine_for_duration("simple_16", 30);
 }

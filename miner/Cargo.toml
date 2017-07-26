@@ -12,7 +12,7 @@ rand = "^0.3"
 byteorder = "^0.5"
 num-bigint = "^0.1.35"
 blake2-rfc = "~0.2.17"
-regex = "0.1.80"
+regex = "~0.2.2"
 cuckoo-sys = { path = "../cuckoo-sys" }
 error = { path = "../error", version="0.1.0" }
 

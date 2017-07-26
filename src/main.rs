@@ -18,9 +18,10 @@
 extern crate miner;
 extern crate error;
 extern crate manager;
+extern crate time;
 
+use std::thread;
 
-use std::{thread, time};
 
 use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution};
 use manager::CuckooPluginManager;
@@ -76,21 +77,34 @@ fn main() {
     3e1fcdd453ce51ffbb16dd200aeb9ef7375aec196e97094868428a7325e4a19b00";
     let post_header="010a020364";
 
-    miner.notify(1, pre_header, post_header, false);
+    //miner.notify(1, pre_header, post_header, false);
 
-    loop {
+    let duration_in_seconds=60;
+
+    let deadline = time::get_time().sec + duration_in_seconds;
+   
+    while time::get_time().sec < deadline {
         
-        if let Some(s) = miner.get_solution()  {
-            miner.stop_jobs();
-            //up to you to read it and check difficulty
-            break;
-        }
+        miner.notify(1, pre_header, post_header, false);
 
+        loop {
+            if let Some(s) = miner.get_solution()  {
+                println!("Sol found: {}, {:?}", s.get_nonce_as_u64(), s);
+                //up to you to read it and check difficulty
+                miner.stop_jobs();
+                break;    
+                
+            }
+
+        }
+            //break;
+        
+        
     }
 
-    thread::sleep(time::Duration::from_millis(500));
+    //thread::sleep(time::Duration::from_millis(500));
 
-    miner.notify(1, pre_header, post_header, false);
+    /*miner.notify(1, pre_header, post_header, false);
 
     loop {
         
@@ -102,11 +116,11 @@ fn main() {
 
     }
     
-    thread::sleep(time::Duration::from_millis(2000));
+    //thread::sleep(time::Duration::from_millis(2000));
 
     println!("Jobs should be stopped now");
 
-    //thread::sleep(time::Duration::from_millis(5000));
+    //thread::sleep(time::Duration::from_millis(5000));*/
         
     //Mine with given header and check for result
     /*let result = miner.mine(&KNOWN_SEED_16, &mut solution).unwrap();
