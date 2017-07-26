@@ -43,6 +43,7 @@ type CuckooPushToInputQueue = unsafe extern fn(*const c_uchar, uint32_t, *const 
 type CuckooReadFromOutputQueue = unsafe extern fn(*mut uint32_t, *mut c_uchar) -> uint32_t;
 type CuckooStartProcessing = unsafe extern fn()->uint32_t;
 type CuckooStopProcessing = unsafe extern fn()->uint32_t;
+type CuckooHashesSinceLastCall = unsafe extern fn()->uint32_t;
 
 // Keep static references to the library and each call that a plugin can expose
 // wrapped in mutex, for theoretical thread-safety, though it's unlikely that
@@ -62,6 +63,7 @@ lazy_static!{
     static ref CUCKOO_READ_FROM_OUTPUT_QUEUE: Mutex<Option<CuckooReadFromOutputQueue>> = Mutex::new(None);
     static ref CUCKOO_START_PROCESSING: Mutex<Option<CuckooStartProcessing>> = Mutex::new(None);
     static ref CUCKOO_STOP_PROCESSING: Mutex<Option<CuckooStopProcessing>> = Mutex::new(None);
+    static ref CUCKOO_HASHES_SINCE_LAST_CALL: Mutex<Option<CuckooHashesSinceLastCall>> = Mutex::new(None);
 }
 
 // Loads the library at lib_full_path into the LOADED_LIBRARY static,
@@ -95,6 +97,7 @@ fn load_lib(lib_full_path:&str) -> Result<(), CuckooMinerError> {
         let mut cuckoo_read_from_output_queue_ref = CUCKOO_READ_FROM_OUTPUT_QUEUE.lock().unwrap();
         let mut cuckoo_start_processing_ref = CUCKOO_START_PROCESSING.lock().unwrap();
         let mut cuckoo_stop_processing_ref = CUCKOO_STOP_PROCESSING.lock().unwrap();
+        let mut cuckoo_hashes_since_last_call_ref = CUCKOO_HASHES_SINCE_LAST_CALL.lock().unwrap();
         unsafe {
             let fn_ref:CuckooCall = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_call\0")?;
             *cuckoo_call_ref = Some(fn_ref);
@@ -128,6 +131,9 @@ fn load_lib(lib_full_path:&str) -> Result<(), CuckooMinerError> {
         
             let fn_ref:CuckooStopProcessing = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_stop_processing\0")?;
             *cuckoo_stop_processing_ref = Some(fn_ref);
+
+            let fn_ref:CuckooHashesSinceLastCall = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_hashes_since_last_call\0")?;
+            *cuckoo_hashes_since_last_call_ref = Some(fn_ref);
 
         }
     }
@@ -181,6 +187,9 @@ pub fn unload_cuckoo_lib(){
 
     let cuckoo_stop_processing_ref = CUCKOO_STOP_PROCESSING.lock().unwrap();
     drop(cuckoo_stop_processing_ref);
+
+    let cuckoo_hashes_since_last_call_ref = CUCKOO_HASHES_SINCE_LAST_CALL.lock().unwrap();
+    drop(cuckoo_hashes_since_last_call_ref);
 
     let loaded_library_ref = LOADED_LIBRARY.lock().unwrap();
     drop(loaded_library_ref);
@@ -539,6 +548,19 @@ pub fn call_cuckoo_stop_processing()
     -> Result<u32, CuckooMinerError>{
     let cuckoo_stop_processing_ref = CUCKOO_STOP_PROCESSING.lock().unwrap(); 
     match *cuckoo_stop_processing_ref {
+        None => return Err(CuckooMinerError::PluginNotLoadedError(
+            String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
+        Some(c) => unsafe {
+                        return Ok(c());
+                   },
+        
+    };
+}
+
+pub fn call_cuckoo_hashes_since_last_call() 
+    -> Result<u32, CuckooMinerError>{
+    let cuckoo_hashes_since_last_call_ref = CUCKOO_HASHES_SINCE_LAST_CALL.lock().unwrap(); 
+    match *cuckoo_hashes_since_last_call_ref {
         None => return Err(CuckooMinerError::PluginNotLoadedError(
             String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
         Some(c) => unsafe {

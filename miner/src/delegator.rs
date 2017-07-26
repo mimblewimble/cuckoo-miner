@@ -41,7 +41,6 @@ pub struct JobSharedData {
     pub job_id: u32, 
     pub pre_nonce: String, 
     pub post_nonce: String, 
-    pub running_flag: bool,
     pub solutions: Vec<CuckooMinerSolution>,
 }
 
@@ -52,7 +51,6 @@ impl Default for JobSharedData {
             pre_nonce:String::from(""),
             post_nonce:String::from(""),
             solutions: Vec::new(),
-            running_flag:true,
 		}
 	}
 }
@@ -65,14 +63,31 @@ impl JobSharedData {
             job_id: job_id,
             pre_nonce: String::from(pre_nonce),
             post_nonce: String::from(post_nonce),
-            running_flag: true,
             solutions: Vec::new(),
         }
     }
+}
 
+//Shared across threads, but just for job control
+//to avoid unnecessary data locks
+pub struct JobControlData {
+    pub running_flag: bool,
+    pub jobs_stopped: bool,
+    pub results_stopped: bool,
+}
+
+impl Default for JobControlData {
+    fn default() -> JobControlData {
+		JobControlData {
+            running_flag: true,
+            jobs_stopped: false,
+            results_stopped: false,
+		}
+	}
 }
 
 pub type JobSharedDataType = Arc<Mutex<JobSharedData>>;
+pub type JobControlDataType = Arc<Mutex<JobControlData>>;
 
 //Some helper stuff, just put here for now
 fn from_hex_string(in_str:&str)->Vec<u8> {
@@ -119,19 +134,19 @@ fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
     (nonce, get_hash(pre_nonce, post_nonce, nonce))
 }
 
-pub fn start_job_loop (shared_data: Arc<Mutex<JobSharedData>>){
+pub fn start_job_loop (shared_data: JobSharedDataType, control_data:JobControlDataType){
     thread::spawn(move || {
-        job_loop(shared_data);
+        job_loop(shared_data, control_data);
     });
 }
 
-pub fn start_result_loop (shared_data: Arc<Mutex<JobSharedData>>){
+pub fn start_result_loop (shared_data: JobSharedDataType, control_data:JobControlDataType){
     thread::spawn(move || {
-        result_loop(shared_data);
+        result_loop(shared_data, control_data);
     });
 }
 
-fn job_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerError>{
+fn job_loop(shared_data: JobSharedDataType, control_data:JobControlDataType) -> Result<(), CuckooMinerError>{
     //keep some unchanging data here, can move this out of shared
     //object later if it's not needed anywhere else
     let mut pre_nonce:String=String::new();
@@ -146,11 +161,13 @@ fn job_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerErr
         return Err(CuckooMinerError::PluginProcessingError(
                 String::from("Error starting processing plugin.")));
     }
+
+    debug!("Job loop processing");
         
     loop {
          //Check if it's time to stop
         {
-            let s = shared_data.lock().unwrap();
+            let s = control_data.lock().unwrap();
             if !s.running_flag {
                 //Do any cleanup
                 debug!("Telling job thread to stop... ");
@@ -172,12 +189,13 @@ fn job_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerErr
     Ok(())
 }
 
-fn result_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMinerError>{
+fn result_loop(shared_data: JobSharedDataType, control_data:JobControlDataType) -> Result<(), CuckooMinerError>{
 
+    debug!("Starting result loop");
     loop {
         let mut solution = CuckooMinerSolution::new();
         {
-            let s = shared_data.lock().unwrap();
+            let s = control_data.lock().unwrap();
             if !s.running_flag {
                 break;
             }
@@ -187,7 +205,7 @@ fn result_loop(shared_data: Arc<Mutex<JobSharedData>>) -> Result<(), CuckooMiner
             //TODO: make this a serialise operation instead
             let nonce = unsafe{transmute::<[u8;8], u64>(solution.nonce)}.to_be();
             
-            //println!("Solution Found for Nonce:({}), {:?}", nonce, solution);
+            debug!("Solution Found for Nonce:({}), {:?}", nonce, solution);
             {
                 let mut s = shared_data.lock().unwrap();
                 s.solutions.push(solution.clone());

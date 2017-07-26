@@ -55,12 +55,16 @@ use byteorder::{ByteOrder, BigEndian};
 
 use cuckoo_sys::{call_cuckoo, 
                  load_cuckoo_lib,
-                 call_cuckoo_set_parameter};
+                 call_cuckoo_set_parameter,
+                 call_cuckoo_hashes_since_last_call};
 
 use error::CuckooMinerError;
 
 use delegator;
-use delegator::{JobSharedData, JobSharedDataType};
+use delegator::{JobSharedData, JobSharedDataType, 
+                JobControlData, JobControlDataType};
+
+use std::time::Instant;
 
 // Hardcoded assumption for now that the solution size will be 42 will be
 // maintained, to avoid having to allocate memory within the called C functions
@@ -198,6 +202,7 @@ pub struct CuckooMiner{
     /// The internal Configuration object
     pub config: CuckooMinerConfig,
     pub shared_data:JobSharedDataType,
+    pub control_data:JobControlDataType,
 }
 
 impl Default for CuckooMiner {
@@ -205,6 +210,7 @@ impl Default for CuckooMiner {
 		CuckooMiner {
             config: CuckooMinerConfig::default(),
             shared_data: Arc::new(Mutex::new(JobSharedData::default())),
+            control_data: Arc::new(Mutex::new(JobControlData::default())),
 		}
 	}
 }
@@ -334,6 +340,7 @@ impl CuckooMiner {
                   pre_nonce: &str, //Pre-nonce portion of header
                   post_nonce: &str, //Post-nonce portion of header
                   clean_jobs: bool) -> Result<(), CuckooMinerError>{
+        
 
         //Load the shared data
         self.shared_data=Arc::new(Mutex::new(JobSharedData::new(
@@ -342,25 +349,47 @@ impl CuckooMiner {
             post_nonce,
         )));
 
-        delegator::start_job_loop(self.shared_data.clone());
-        delegator::start_result_loop(self.shared_data.clone());
+        self.control_data=Arc::new(Mutex::new(JobControlData::default()));
+
+        delegator::start_job_loop(self.shared_data.clone(), self.control_data.clone());
+        delegator::start_result_loop(self.shared_data.clone(), self.control_data.clone());
         Ok(())
     }
 
     pub fn get_solution(&self)->Option<CuckooMinerSolution>{
         //just to prevent endless needless locking of this
-        thread::sleep(time::Duration::from_millis(100));
+        //when using fast test miners, in real cuckoo30 terms
+        //this shouldn't be an issue
+        //TODO: Make this less blocky
+        thread::sleep(time::Duration::from_millis(10));
+        //let time_pre_lock=Instant::now();
         let mut s=self.shared_data.lock().unwrap();
+        //let time_elapsed=Instant::now()-time_pre_lock;
+        //println!("Get_solution Time spent waiting for lock: {}", time_elapsed.as_secs()*1000 +(time_elapsed.subsec_nanos()/1_000_000)as u64);
         if (s.solutions.len()>0){
             let sol = s.solutions.pop().unwrap();
             return Some(sol);
         }
+
         None
     }
 
     pub fn stop_jobs(&self){
-        let mut s=self.shared_data.lock().unwrap();
+        let mut s=self.control_data.lock().unwrap();
         s.running_flag=false;
+    }
+
+    pub fn get_hashes_since_last_call(&self)->Result<u32, CuckooMinerError>{
+        match call_cuckoo_hashes_since_last_call() {
+            Ok(result) => {
+                return Ok(result);
+            },
+            Err(_) => {
+                return Err(CuckooMinerError::PluginNotLoadedError(
+                String::from("Please call init to load a miner plug-in")));
+            }
+        }
+    
     }
                   
 }
