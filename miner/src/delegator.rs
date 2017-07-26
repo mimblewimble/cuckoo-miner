@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 use std::{thread, time};
 use std::mem::transmute;
 
@@ -68,26 +68,8 @@ impl JobSharedData {
     }
 }
 
-//Shared across threads, but just for job control
-//to avoid unnecessary data locks
-pub struct JobControlData {
-    pub running_flag: bool,
-    pub jobs_stopped: bool,
-    pub results_stopped: bool,
-}
-
-impl Default for JobControlData {
-    fn default() -> JobControlData {
-		JobControlData {
-            running_flag: true,
-            jobs_stopped: false,
-            results_stopped: false,
-		}
-	}
-}
-
-pub type JobSharedDataType = Arc<Mutex<JobSharedData>>;
-pub type JobControlDataType = Arc<Mutex<JobControlData>>;
+pub type JobSharedDataType = Arc<RwLock<JobSharedData>>;
+pub type JobControlDataType = Arc<RwLock<bool>>;
 
 //Some helper stuff, just put here for now
 fn from_hex_string(in_str:&str)->Vec<u8> {
@@ -134,25 +116,26 @@ fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
     (nonce, get_hash(pre_nonce, post_nonce, nonce))
 }
 
-pub fn start_job_loop (shared_data: JobSharedDataType, control_data:JobControlDataType){
-    thread::spawn(move || {
-        job_loop(shared_data, control_data);
+pub fn start_job_loop (shared_data: JobSharedDataType, running_status:JobControlDataType, shutdown_status:JobControlDataType){
+    
+    let child=thread::spawn(move || {
+        
+        let mut s = shutdown_status.write().unwrap();
+        *s = false;
+        
+        job_loop(shared_data, running_status.clone(), shutdown_status.clone());
+        
+        *s = true;
     });
 }
 
-pub fn start_result_loop (shared_data: JobSharedDataType, control_data:JobControlDataType){
-    thread::spawn(move || {
-        result_loop(shared_data, control_data);
-    });
-}
-
-fn job_loop(shared_data: JobSharedDataType, control_data:JobControlDataType) -> Result<(), CuckooMinerError>{
+fn job_loop(shared_data: JobSharedDataType, running_status:JobControlDataType, shutdown_status:JobControlDataType) -> Result<(), CuckooMinerError>{
     //keep some unchanging data here, can move this out of shared
     //object later if it's not needed anywhere else
     let mut pre_nonce:String=String::new();
     let mut post_nonce:String=String::new();
     {
-        let s = shared_data.lock().unwrap();
+        let s = shared_data.read().unwrap();
         pre_nonce=s.pre_nonce.clone();
         post_nonce=s.post_nonce.clone();
     }
@@ -163,58 +146,43 @@ fn job_loop(shared_data: JobSharedDataType, control_data:JobControlDataType) -> 
     }
 
     debug!("Job loop processing");
-        
-    loop {
-         //Check if it's time to stop
-        {
-            let s = control_data.lock().unwrap();
-            if !s.running_flag {
-                //Do any cleanup
-                debug!("Telling job thread to stop... ");
-                call_cuckoo_stop_processing(); //should be a synchronous cleanup call
-                debug!("stopped.");
-                break;
-            }
-        }
 
+    loop {
+        //Check if it's time to stop
+        
+        let s = running_status.read().unwrap();
+        if !*s {
+            break;
+        }
+        
         while(call_cuckoo_is_queue_under_limit().unwrap()==1){
+
             let (nonce, hash) = get_next_hash(&pre_nonce, &post_nonce);
             //println!("Hash thread 1: {:?}", hash);
             //TODO: make this a serialise operation instead
             let nonce_bytes:[u8;8] = unsafe{transmute(nonce.to_be())};
             call_cuckoo_push_to_input_queue(&hash, &nonce_bytes)?;
         }
-    }
-    debug!("Cuckoo-Miner: Job loop has exited.");
-    Ok(())
-}
 
-fn result_loop(shared_data: JobSharedDataType, control_data:JobControlDataType) -> Result<(), CuckooMinerError>{
-
-    debug!("Starting result loop");
-    loop {
-        let mut solution = CuckooMinerSolution::new();
-        {
-            let s = control_data.lock().unwrap();
-            if !s.running_flag {
-                break;
-            }
-        }
+        let mut solution=CuckooMinerSolution::new();
         while call_cuckoo_read_from_output_queue(&mut solution.solution_nonces, &mut solution.nonce).unwrap()!=0 {
-            
             //TODO: make this a serialise operation instead
             let nonce = unsafe{transmute::<[u8;8], u64>(solution.nonce)}.to_be();
             
-            debug!("Solution Found for Nonce:({}), {:?}", nonce, solution);
+            //println!("Solution Found for Nonce:({}), {:?}", nonce, solution);
             {
-                let mut s = shared_data.lock().unwrap();
+                
+                let mut s = shared_data.write().unwrap();
                 s.solutions.push(solution.clone());
             }
             
             
         }
     }
-    debug!("Cuckoo-Miner: Result loop has exited.");
+
+    //Do any cleanup
+    println!("Telling job thread to stop... ");
+    call_cuckoo_stop_processing(); //should be a synchronous cleanup call
+    debug!("Cuckoo-Miner: Job loop has exited.");
     Ok(())
 }
-

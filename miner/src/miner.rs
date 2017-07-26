@@ -49,12 +49,13 @@
 use std::{fmt,cmp};
 use std::collections::HashMap;
 use std::{thread,time};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use byteorder::{ByteOrder, BigEndian};
 
 use cuckoo_sys::{call_cuckoo, 
                  load_cuckoo_lib,
+                 call_cuckoo_stop_processing,
                  call_cuckoo_set_parameter,
                  call_cuckoo_hashes_since_last_call};
 
@@ -62,7 +63,7 @@ use error::CuckooMinerError;
 
 use delegator;
 use delegator::{JobSharedData, JobSharedDataType, 
-                JobControlData, JobControlDataType};
+                JobControlDataType};
 
 use std::time::Instant;
 
@@ -202,15 +203,17 @@ pub struct CuckooMiner{
     /// The internal Configuration object
     pub config: CuckooMinerConfig,
     pub shared_data:JobSharedDataType,
-    pub control_data:JobControlDataType,
+    pub running_status:JobControlDataType,
+    pub shutdown_status:JobControlDataType,
 }
 
 impl Default for CuckooMiner {
 	fn default() -> CuckooMiner {
 		CuckooMiner {
             config: CuckooMinerConfig::default(),
-            shared_data: Arc::new(Mutex::new(JobSharedData::default())),
-            control_data: Arc::new(Mutex::new(JobControlData::default())),
+            shared_data: Arc::new(RwLock::new(JobSharedData::default())),
+            running_status: Arc::new(RwLock::new(false)),
+            shutdown_status: Arc::new(RwLock::new(true)),
 		}
 	}
 }
@@ -341,18 +344,31 @@ impl CuckooMiner {
                   post_nonce: &str, //Post-nonce portion of header
                   clean_jobs: bool) -> Result<(), CuckooMinerError>{
         
-
+        println!("Notify called");
+        {   
+            let mut r=self.running_status.write().unwrap();
+            if (*r){
+                self.stop_jobs();
+            }
+            *r=true;
+        }
+        
+        //wait for previous job to clean up
+        loop{
+            let s=self.shutdown_status.read().unwrap();
+            if *s {
+                break;
+            }
+        }
+                
         //Load the shared data
-        self.shared_data=Arc::new(Mutex::new(JobSharedData::new(
+        self.shared_data=Arc::new(RwLock::new(JobSharedData::new(
             job_id,
             pre_nonce,
             post_nonce,
         )));
-
-        self.control_data=Arc::new(Mutex::new(JobControlData::default()));
-
-        delegator::start_job_loop(self.shared_data.clone(), self.control_data.clone());
-        delegator::start_result_loop(self.shared_data.clone(), self.control_data.clone());
+       
+        delegator::start_job_loop(self.shared_data.clone(), self.running_status.clone(), self.shutdown_status.clone());
         Ok(())
     }
 
@@ -363,20 +379,22 @@ impl CuckooMiner {
         //TODO: Make this less blocky
         thread::sleep(time::Duration::from_millis(10));
         //let time_pre_lock=Instant::now();
-        let mut s=self.shared_data.lock().unwrap();
+        let mut s=self.shared_data.write().unwrap();
         //let time_elapsed=Instant::now()-time_pre_lock;
         //println!("Get_solution Time spent waiting for lock: {}", time_elapsed.as_secs()*1000 +(time_elapsed.subsec_nanos()/1_000_000)as u64);
         if (s.solutions.len()>0){
+            println!("Solution");
             let sol = s.solutions.pop().unwrap();
             return Some(sol);
         }
-
         None
     }
 
     pub fn stop_jobs(&self){
-        let mut s=self.control_data.lock().unwrap();
-        s.running_flag=false;
+        println!("Stop jobs called");
+        let mut r=self.running_status.write().unwrap();
+        *r=false;
+        println!("Stop jobs unlocked?");
     }
 
     pub fn get_hashes_since_last_call(&self)->Result<u32, CuckooMinerError>{
