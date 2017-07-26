@@ -330,6 +330,8 @@ extern "C" {
     // Returns whether the plugin is ready for another job (there's space in the queue)
     pub fn cuckoo_read_from_output_queue(sol_nonces: *mut uint32_t, 
                                          nonce: *mut c_uchar) -> uint32_t; 
-
+    
+    //Simple metric to count the number of hashes run since last time this was called
+    pub fn cuckoo_hashes_since_last_call() -> uint32_t;
     
 }

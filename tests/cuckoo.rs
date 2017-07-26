@@ -18,6 +18,8 @@
 //! miner will be much faster in almost every environment.
 
 //! Copied from Grin, for testing support
+extern crate crypto;
+extern crate miner;
 
 use std::collections::HashSet;
 use std::cmp;
@@ -25,11 +27,11 @@ use std::cmp;
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 
-use siphash::siphash24;
 use miner::CuckooMinerSolution;
 
 const MAXPATHLEN: usize = 8192;
 const PROOFSIZE: usize = 42;
+
 
 /// A cuckoo-cycle related error
 #[derive(Debug)]
@@ -156,4 +158,54 @@ fn u8_to_u64(p: [u8; 32], i: usize) -> u64 {
 	(p[i] as u64) | (p[i + 1] as u64) << 8 | (p[i + 2] as u64) << 16 | (p[i + 3] as u64) << 24 |
 	(p[i + 4] as u64) << 32 | (p[i + 5] as u64) << 40 |
 	(p[i + 6] as u64) << 48 | (p[i + 7] as u64) << 56
+}
+
+/// Implements siphash 2-4 specialized for a 4 u64 array key and a u64 nonce
+pub fn siphash24(v: [u64; 4], nonce: u64) -> u64 {
+	let mut v0 = v[0];
+	let mut v1 = v[1];
+	let mut v2 = v[2];
+	let mut v3 = v[3] ^ nonce;
+
+	// macro for left rotation
+	macro_rules! rotl {
+    ($num:ident, $shift:expr) => {
+      $num = ($num << $shift) | ($num >> (64 - $shift));
+    }
+  }
+
+	// macro for a single siphash round
+	macro_rules! round {
+    () => {
+      v0 = v0.wrapping_add(v1);
+      v2 = v2.wrapping_add(v3);
+      rotl!(v1, 13);
+      rotl!(v3, 16);
+      v1 ^= v0;
+      v3 ^= v2;
+      rotl!(v0, 32);
+      v2 = v2.wrapping_add(v1);
+      v0 = v0.wrapping_add(v3);
+      rotl!(v1, 17);
+      rotl!(v3, 21);
+      v1 ^= v2;
+      v3 ^= v0;
+      rotl!(v2, 32);
+    }
+  }
+
+	// 2 rounds
+	round!();
+	round!();
+
+	v0 ^= nonce;
+	v2 ^= 0xff;
+
+	// and then 4 rounds, hence siphash 2-4
+	round!();
+	round!();
+	round!();
+	round!();
+
+	return v0 ^ v1 ^ v2 ^ v3;
 }
