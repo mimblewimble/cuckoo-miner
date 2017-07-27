@@ -23,7 +23,7 @@ extern crate time;
 use std::thread;
 
 
-use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution};
+use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution, JobHandle};
 use manager::CuckooPluginManager;
 
 static KNOWN_SEED_16:[u8;32] = [0xd9, 0x93, 0xac, 0x4a, 0xe3, 0xc7, 0xf9, 0xeb, 
@@ -65,7 +65,7 @@ fn main() {
     //Build a new miner with this info, which will load
     //the associated plugin and 
     
-    let mut miner = CuckooMiner::new(config).expect("");
+    
 
     //Keep a structure to hold the solution.. this will be
     //filled out by the plugin
@@ -85,13 +85,15 @@ fn main() {
    
     while time::get_time().sec < deadline {
         
-        miner.notify(1, pre_header, post_header, false);
+        //these always get consumed after notify
+        let mut miner = CuckooMiner::new(config.clone()).expect("");
+        let job_handle=miner.notify(1, pre_header, post_header, false).unwrap();
 
         loop {
-            if let Some(s) = miner.get_solution()  {
+            if let Some(s) = job_handle.get_solution()  {
                 println!("Sol found: {}, {:?}", s.get_nonce_as_u64(), s);
                 //up to you to read it and check difficulty
-                miner.stop_jobs();
+                job_handle.stop_jobs();
                 break;    
                 
             }

@@ -33,11 +33,12 @@ extern crate crypto;
 extern crate num_bigint as bigint;
 extern crate blake2_rfc as blake2;
 
-mod delegator;
+pub mod delegator;
 
 pub mod miner;
 pub use miner::{CuckooMiner,
                 CuckooMinerConfig,
                 CuckooMinerSolution};
+pub use delegator::JobHandle;
 
 
