@@ -56,14 +56,11 @@ use byteorder::{ByteOrder, BigEndian};
 use cuckoo_sys::{call_cuckoo, 
                  load_cuckoo_lib,
                  call_cuckoo_stop_processing,
-                 call_cuckoo_set_parameter,
-                 call_cuckoo_hashes_since_last_call};
+                 call_cuckoo_set_parameter};
 
 use error::CuckooMinerError;
 
-use delegator;
-use delegator::{JobSharedData, JobSharedDataType, 
-                JobControlDataType};
+use delegator::{Delegator, JobHandle};
 
 use std::time::Instant;
 
@@ -202,18 +199,16 @@ impl CuckooMinerConfig{
 pub struct CuckooMiner{
     /// The internal Configuration object
     pub config: CuckooMinerConfig,
-    pub shared_data:JobSharedDataType,
-    pub running_status:JobControlDataType,
-    pub shutdown_status:JobControlDataType,
+    
+    ///
+    delegator: Delegator,
 }
 
 impl Default for CuckooMiner {
 	fn default() -> CuckooMiner {
 		CuckooMiner {
             config: CuckooMinerConfig::default(),
-            shared_data: Arc::new(RwLock::new(JobSharedData::default())),
-            running_status: Arc::new(RwLock::new(false)),
-            shutdown_status: Arc::new(RwLock::new(true)),
+            delegator: Delegator::new(0,"",""),
 		}
 	}
 }
@@ -338,76 +333,15 @@ impl CuckooMiner {
 
     /// stratum-esque version of the miner, which takes a job for a particular
     /// potential block, mutates it and sends to the plugin to manage
-    pub fn notify(&mut self, 
+    pub fn notify(mut self, 
                   job_id: u32, //Job id
                   pre_nonce: &str, //Pre-nonce portion of header
                   post_nonce: &str, //Post-nonce portion of header
-                  clean_jobs: bool) -> Result<(), CuckooMinerError>{
+                  clean_jobs: bool) -> Result<JobHandle, CuckooMinerError>{
         
-        println!("Notify called");
-        {   
-            let mut r=self.running_status.write().unwrap();
-            if (*r){
-                self.stop_jobs();
-            }
-            *r=true;
-        }
-        
-        //wait for previous job to clean up
-        loop{
-            let s=self.shutdown_status.read().unwrap();
-            if *s {
-                break;
-            }
-        }
-                
-        //Load the shared data
-        self.shared_data=Arc::new(RwLock::new(JobSharedData::new(
-            job_id,
-            pre_nonce,
-            post_nonce,
-        )));
-       
-        delegator::start_job_loop(self.shared_data.clone(), self.running_status.clone(), self.shutdown_status.clone());
-        Ok(())
-    }
-
-    pub fn get_solution(&self)->Option<CuckooMinerSolution>{
-        //just to prevent endless needless locking of this
-        //when using fast test miners, in real cuckoo30 terms
-        //this shouldn't be an issue
-        //TODO: Make this less blocky
-        thread::sleep(time::Duration::from_millis(10));
-        //let time_pre_lock=Instant::now();
-        let mut s=self.shared_data.write().unwrap();
-        //let time_elapsed=Instant::now()-time_pre_lock;
-        //println!("Get_solution Time spent waiting for lock: {}", time_elapsed.as_secs()*1000 +(time_elapsed.subsec_nanos()/1_000_000)as u64);
-        if (s.solutions.len()>0){
-            println!("Solution");
-            let sol = s.solutions.pop().unwrap();
-            return Some(sol);
-        }
-        None
-    }
-
-    pub fn stop_jobs(&self){
-        println!("Stop jobs called");
-        let mut r=self.running_status.write().unwrap();
-        *r=false;
-        println!("Stop jobs unlocked?");
-    }
-
-    pub fn get_hashes_since_last_call(&self)->Result<u32, CuckooMinerError>{
-        match call_cuckoo_hashes_since_last_call() {
-            Ok(result) => {
-                return Ok(result);
-            },
-            Err(_) => {
-                return Err(CuckooMinerError::PluginNotLoadedError(
-                String::from("Please call init to load a miner plug-in")));
-            }
-        }
-    
+        println!("Notify called");      
+        self.delegator=Delegator::new(job_id, pre_nonce, post_nonce); 
+        Ok(self.delegator.start_job_loop())
     }
                   
 }
