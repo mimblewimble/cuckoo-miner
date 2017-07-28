@@ -15,6 +15,10 @@
 //! Testing/Sample app using the cuckoo_miner lib
 //!
 
+#[macro_use]
+extern crate log;
+extern crate env_logger;
+
 extern crate miner;
 extern crate error;
 extern crate manager;
@@ -23,7 +27,7 @@ extern crate time;
 use std::thread;
 
 
-use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution, JobHandle};
+use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution, CuckooMinerJobHandle};
 use manager::CuckooPluginManager;
 
 static KNOWN_SEED_16:[u8;32] = [0xd9, 0x93, 0xac, 0x4a, 0xe3, 0xc7, 0xf9, 0xeb, 
@@ -36,6 +40,7 @@ static KNOWN_SOLUTION_16:[u32;42] = [671, 2624, 3044, 4429, 4682, 4734, 6727, 72
 29606, 30616, 30674, 30727, 31162, 31466, 31706];
 
 fn main() {
+    env_logger::init().unwrap();
 
     //this should have a solution under cuckoo25
     let test_header = [0xae,0x71,0xf3,0x6d,0xe6,0x4c,0x2d,0xde,
@@ -87,13 +92,14 @@ fn main() {
         
         //these always get consumed after notify
         let mut miner = CuckooMiner::new(config.clone()).expect("");
-        let job_handle=miner.notify(1, pre_header, post_header, false).unwrap();
+        let job_handle=miner.notify(1, pre_header, post_header, 10, false).unwrap();
 
         loop {
             if let Some(s) = job_handle.get_solution()  {
                 println!("Sol found: {}, {:?}", s.get_nonce_as_u64(), s);
                 //up to you to read it and check difficulty
                 job_handle.stop_jobs();
+                thread::sleep(std::time::Duration::from_millis(20));
                 break;    
                 
             }

@@ -32,7 +32,7 @@ pub use error::CuckooMinerError;
 pub use miner::{CuckooMinerConfig,
                 CuckooMiner,
                 CuckooMinerSolution};
-pub use miner::delegator::JobHandle;
+pub use miner::delegator::CuckooMinerJobHandle;
 
 pub use manager::{CuckooPluginManager,
                   CuckooPluginCapabilities};

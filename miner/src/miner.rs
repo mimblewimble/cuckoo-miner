@@ -53,6 +53,8 @@ use std::sync::{Arc, RwLock};
 
 use byteorder::{ByteOrder, BigEndian};
 
+use blake2::blake2b::Blake2b;
+
 use cuckoo_sys::{call_cuckoo, 
                  load_cuckoo_lib,
                  call_cuckoo_stop_processing,
@@ -60,7 +62,7 @@ use cuckoo_sys::{call_cuckoo,
 
 use error::CuckooMinerError;
 
-use delegator::{Delegator, JobHandle};
+use delegator::{Delegator, CuckooMinerJobHandle};
 
 use std::time::Instant;
 
@@ -133,6 +135,19 @@ impl CuckooMinerSolution{
 		}
 		nonces
 	}
+
+    pub fn hash(&self) -> [u8;32] {
+        //Hash
+        let mut blake2b = Blake2b::new(32);
+        for n in 0..self.solution_nonces.len() {
+            let mut bytes = [0;4];
+            BigEndian::write_u32(&mut bytes, self.solution_nonces[n]);
+            blake2b.update(&bytes);
+        }
+        let mut ret = [0; 32];
+        ret.copy_from_slice(blake2b.finalize().as_bytes());
+        ret
+    }
 }
 
 impl fmt::Display for CuckooMinerSolution {
@@ -193,7 +208,7 @@ impl CuckooMinerConfig{
 }
 
 /// An instance of a miner, which loads a cuckoo-miner plugin
-/// and calls it's mine function according to the provided configuration
+/// and calls its mine function according to the provided configuration
 ///
 
 pub struct CuckooMiner{
@@ -208,7 +223,7 @@ impl Default for CuckooMiner {
 	fn default() -> CuckooMiner {
 		CuckooMiner {
             config: CuckooMinerConfig::default(),
-            delegator: Delegator::new(0,"",""),
+            delegator: Delegator::new(0,"","",0),
 		}
 	}
 }
@@ -333,14 +348,17 @@ impl CuckooMiner {
 
     /// stratum-esque version of the miner, which takes a job for a particular
     /// potential block, mutates it and sends to the plugin to manage
+    /// Returns a handle to the running job, through which the job can
+    /// be controlled and results can be read
+
     pub fn notify(mut self, 
                   job_id: u32, //Job id
                   pre_nonce: &str, //Pre-nonce portion of header
                   post_nonce: &str, //Post-nonce portion of header
-                  clean_jobs: bool) -> Result<JobHandle, CuckooMinerError>{
+                  difficulty: u64, //The target difficulty, only sols greater than this difficulty will be returned.
+                  clean_jobs: bool) -> Result<CuckooMinerJobHandle, CuckooMinerError>{
         
-        println!("Notify called");      
-        self.delegator=Delegator::new(job_id, pre_nonce, post_nonce); 
+        self.delegator=Delegator::new(job_id, pre_nonce, post_nonce, difficulty); 
         Ok(self.delegator.start_job_loop())
     }
                   

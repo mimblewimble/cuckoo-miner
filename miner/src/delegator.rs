@@ -31,10 +31,8 @@ use error::CuckooMinerError;
 use CuckooMinerSolution;
 
 /// From grin
-/// The target is the 32-bytes hash block hashes must be lower than.
-pub const MAX_TARGET: [u8; 32] = [0xf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                                  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                                  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+/// The target is the 8-bytes hash block hashes must be lower than.
+pub const MAX_TARGET: [u8; 8] = [0xf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 
 pub type JobSharedDataType = Arc<RwLock<JobSharedData>>;
 pub type JobControlDataType = Arc<RwLock<JobControlData>>;
@@ -44,6 +42,7 @@ pub struct JobSharedData {
     pub job_id: u32, 
     pub pre_nonce: String, 
     pub post_nonce: String, 
+    pub difficulty: u64,
     pub solutions: Vec<CuckooMinerSolution>,
 }
 
@@ -53,6 +52,7 @@ impl Default for JobSharedData {
             job_id:0,
             pre_nonce:String::from(""),
             post_nonce:String::from(""),
+            difficulty: 0,
             solutions: Vec::new(),
 		}
 	}
@@ -61,11 +61,13 @@ impl Default for JobSharedData {
 impl JobSharedData {
     pub fn new(job_id: u32, 
                pre_nonce: &str, 
-               post_nonce: &str) -> JobSharedData {
+               post_nonce: &str,
+               difficulty: u64) -> JobSharedData {
         JobSharedData {
             job_id: job_id,
             pre_nonce: String::from(pre_nonce),
             post_nonce: String::from(post_nonce),
+            difficulty: difficulty,
             solutions: Vec::new(),
         }
     }
@@ -85,12 +87,12 @@ impl Default for JobControlData {
 	}
 }
 
-pub struct JobHandle {
+pub struct CuckooMinerJobHandle {
     shared_data: JobSharedDataType,
     control_data: JobControlDataType,
 }
 
-impl JobHandle {
+impl CuckooMinerJobHandle {
 
     pub fn get_solution(&self)->Option<CuckooMinerSolution>{
         //just to prevent endless needless locking of this
@@ -102,7 +104,7 @@ impl JobHandle {
         let mut s=self.shared_data.write().unwrap();
         //let time_elapsed=Instant::now()-time_pre_lock;
         //println!("Get_solution Time spent waiting for lock: {}", time_elapsed.as_secs()*1000 +(time_elapsed.subsec_nanos()/1_000_000)as u64);
-        if (s.solutions.len()>0){
+        if s.solutions.len()>0 {
             let sol = s.solutions.pop().unwrap();
             return Some(sol);
         }
@@ -132,53 +134,6 @@ impl JobHandle {
         
 }
 
-
-//Some helper stuff, just put here for now
-fn from_hex_string(in_str:&str)->Vec<u8> {
-    let mut bytes = Vec::new();
-    for i in 0..(in_str.len()/2){
-        let res = u8::from_str_radix(&in_str[2*i .. 2*i+2],16);
-        match res {
-            Ok(v) => bytes.push(v),
-            Err(e) => println!("Problem with hex: {}", e)
-        }
-    }
-    bytes
-}
-
-//returns the nonce and the hash it generates
-fn get_hash(pre_nonce: &str, post_nonce: &str, nonce:u64)->[u8;32]{
-    //Turn input strings into vectors
-    let mut pre_vec = from_hex_string(pre_nonce);
-    let mut post_vec = from_hex_string(post_nonce);
-        
-    //println!("nonce: {}", nonce);
-    let mut nonce_bytes = [0; 8];
-    BigEndian::write_u64(&mut nonce_bytes, nonce);
-    let mut nonce_vec = nonce_bytes.to_vec();
-
-    //Generate new header
-    pre_vec.append(&mut nonce_vec);
-    pre_vec.append(&mut post_vec);
-
-    //println!("pre-vec: {:?}", pre_vec);
-
-    //Hash
-    let mut blake2b = Blake2b::new(32);
-    blake2b.update(&pre_vec);
-       
-    let mut ret = [0; 32];
-    ret.copy_from_slice(blake2b.finalize().as_bytes());
-    ret
-}
-
-fn get_next_hash(pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
-    //Generate new nonce
-    let nonce:u64 = rand::OsRng::new().unwrap().gen();
-    (nonce, get_hash(pre_nonce, post_nonce, nonce))
-}
-
-
 pub struct Delegator {
     shared_data: JobSharedDataType,
     control_data: JobControlDataType,
@@ -186,17 +141,18 @@ pub struct Delegator {
 
 impl Delegator {
 
-    pub fn new(job_id:u32, pre_nonce: &str, post_nonce: &str)->Delegator{
+    pub fn new(job_id:u32, pre_nonce: &str, post_nonce: &str, difficulty:u64)->Delegator{
         Delegator {
             shared_data: Arc::new(RwLock::new(JobSharedData::new(
                 job_id, 
                 pre_nonce,
-                post_nonce))),
+                post_nonce,
+                difficulty))),
             control_data: Arc::new(RwLock::new(JobControlData::default())),
         }
     }
 
-    pub fn start_job_loop (mut self) -> JobHandle {
+    pub fn start_job_loop (mut self) -> CuckooMinerJobHandle {
         //this will block, waiting until previous job is cleared
         //call_cuckoo_stop_processing();
 
@@ -205,24 +161,77 @@ impl Delegator {
         let child=thread::spawn(move || {
             self.job_loop();
         });
-        JobHandle {
+        CuckooMinerJobHandle {
             shared_data: shared_data, 
             control_data: control_data,
         }
     }
 
 
+    //Some helper stuff, just put here for now
+    fn from_hex_string(&self, in_str:&str)->Vec<u8> {
+        let mut bytes = Vec::new();
+        for i in 0..(in_str.len()/2){
+            let res = u8::from_str_radix(&in_str[2*i .. 2*i+2],16);
+            match res {
+                Ok(v) => bytes.push(v),
+                Err(e) => println!("Problem with hex: {}", e)
+            }
+        }
+        bytes
+    }
+
+    //returns the nonce and the hash it generates
+    fn get_hash(&self, pre_nonce: &str, post_nonce: &str, nonce:u64)->[u8;32]{
+        //Turn input strings into vectors
+        let mut pre_vec = self.from_hex_string(pre_nonce);
+        let mut post_vec = self.from_hex_string(post_nonce);
+            
+        //println!("nonce: {}", nonce);
+        let mut nonce_bytes = [0; 8];
+        BigEndian::write_u64(&mut nonce_bytes, nonce);
+        let mut nonce_vec = nonce_bytes.to_vec();
+
+        //Generate new header
+        pre_vec.append(&mut nonce_vec);
+        pre_vec.append(&mut post_vec);
+
+        //println!("pre-vec: {:?}", pre_vec);
+
+        //Hash
+        let mut blake2b = Blake2b::new(32);
+        blake2b.update(&pre_vec);
+        
+        let mut ret = [0; 32];
+        ret.copy_from_slice(blake2b.finalize().as_bytes());
+        ret
+    }
+
+    fn get_next_hash(&self, pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
+        //Generate new nonce
+        let nonce:u64 = rand::OsRng::new().unwrap().gen();
+        (nonce, self.get_hash(pre_nonce, post_nonce, nonce))
+    }
+
+    fn meets_difficulty(&self, in_difficulty: u64, sol:CuckooMinerSolution)->bool {
+        let max_target = BigEndian::read_u64(&MAX_TARGET);
+		let num = BigEndian::read_u64(&sol.hash()[0..8]);
+		max_target / num > in_difficulty
+    }
 
     fn job_loop(mut self) -> Result<(), CuckooMinerError>{
         //keep some unchanging data here, can move this out of shared
         //object later if it's not needed anywhere else
         let mut pre_nonce:String=String::new();
         let mut post_nonce:String=String::new();
+        let mut difficulty=0;
         {
             let s = self.shared_data.read().unwrap();
             pre_nonce=s.pre_nonce.clone();
             post_nonce=s.post_nonce.clone();
+            difficulty=s.difficulty;
         }
+        debug!("Cuckoo-miner: Searching for solution >= difficulty {}", difficulty);
         {
             let mut s = self.control_data.write().unwrap();
             s.is_running=true;
@@ -233,7 +242,7 @@ impl Delegator {
                     String::from("Error starting processing plugin.")));
         }
 
-        debug!("Job loop processing");
+        debug!("Cuckoo Miner Job loop processing");
         let mut solution=CuckooMinerSolution::new();
 
         loop {
@@ -244,9 +253,9 @@ impl Delegator {
                 break;
             }
             
-            while(call_cuckoo_is_queue_under_limit().unwrap()==1){
+            while call_cuckoo_is_queue_under_limit().unwrap()==1{
 
-                let (nonce, hash) = get_next_hash(&pre_nonce, &post_nonce);
+                let (nonce, hash) = self.get_next_hash(&pre_nonce, &post_nonce);
                 //println!("Hash thread 1: {:?}", hash);
                 //TODO: make this a serialise operation instead
                 let nonce_bytes:[u8;8] = unsafe{transmute(nonce.to_be())};
@@ -258,12 +267,11 @@ impl Delegator {
                 //TODO: make this a serialise operation instead
                 let nonce = unsafe{transmute::<[u8;8], u64>(solution.nonce)}.to_be();
                 
-                //println!("Solution Found for Nonce:({}), {:?}", nonce, solution);
-                {
-                    
+                if self.meets_difficulty(difficulty, solution) {    
+                    debug!("Cuckoo-miner: Solution Found for Nonce:({}), {:?}", nonce, solution);
                     let mut s = self.shared_data.write().unwrap();
                     s.solutions.push(solution.clone());
-                }
+                } 
                 
                 
             }
@@ -271,7 +279,7 @@ impl Delegator {
 
         //Do any cleanup
         debug!("Telling job thread to stop... ");
-        call_cuckoo_stop_processing(); //should be a synchronous cleanup call
+        call_cuckoo_stop_processing();
         debug!("Cuckoo-Miner: Job loop has exited.");
         Ok(())
     }
