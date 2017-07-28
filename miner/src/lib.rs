@@ -39,6 +39,6 @@ pub mod miner;
 pub use miner::{CuckooMiner,
                 CuckooMinerConfig,
                 CuckooMinerSolution};
-pub use delegator::JobHandle;
+pub use delegator::CuckooMinerJobHandle;
 
 

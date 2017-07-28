@@ -47,22 +47,24 @@ fn mine_for_duration(plugin_filter:&str,
     let mut config = CuckooMinerConfig::new();
     config.plugin_full_path = caps[0].full_path.clone();
     
-    let mut miner = CuckooMiner::new(config).expect("");
-
     let deadline = time::get_time().sec + duration_in_seconds;
    
     while time::get_time().sec < deadline {
         
-        miner.notify(1, pre_header, post_header, false);
+        //these always get consumed after a notify
+        let mut miner = CuckooMiner::new(config.clone()).expect("");
+        let job_handle=miner.notify(1, pre_header, post_header, false).unwrap();
 
         loop {
-            if let Some(s) = miner.get_solution()  {
+            if let Some(s) = job_handle.get_solution()  {
                 println!("Sol found: {}, {:?}", s.get_nonce_as_u64(), s);
-                miner.stop_jobs();
                 //up to you to read it and check difficulty
+                job_handle.stop_jobs();
+                std::thread::sleep(std::time::Duration::from_millis(20));
                 break;    
                 
             }
+
         }
             //break;
         
