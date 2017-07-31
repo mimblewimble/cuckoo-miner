@@ -30,7 +30,6 @@ extern crate regex;
 extern crate rand;
 extern crate byteorder;
 extern crate crypto;
-extern crate num_bigint as bigint;
 extern crate blake2_rfc as blake2;
 
 pub mod delegator;

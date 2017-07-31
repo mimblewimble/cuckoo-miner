@@ -489,6 +489,19 @@ pub fn call_cuckoo_set_parameter(name_bytes: &[u8], value:u32)
     };
 }
 
+/// #Description 
+///
+/// For Async/Queued mode, check whether the plugin is ready
+/// to accept more hashes.
+///
+/// #Arguments
+///
+/// * None
+///
+/// #Returns
+///
+/// * 1 if the queue can accept more hashes, 0 otherwise
+///
 
 pub fn call_cuckoo_is_queue_under_limit() 
     -> Result<u32, CuckooMinerError>{
@@ -502,6 +515,36 @@ pub fn call_cuckoo_is_queue_under_limit()
         
     };
 }
+
+/// #Description 
+///
+/// Pushes a hash to the loaded plugin for later processing in asyncronous/queued mode.
+///
+/// #Arguments
+///
+/// * `hash` (IN) A block of bytes to use for the seed to the internal SIPHASH function
+///    which generates edge locations in the graph. In practice, this is a BLAKE2 hash
+///    of a Grin blockheader, but from the plugin's perspective this can be anything.
+///
+/// * `nonce` (IN) The nonce that was used to generate this hash, for identification
+///   purposes in the solution queue
+///
+/// #Returns
+///
+/// Ok(1) if the hash was added to the queue, Ok(0) otherwise (if shutting down or queue
+/// is full. 
+/// Otherwise, a [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+/// with specific detail is returned if an error is encountered.
+///
+///
+/// #Example
+///
+/// ```
+///  let (nonce, hash) = self.get_next_hash(&pre_nonce, &post_nonce);
+///  let nonce_bytes:[u8;8] = unsafe{transmute(nonce.to_be())};
+///  call_cuckoo_push_to_input_queue(&hash, &nonce_bytes)?;
+/// ```
+///
 
 
 pub fn call_cuckoo_push_to_input_queue(hash: &[u8], nonce:&[u8]) 
@@ -517,6 +560,39 @@ pub fn call_cuckoo_push_to_input_queue(hash: &[u8], nonce:&[u8])
     };
 }
 
+/// #Description 
+///
+/// Reads the next solution from the output queue, if one exists. Only solutions which meet
+/// the target difficulty specified in the preceeding call to 'notify' will be placed in the 
+//  output queue. Read solutions are popped from the queue.
+/// Does not block, and intended to be called continually as part of a mining loop. 
+///
+/// #Arguments
+///
+/// * `sol_nonces` (OUT) A block of 42 u32s in which the solution nonces will be stored,
+///    if any exist.
+///
+/// * `nonce` (OUT) A block of 8 u8s representing a Big-Endian u64, used for identification
+///   purposes so the caller can reconstruct the header used to generate the solution
+///
+///
+/// #Returns
+///
+/// Ok(1) if a solution was popped from the queue, Ok(0) if not solution is available. 
+/// Otherwise, a [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+/// with specific detail is returned if an error is encountered.
+///
+/// #Example
+///
+/// 
+/// ```
+///     let mut sol_nonces[u32;42]=[0;42];
+///     let mut nonce[u8;8]=[0;8];  //Initialise this with a u64
+///     while call_cuckoo_read_from_output_queue(&mut sol_nonces, &mut nonce).unwrap()!=0 {
+///        ...
+///     }
+/// ```
+///
 
 pub fn call_cuckoo_read_from_output_queue(solutions:&mut [u32; 42], nonce:&mut[u8; 8] ) -> Result<u32, CuckooMinerError> {
     let cuckoo_read_from_output_queue_ref = CUCKOO_READ_FROM_OUTPUT_QUEUE.lock().unwrap(); 
@@ -531,6 +607,30 @@ pub fn call_cuckoo_read_from_output_queue(solutions:&mut [u32; 42], nonce:&mut[u
 
 }
 
+/// #Description 
+///
+/// Starts asyncronous processing. The plugin will start reading hashes
+/// from the input queue, delegate them internally as it sees fit, and
+/// put solutions into the output queue. It is up to the plugin implementation
+/// to manage how the workload is spread across devices/threads.
+///
+/// #Arguments
+///
+/// * None
+///
+/// #Returns
+///
+/// * Ok(1) if processing was successfully started, 0 otherwise (TBD return codes)
+/// with a return code from the plugin.
+/// Otherwise, a [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+/// with specific detail is returned if an error is encountered.
+///
+/// #Corresponding C (Unix)
+/// 
+/// ```
+///  extern "C" int cuckoo_start_processing();
+/// ```
+
 pub fn call_cuckoo_start_processing() 
     -> Result<u32, CuckooMinerError>{
     let cuckoo_start_processing_ref = CUCKOO_START_PROCESSING.lock().unwrap(); 
@@ -544,6 +644,29 @@ pub fn call_cuckoo_start_processing()
     };
 }
 
+/// #Description 
+///
+/// Stops asyncronous processing. The plugin should signal to shut down processing,
+/// as quickly as possible, and clean up all threads/devices/memory it may have
+/// allocated. This function should not block
+///
+/// #Arguments
+///
+/// * None
+///
+/// #Returns
+///
+/// * Ok(1) if processing was successfully stopped, 0 otherwise (TBD return codes)
+/// with a return code from the plugin.
+/// Otherwise, a [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+/// with specific detail is returned if an error is encountered.
+///
+/// #Corresponding C (Unix)
+/// 
+/// ```
+///  extern "C" int cuckoo_stop_processing();
+/// ```
+
 pub fn call_cuckoo_stop_processing() 
     -> Result<u32, CuckooMinerError>{
     let cuckoo_stop_processing_ref = CUCKOO_STOP_PROCESSING.lock().unwrap(); 
@@ -556,6 +679,28 @@ pub fn call_cuckoo_stop_processing()
         
     };
 }
+
+/// #Description 
+///
+/// A simple metric function that returns the number of hashes the plugin
+/// has processed since this function was last called. It is up to the 
+/// plugin implementation to keep track of this count.
+///
+/// #Arguments
+///
+/// * None
+///
+/// #Returns
+///
+/// * Ok(h) with the number of hashes processed since this function was last called.
+/// Otherwise, a [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+/// with specific detail is returned if an error is encountered.
+///
+/// #Corresponding C (Unix)
+/// 
+/// ```
+///  extern "C" int cuckoo_stop_processing();
+/// ```
 
 pub fn call_cuckoo_hashes_since_last_call() 
     -> Result<u32, CuckooMinerError>{

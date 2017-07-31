@@ -52,7 +52,7 @@ fn main() {
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
     plugin_manager.load_plugin_dir(String::from("target/debug")).expect("");
     //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins("simple_16").unwrap();
+    let caps = plugin_manager.get_available_plugins("edgetrim_16").unwrap();
 
     //Print all available plugins
     for c in &caps {
@@ -92,7 +92,7 @@ fn main() {
         
         //these always get consumed after notify
         let mut miner = CuckooMiner::new(config.clone()).expect("");
-        let job_handle=miner.notify(1, pre_header, post_header, 10, false).unwrap();
+        let job_handle=miner.notify(1, pre_header, post_header, 0, false).unwrap();
 
         loop {
             if let Some(s) = job_handle.get_solution()  {

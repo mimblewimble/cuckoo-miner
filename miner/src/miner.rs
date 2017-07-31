@@ -301,7 +301,8 @@ impl CuckooMiner {
 
     /// #Description 
     ///
-    /// Call to the cuckoo_call function of the currently loaded plugin, which will perform 
+    /// Synchronous call to the cuckoo_call function of the currently loaded plugin, which 
+    /// will perform 
     /// a Cuckoo Cycle on the given seed, filling the first solution (a length 42 cycle)
     /// that is found in the provided [CuckooMinerSolution](struct.CuckooMinerSolution.html) structure.
     /// The implementation details are dependent on particular loaded plugin. Values provided
@@ -346,10 +347,42 @@ impl CuckooMiner {
             }
     }
 
-    /// stratum-esque version of the miner, which takes a job for a particular
-    /// potential block, mutates it and sends to the plugin to manage
-    /// Returns a handle to the running job, through which the job can
-    /// be controlled and results can be read
+    /// #Description 
+    ///
+    /// An asynchronous stratum-esque version of the plugin miner, which takes
+    /// parts of the header and the target difficulty as input, and begins
+    /// asyncronous processing to find a solution. The loaded plugin is responsible
+    /// for how it wishes to manage processing or distribute the load. Once called
+    /// this function will continue to find solutions over the target difficulty
+    /// for the given inputs and place them into its output queue until instructed to stop. 
+    ///
+    /// Once this function is called, the miner is consumed, and all interaction with the miner,
+    /// including reading solutions or stopping the job, then takes place via the returned 
+    /// [CuckooMinerJobHandle](struct.CuckooMinerJobHandle.html) struct.
+    ///
+    ///
+    /// #Arguments
+    ///
+    /// * `job_id` (IN) A job ID, for later reference (not currently used).
+    ///
+    /// * `pre_nonce` (IN) The part of the header which comes before the nonce,
+    ///   as a hex string slice. 
+    ///
+    /// * 'post_nonce` (IN) The part of the header which comes after the nonce
+    ///   as a hex string slice. This will be hashed together with generated
+    ///   nonces and the pre_nonce field to create hash inputs for the loaded
+    ///   cuckoo miner plugin.
+    ///
+    /// * `difficulty` (IN) The miner will only put solutions greater than or
+    ///   equal to this difficulty in its output queue. 
+    ///
+    /// #Returns
+    ///
+    /// * Ok([CuckooMinerJobHandle](struct.CuckooMinerJobHandle.html)) if the job
+    /// is successfully started.
+    /// * A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+    /// if there is no plugin loaded, or if there is an error calling the function.
+    ///
 
     pub fn notify(mut self, 
                   job_id: u32, //Job id
