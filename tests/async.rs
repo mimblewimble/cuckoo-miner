@@ -53,7 +53,7 @@ fn mine_for_duration(plugin_filter:&str,
         
         //these always get consumed after a notify
         let mut miner = CuckooMiner::new(config.clone()).expect("");
-        let job_handle=miner.notify(1, pre_header, post_header, false).unwrap();
+        let job_handle=miner.notify(1, pre_header, post_header, 10, false).unwrap();
 
         loop {
             if let Some(s) = job_handle.get_solution()  {
@@ -63,6 +63,10 @@ fn mine_for_duration(plugin_filter:&str,
                 std::thread::sleep(std::time::Duration::from_millis(20));
                 break;    
                 
+            }
+            if time::get_time().sec < deadline {
+                job_handle.stop_jobs();
+                break;
             }
 
         }
@@ -75,5 +79,7 @@ fn mine_for_duration(plugin_filter:&str,
 #[test]
 fn mine_async(){
     env_logger::init();
-    mine_for_duration("simple_16", 30);
+    mine_for_duration("simple_16", 5);
+    std::thread::sleep(std::time::Duration::from_millis(20));
+    mine_for_duration("edgetrim_16", 5);
 }

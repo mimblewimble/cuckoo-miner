@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Internal module responsible for job delegation, creating hashes 
+//! and sending them to the plugin's internal queues. Used internally
+//!
+//!
+
 use std::sync::{Arc, RwLock};
 use std::{thread, time};
 use std::mem::transmute;
 
 use rand::{self, Rng};
-use byteorder::{ByteOrder, ReadBytesExt, BigEndian};
+use byteorder::{ByteOrder, BigEndian};
 use blake2::blake2b::Blake2b;
-use bigint::BigUint;
 
 use cuckoo_sys::{call_cuckoo_is_queue_under_limit,
                  call_cuckoo_push_to_input_queue,
@@ -32,13 +36,13 @@ use CuckooMinerSolution;
 
 /// From grin
 /// The target is the 8-bytes hash block hashes must be lower than.
-pub const MAX_TARGET: [u8; 8] = [0xf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+const MAX_TARGET: [u8; 8] = [0xf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 
-pub type JobSharedDataType = Arc<RwLock<JobSharedData>>;
-pub type JobControlDataType = Arc<RwLock<JobControlData>>;
+type JobSharedDataType = Arc<RwLock<JobSharedData>>;
+type JobControlDataType = Arc<RwLock<JobControlData>>;
 
 // Struct intended to be shared across threads
-pub struct JobSharedData {
+struct JobSharedData {
     pub job_id: u32, 
     pub pre_nonce: String, 
     pub post_nonce: String, 
@@ -87,12 +91,27 @@ impl Default for JobControlData {
 	}
 }
 
+/// Handle to the miner's running job, used to read solutions
+/// or to control the job. Internal members are not exposed
+/// and all interactions should be via public functions
+///
+
 pub struct CuckooMinerJobHandle {
     shared_data: JobSharedDataType,
     control_data: JobControlDataType,
 }
 
 impl CuckooMinerJobHandle {
+
+    /// #Description 
+    ///
+    /// Returns a solution if one is currently waiting.
+    ///
+    /// #Returns
+    ///
+    /// If a solution was found and is waiting in the plugin's input queue, returns
+    /// Ok([CuckooMinerSolution](struct.CuckooMinerSolution.html)). If there
+    /// no solution waiting, returns None
 
     pub fn get_solution(&self)->Option<CuckooMinerSolution>{
         //just to prevent endless needless locking of this
@@ -111,12 +130,33 @@ impl CuckooMinerJobHandle {
         None
     }
 
+    /// #Description 
+    ///
+    /// Stops the current job, and signals for the loaded plugin to stop processing
+    /// and perform any cleanup it needs to do.
+    ///
+    /// #Returns
+    ///
+    /// Nothing
+
     pub fn stop_jobs(&self) {
         debug!("Stop jobs called");
         let mut r=self.control_data.write().unwrap();
         r.is_running=false;
         debug!("Stop jobs unlocked?");
     }
+
+    /// #Description 
+    ///
+    /// Returns the number of hashes processed by the plugin since the last time
+    /// this function was called. 
+    ///
+    /// #Returns
+    ///
+    /// Ok(n) if successful, with n containing the number of hashes processed
+    /// since the last time this function was called.
+    /// A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+    /// with specific detail if an error occurred.
 
     pub fn get_hashes_since_last_call(&self)->Result<u32, CuckooMinerError>{
         match call_cuckoo_hashes_since_last_call() {
@@ -133,6 +173,10 @@ impl CuckooMinerJobHandle {
 
         
 }
+
+/// Internal structure which controls and runs processing jobs.
+///
+///
 
 pub struct Delegator {
     shared_data: JobSharedDataType,
@@ -152,13 +196,13 @@ impl Delegator {
         }
     }
 
-    pub fn start_job_loop (mut self) -> CuckooMinerJobHandle {
+    pub fn start_job_loop (self) -> CuckooMinerJobHandle {
         //this will block, waiting until previous job is cleared
         //call_cuckoo_stop_processing();
 
         let shared_data=self.shared_data.clone();
         let control_data=self.control_data.clone();
-        let child=thread::spawn(move || {
+        thread::spawn(move || {
             self.job_loop();
         });
         CuckooMinerJobHandle {
