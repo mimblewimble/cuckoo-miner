@@ -18,7 +18,7 @@
 //!
 
 use std::sync::{Arc, RwLock};
-use std::{thread, time};
+use std::{thread};
 use std::mem::transmute;
 
 use rand::{self, Rng};
@@ -29,9 +29,9 @@ use cuckoo_sys::{call_cuckoo_is_queue_under_limit,
                  call_cuckoo_push_to_input_queue,
                  call_cuckoo_read_from_output_queue,
                  call_cuckoo_start_processing,
-                 call_cuckoo_stop_processing,
-                 call_cuckoo_hashes_since_last_call};
+                 call_cuckoo_stop_processing};
 use error::CuckooMinerError;
+use CuckooMinerJobHandle;
 use CuckooMinerSolution;
 
 /// From grin
@@ -41,12 +41,24 @@ const MAX_TARGET: [u8; 8] = [0xf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 type JobSharedDataType = Arc<RwLock<JobSharedData>>;
 type JobControlDataType = Arc<RwLock<JobControlData>>;
 
-// Struct intended to be shared across threads
-struct JobSharedData {
+/// Data intended to be shared across threads
+pub struct JobSharedData {
+    
+    /// ID of the current running job (not currently used)
     pub job_id: u32, 
+    
+    /// The part of the header before the nonce, which this
+    /// module will mutate in search of a solution
     pub pre_nonce: String, 
+
+    /// The part of the header after the nonce
     pub post_nonce: String, 
+
+    /// The target difficulty. Only solutions >= this
+    /// target will be put into the output queue
     pub difficulty: u64,
+
+    /// Output solutions
     pub solutions: Vec<CuckooMinerSolution>,
 }
 
@@ -77,8 +89,15 @@ impl JobSharedData {
     }
 }
 
+/// An internal structure to flag job control,
+/// stopping mining threads, etc.
+
 pub struct JobControlData {
+    /// Whether the mining job is running
     pub is_running: bool,
+
+    /// Whether the mining job is in the 
+    /// process of shutting down
     pub is_stopping: bool,
 }
 
@@ -91,99 +110,22 @@ impl Default for JobControlData {
 	}
 }
 
-/// Handle to the miner's running job, used to read solutions
-/// or to control the job. Internal members are not exposed
-/// and all interactions should be via public functions
-///
-
-pub struct CuckooMinerJobHandle {
-    shared_data: JobSharedDataType,
-    control_data: JobControlDataType,
-}
-
-impl CuckooMinerJobHandle {
-
-    /// #Description 
-    ///
-    /// Returns a solution if one is currently waiting.
-    ///
-    /// #Returns
-    ///
-    /// If a solution was found and is waiting in the plugin's input queue, returns
-    /// Ok([CuckooMinerSolution](struct.CuckooMinerSolution.html)). If there
-    /// no solution waiting, returns None
-
-    pub fn get_solution(&self)->Option<CuckooMinerSolution>{
-        //just to prevent endless needless locking of this
-        //when using fast test miners, in real cuckoo30 terms
-        //this shouldn't be an issue
-        //TODO: Make this less blocky
-        thread::sleep(time::Duration::from_millis(10));
-        //let time_pre_lock=Instant::now();
-        let mut s=self.shared_data.write().unwrap();
-        //let time_elapsed=Instant::now()-time_pre_lock;
-        //println!("Get_solution Time spent waiting for lock: {}", time_elapsed.as_secs()*1000 +(time_elapsed.subsec_nanos()/1_000_000)as u64);
-        if s.solutions.len()>0 {
-            let sol = s.solutions.pop().unwrap();
-            return Some(sol);
-        }
-        None
-    }
-
-    /// #Description 
-    ///
-    /// Stops the current job, and signals for the loaded plugin to stop processing
-    /// and perform any cleanup it needs to do.
-    ///
-    /// #Returns
-    ///
-    /// Nothing
-
-    pub fn stop_jobs(&self) {
-        debug!("Stop jobs called");
-        let mut r=self.control_data.write().unwrap();
-        r.is_running=false;
-        debug!("Stop jobs unlocked?");
-    }
-
-    /// #Description 
-    ///
-    /// Returns the number of hashes processed by the plugin since the last time
-    /// this function was called. 
-    ///
-    /// #Returns
-    ///
-    /// Ok(n) if successful, with n containing the number of hashes processed
-    /// since the last time this function was called.
-    /// A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
-    /// with specific detail if an error occurred.
-
-    pub fn get_hashes_since_last_call(&self)->Result<u32, CuckooMinerError>{
-        match call_cuckoo_hashes_since_last_call() {
-            Ok(result) => {
-                return Ok(result);
-            },
-            Err(_) => {
-                return Err(CuckooMinerError::PluginNotLoadedError(
-                String::from("Please call init to load a miner plug-in")));
-            }
-        }
-    
-    }
-
-        
-}
-
 /// Internal structure which controls and runs processing jobs.
 ///
 ///
 
 pub struct Delegator {
+    
+    /// Data which is shared across all threads
     shared_data: JobSharedDataType,
+
+    /// Job control flags which are shared across threads
     control_data: JobControlDataType,
 }
 
 impl Delegator {
+
+    /// Create a new job delegator
 
     pub fn new(job_id:u32, pre_nonce: &str, post_nonce: &str, difficulty:u64)->Delegator{
         Delegator {
@@ -196,23 +138,30 @@ impl Delegator {
         }
     }
 
-    pub fn start_job_loop (self) -> CuckooMinerJobHandle {
+    /// Starts the job loop, and initialises the internal plugin
+
+    pub fn start_job_loop (self) -> Result<CuckooMinerJobHandle, CuckooMinerError> {
         //this will block, waiting until previous job is cleared
         //call_cuckoo_stop_processing();
 
         let shared_data=self.shared_data.clone();
         let control_data=self.control_data.clone();
+
         thread::spawn(move || {
-            self.job_loop();
+            let result=self.job_loop();
+            if let Err(e) = result {
+                error!("Error in job loop: {:?}", e);
+            }
         });
-        CuckooMinerJobHandle {
+        Ok(CuckooMinerJobHandle {
             shared_data: shared_data, 
             control_data: control_data,
-        }
+        })
     }
 
 
-    //Some helper stuff, just put here for now
+    /// Helper to convert a hex string
+
     fn from_hex_string(&self, in_str:&str)->Vec<u8> {
         let mut bytes = Vec::new();
         for i in 0..(in_str.len()/2){
@@ -225,7 +174,9 @@ impl Delegator {
         bytes
     }
 
-    //returns the nonce and the hash it generates
+    /// Helper that returns a hash generated by the header parts and a
+    /// nonce
+
     fn get_hash(&self, pre_nonce: &str, post_nonce: &str, nonce:u64)->[u8;32]{
         //Turn input strings into vectors
         let mut pre_vec = self.from_hex_string(pre_nonce);
@@ -251,11 +202,16 @@ impl Delegator {
         ret
     }
 
+    /// helper that generates a nonce and returns a header
+
     fn get_next_hash(&self, pre_nonce: &str, post_nonce: &str)->(u64, [u8;32]){
         //Generate new nonce
         let nonce:u64 = rand::OsRng::new().unwrap().gen();
         (nonce, self.get_hash(pre_nonce, post_nonce, nonce))
     }
+
+    /// Helper to determing whether a solution meets a target difficulty
+    /// based on same algorithm from grin
 
     fn meets_difficulty(&self, in_difficulty: u64, sol:CuckooMinerSolution)->bool {
         let max_target = BigEndian::read_u64(&MAX_TARGET);
@@ -263,12 +219,16 @@ impl Delegator {
 		max_target / num > in_difficulty
     }
 
-    fn job_loop(mut self) -> Result<(), CuckooMinerError>{
+    /// The main job loop. Pushes hashes to the plugin and reads solutions
+    /// from the queue, putting them into the job's output queue. Continues
+    /// until another thread sets the is_running flag to false
+
+    fn job_loop(self) -> Result<(), CuckooMinerError>{
         //keep some unchanging data here, can move this out of shared
         //object later if it's not needed anywhere else
-        let mut pre_nonce:String=String::new();
-        let mut post_nonce:String=String::new();
-        let mut difficulty=0;
+        let pre_nonce:String;
+        let post_nonce:String;
+        let difficulty;
         {
             let s = self.shared_data.read().unwrap();
             pre_nonce=s.pre_nonce.clone();
@@ -283,7 +243,7 @@ impl Delegator {
 
         if let Err(e) = call_cuckoo_start_processing() {
             return Err(CuckooMinerError::PluginProcessingError(
-                    String::from("Error starting processing plugin.")));
+                    String::from(format!("Error starting processing plugin: {:?}", e))));
         }
 
         debug!("Cuckoo Miner Job loop processing");
@@ -323,7 +283,10 @@ impl Delegator {
 
         //Do any cleanup
         debug!("Telling job thread to stop... ");
-        call_cuckoo_stop_processing();
+        if let Err(e) = call_cuckoo_stop_processing() {
+            return Err(CuckooMinerError::PluginProcessingError(
+                    String::from(format!("Error stopping processing plugin: {:?}", e))));
+        }
         debug!("Cuckoo-Miner: Job loop has exited.");
         Ok(())
     }

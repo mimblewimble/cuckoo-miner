@@ -14,7 +14,6 @@
 //
 
 //! Tests for async mode.. should be run with RUST_TEST_THREADS=1
-extern crate env_logger;
 
 extern crate miner;
 extern crate error;
@@ -53,7 +52,7 @@ fn mine_for_duration(plugin_filter:&str,
         
         //these always get consumed after a notify
         let mut miner = CuckooMiner::new(config.clone()).expect("");
-        let job_handle=miner.notify(1, pre_header, post_header, 10, false).unwrap();
+        let job_handle=miner.notify(1, pre_header, post_header, 10).unwrap();
 
         loop {
             if let Some(s) = job_handle.get_solution()  {
@@ -78,7 +77,6 @@ fn mine_for_duration(plugin_filter:&str,
 
 #[test]
 fn mine_async(){
-    env_logger::init();
     mine_for_duration("simple_16", 5);
     std::thread::sleep(std::time::Duration::from_millis(20));
     mine_for_duration("edgetrim_16", 5);

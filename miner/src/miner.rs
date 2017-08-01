@@ -16,7 +16,19 @@
 //! to load a mining plugin, send it a Cuckoo Cycle POW problem, and 
 //! return any result solutions that may be found.
 //!
-//! #Example
+//! The miner can be run in one of two modes, syncronous and async modes.
+//!
+//! Syncronous mode uses the 'mine' function, and takes a complete hash,
+//! processes it via the plugin's 'call_cuckoo' function, and returns the result.
+//!
+//! Async or queued mode uses the 'notify' function, and takes pre-nonce and post-nonce
+//! parts of the header, and mutates it internally, sending potential solutions hashes
+//! into the plugin's internal queue for processing. Solutions are placed into an
+//! output queue, which the calling thread can read ascynronously via a job handle.
+//! 
+//! Examples of using either mode follow:
+//!
+//! #Example - Sync mode
 //! ```
 //!  let mut config = CuckooMinerConfig::new();
 //!  config.plugin_full_path = caps[0].full_path.clone();
@@ -44,12 +56,72 @@
 //!  } else {
 //!      println!("No Solution found");
 //!  }
-/// ```
+//! ```
+//!
+//! #Example - Async mode
+//! ```
+//!  let mut config = CuckooMinerConfig::new();
+//!  config.plugin_full_path = caps[0].full_path.clone();
+//!    
+//!  //set the number of threads for the miner to use
+//!  config.num_threads=2;
+//!
+//!  //set the number of trimes, 0 lets the plugin decide
+//!  config.num_trims=0;
+//!
+//!  //Build a new miner with this info, which will load
+//!  //the associated plugin and 
+//!    
+//!  let mut miner = CuckooMiner::new(config).expect("");
+//!
+//!  //Keep a structure to hold the solution.. this will be
+//!  //filled out by the plugin
+//!  let mut solution = CuckooMinerSolution::new();
+//!  
+//!  //Sample header 'parts' to mutate, the parts before and after the nonce
+//!
+//!  let pre_nonce="00000000000000118e0fe6bcfaa76c6795592339f27b6d330d8f9c4ac8e86171a66357d1\
+//!      d0fce808000000005971f14f0000000000000000000000000000000000000000000000000000000000000000\
+//!      3e1fcdd453ce51ffbb16dd200aeb9ef7375aec196e97094868428a7325e4a19b00";
+//!  let post_nonce="010a020364";
+//!        
+//!  //mine until a certain time 
+//!  let deadline = time::get_time().sec + duration_in_seconds;
+//!  while time::get_time().sec < deadline {
+//!            
+//!     //Build a new miner with the configuration, as notify 
+//!     //will consume it
+//!     let mut miner = CuckooMiner::new(config.clone()).expect("");
+//!            
+//!     //Call notify, which starts processing. 
+//!     //The job handle contains methods to control the running job and read
+//!     //results
+//!     let job_handle=miner.notify(1, pre_nonce, post_nonce, 10).unwrap();
+//!
+//!     loop {
+//!         if let Some(s) = job_handle.get_solution()  {
+//!         println!("Sol found: {}, {:?}", s.get_nonce_as_u64(), s);
+//!         
+//!             job_handle.stop_jobs();
+//!             /// Process the solution in s
+//!             /// ...
+//!             /// 
+//!             
+//!             break;    
+//!                
+//!         }
+//!         if time::get_time().sec < deadline {
+//!             job_handle.stop_jobs();
+//!             break;
+//!         }
+//!
+//!     }
+//! ```
 
+use std::sync::{Arc, RwLock};
+use std::{thread, time};
 use std::{fmt,cmp};
 use std::collections::HashMap;
-use std::{thread,time};
-use std::sync::{Arc, RwLock};
 
 use byteorder::{ByteOrder, BigEndian};
 
@@ -57,14 +129,12 @@ use blake2::blake2b::Blake2b;
 
 use cuckoo_sys::{call_cuckoo, 
                  load_cuckoo_lib,
-                 call_cuckoo_stop_processing,
-                 call_cuckoo_set_parameter};
+                 call_cuckoo_set_parameter,
+                 call_cuckoo_hashes_since_last_call};
 
 use error::CuckooMinerError;
 
-use delegator::{Delegator, CuckooMinerJobHandle};
-
-use std::time::Instant;
+use delegator::{Delegator, JobControlData, JobSharedData};
 
 // Hardcoded assumption for now that the solution size will be 42 will be
 // maintained, to avoid having to allocate memory within the called C functions
@@ -136,6 +206,8 @@ impl CuckooMinerSolution{
 		nonces
 	}
 
+    /// Returns the has of the solution, as performed in
+    /// grin
     pub fn hash(&self) -> [u8;32] {
         //Hash
         let mut blake2b = Blake2b::new(32);
@@ -205,6 +277,93 @@ impl CuckooMinerConfig{
     pub fn new()->CuckooMinerConfig{
         CuckooMinerConfig::default()
     }
+}
+
+/// Handle to the miner's running job, used to read solutions
+/// or to control the job. Internal members are not exposed
+/// and all interactions should be via public functions
+/// This will basically hold an arc reference clone of
+/// the Delegator's internal shared data
+
+pub struct CuckooMinerJobHandle {
+    /// Data shared across threads
+    pub shared_data: Arc<RwLock<JobSharedData>>,
+
+    /// Job control flags
+    pub control_data: Arc<RwLock<JobControlData>>,
+}
+
+impl CuckooMinerJobHandle {
+
+    /// #Description 
+    ///
+    /// Returns a solution if one is currently waiting.
+    ///
+    /// #Returns
+    ///
+    /// If a solution was found and is waiting in the plugin's input queue, returns
+    /// Ok([CuckooMinerSolution](struct.CuckooMinerSolution.html)). If there
+    /// no solution waiting, returns None
+
+    pub fn get_solution(&self)->Option<CuckooMinerSolution>{
+        //just to prevent endless needless locking of this
+        //when using fast test miners, in real cuckoo30 terms
+        //this shouldn't be an issue
+        //TODO: Make this less blocky
+        thread::sleep(time::Duration::from_millis(10));
+        //let time_pre_lock=Instant::now();
+        let mut s=self.shared_data.write().unwrap();
+        //let time_elapsed=Instant::now()-time_pre_lock;
+        //println!("Get_solution Time spent waiting for lock: {}", time_elapsed.as_secs()*1000 +(time_elapsed.subsec_nanos()/1_000_000)as u64);
+        if s.solutions.len()>0 {
+            let sol = s.solutions.pop().unwrap();
+            return Some(sol);
+        }
+        None
+    }
+
+    /// #Description 
+    ///
+    /// Stops the current job, and signals for the loaded plugin to stop processing
+    /// and perform any cleanup it needs to do.
+    ///
+    /// #Returns
+    ///
+    /// Nothing
+
+    pub fn stop_jobs(&self) {
+        debug!("Stop jobs called");
+        let mut r=self.control_data.write().unwrap();
+        r.is_running=false;
+        debug!("Stop jobs unlocked?");
+    }
+
+    /// #Description 
+    ///
+    /// Returns the number of hashes processed by the plugin since the last time
+    /// this function was called. 
+    ///
+    /// #Returns
+    ///
+    /// Ok(n) if successful, with n containing the number of hashes processed
+    /// since the last time this function was called.
+    /// A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+    /// with specific detail if an error occurred.
+
+    pub fn get_hashes_since_last_call(&self)->Result<u32, CuckooMinerError>{
+        match call_cuckoo_hashes_since_last_call() {
+            Ok(result) => {
+                return Ok(result);
+            },
+            Err(_) => {
+                return Err(CuckooMinerError::PluginNotLoadedError(
+                String::from("Please call init to load a miner plug-in")));
+            }
+        }
+    
+    }
+
+        
 }
 
 /// An instance of a miner, which loads a cuckoo-miner plugin
@@ -388,11 +547,11 @@ impl CuckooMiner {
                   job_id: u32, //Job id
                   pre_nonce: &str, //Pre-nonce portion of header
                   post_nonce: &str, //Post-nonce portion of header
-                  difficulty: u64, //The target difficulty, only sols greater than this difficulty will be returned.
-                  clean_jobs: bool) -> Result<CuckooMinerJobHandle, CuckooMinerError>{
+                  difficulty: u64  //The target difficulty, only sols greater than this difficulty will be returned.
+                  ) -> Result<CuckooMinerJobHandle, CuckooMinerError>{
         
         self.delegator=Delegator::new(job_id, pre_nonce, post_nonce, difficulty); 
-        Ok(self.delegator.start_job_loop())
+        Ok(self.delegator.start_job_loop().unwrap())
     }
                   
 }

@@ -31,8 +31,8 @@ pub use error::CuckooMinerError;
 
 pub use miner::{CuckooMinerConfig,
                 CuckooMiner,
-                CuckooMinerSolution};
-pub use miner::delegator::CuckooMinerJobHandle;
+                CuckooMinerSolution,
+                CuckooMinerJobHandle};
 
 pub use manager::{CuckooPluginManager,
                   CuckooPluginCapabilities};

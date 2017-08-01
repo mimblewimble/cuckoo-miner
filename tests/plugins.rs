@@ -22,7 +22,6 @@
 extern crate miner;
 extern crate error;
 extern crate manager;
-extern crate env_logger;
 extern crate crypto;
 
 
@@ -84,7 +83,6 @@ fn test_for_known_set(plugin_filter:&str,
                       input_header: &[u8;32],
                       expected_result_nonces:CuckooMinerSolution, 
                       num_threads:u32){
-    env_logger::init();
 
     //First, load and query the plugins in the given directory
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
@@ -118,7 +116,6 @@ fn test_for_known_set(plugin_filter:&str,
 
 fn mine_until_solution_found(plugin_filter:&str,
                              num_threads:u32) {
-    env_logger::init();
 
     //First, load and query the plugins in the given directory
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
@@ -198,7 +195,6 @@ fn test_known_solutions() {
 #[test]
 fn mine_plugins_until_found() {
 
-    env_logger::init();
     //mine_until_solution_found("cuda_28", 0);
     mine_until_solution_found("simple_16", 4);
     
