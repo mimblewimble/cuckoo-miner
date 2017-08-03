@@ -53,6 +53,8 @@ use error::CuckooMinerError;
 static DLL_SUFFIX: &str=".so";
 #[cfg(target_os = "macos")]
 static DLL_SUFFIX: &str=".dylib";
+#[cfg(target_os = "windows")]
+static DLL_SUFFIX: &str=".dll";
 
 // Helper function to get the absolute path from a relative path
 

@@ -86,6 +86,11 @@ impl CuckooBuildEnv {
             .collect::<Vec<&str>>();
 
         if cfg!(target_env = "msvc") {
+            //Just return for now.. windows is unsupported
+            return;
+        }
+
+        if cfg!(target_env = "msvc") {
             config.flag("-EHsc");
         } else {
             //config.flag("-Wall");
