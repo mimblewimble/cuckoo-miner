@@ -1,1 +1,1 @@
-mean_miner.cpp
+mean_miner.cpp blake2b-ref.c

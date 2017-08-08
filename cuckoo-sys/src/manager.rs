@@ -77,8 +77,8 @@ fn load_lib(lib_full_path:&str) -> Result<(), CuckooMinerError> {
     let loaded_lib = {
         match result {
             Ok(l) => l,
-            Err(_) => {
-                return Err(CuckooMinerError::PluginNotFoundError(String::from(lib_full_path)));
+            Err(e) => {
+                return Err(CuckooMinerError::PluginNotFoundError(String::from(format!("{} - {:?}", lib_full_path, e))));
             }
         }
     };

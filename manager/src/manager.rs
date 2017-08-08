@@ -326,7 +326,7 @@ impl CuckooPluginManager {
                     let caps = self.load_plugin_caps(String::from(path.to_str().unwrap()))?;
                     result_vec.push(caps);
                 },
-                Err(e) => println!("{:?}", e),
+                Err(e) => error!("{:?}", e),
             }
         }
 

@@ -1,1 +1,1 @@
-cuckoo_miner.cpp
+cuckoo_miner.cpp blake2b-ref.c

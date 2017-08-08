@@ -79,11 +79,13 @@ impl CuckooBuildEnv {
         let mut file = File::open(sources).expect("Unable to open the file");
         let mut contents = String::new();
         file.read_to_string(&mut contents).expect("Unable to read the file");
-        //println!("{}", contents);
+        //println!("contents: {}", contents);
         
         let lib_sources = contents
-            .split(" ")
+            .split_whitespace()
             .collect::<Vec<&str>>();
+
+        //println!("lib_sources: {:?}", contents);
 
         if cfg!(target_env = "msvc") {
             //Just return for now.. windows is unsupported
