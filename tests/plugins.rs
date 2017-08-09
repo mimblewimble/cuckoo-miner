@@ -24,9 +24,13 @@ extern crate error;
 extern crate manager;
 extern crate crypto;
 
+extern crate blake2_rfc as blake2;
+
 
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
+
+use blake2::blake2b::Blake2b;
 
 use error::CuckooMinerError;
 use miner::{CuckooMinerConfig, CuckooMinerSolution, CuckooMiner};
@@ -77,12 +81,18 @@ static KNOWN_SOLUTION_28:[u32;42] = [2053444, 6783171, 7967041, 12789270, 133957
 94069571, 96282504, 98112159, 106275507, 117538021, 119734709, 120246550, 127011166, 
 130229154, 132524931];
 
+static KNOWN_TEST_28:[u8;32] = [0x79,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00];
+
+
+
 // Helper function, tests a particular miner implementation against a known set
 // that should have a result
 fn test_for_known_set(plugin_filter:&str, 
                       input_header: &[u8;32],
-                      expected_result_nonces:CuckooMinerSolution, 
-                      num_threads:u32){
+                      num_threads:u32)->Option<CuckooMinerSolution>{
 
     //First, load and query the plugins in the given directory
     let mut plugin_manager = CuckooPluginManager::new().unwrap();
@@ -105,10 +115,15 @@ fn test_for_known_set(plugin_filter:&str,
 
         let result = miner.mine(input_header, &mut solution).unwrap();
 
-        println!("Solution found: {} - {}", c.name, solution);
-
-        assert!(solution == expected_result_nonces);
+        if result {
+            println!("Solution found: {} - {}", c.name, solution);
+            return Some(solution);
+        } else {
+            println!("No solution found.");
+            return None;
+        }
     }   
+    None
 }
 
 // Helper function to mine using a semi random-hash until a solution
@@ -175,11 +190,14 @@ fn mine_until_solution_found(plugin_filter:&str,
 fn test_known_solutions() {
     let mut solution = CuckooMinerSolution::new();
     solution.set_solution(KNOWN_SOLUTION_16);
-    test_for_known_set("16", &KNOWN_SEED_16, solution, 1);
+    test_for_known_set("cuda_28", &KNOWN_TEST_28, 1);
+    panic!("stop");
 
-    solution = CuckooMinerSolution::new();
+
+
+    /*solution = CuckooMinerSolution::new();
     solution.set_solution(KNOWN_SOLUTION_20);
-    test_for_known_set("20", &KNOWN_SEED_20, solution, 1);
+    test_for_known_set("20", &KNOWN_SEED_20, solution, 1);*/
 
     /*solution = CuckooMinerSolution::new();
     solution.set_solution(KNOWN_SOLUTION_25);
@@ -195,8 +213,8 @@ fn test_known_solutions() {
 #[test]
 fn mine_plugins_until_found() {
 
-    //mine_until_solution_found("cuda_28", 0);
-    mine_until_solution_found("simple_16", 4);
+    mine_until_solution_found("cuda_28", 0);
+    //mine_until_solution_found("simple_16", 4);
     
     panic!("stop");
 }

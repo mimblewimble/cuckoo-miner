@@ -16,6 +16,8 @@ time = "^0.1"
 
 [dev-dependencies]
 rust-crypto = "0.2.36"
+blake2-rfc = "~0.2.17"
+
 
 
 [[bin]]

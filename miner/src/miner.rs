@@ -224,7 +224,16 @@ impl CuckooMinerSolution{
 
 impl fmt::Display for CuckooMinerSolution {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,"{:?}", &self.solution_nonces[..])
+        let mut comma_separated = String::new();
+
+        for num in &self.solution_nonces[0..self.solution_nonces.len()] {
+            comma_separated.push_str(&format!("0x{:X}", &num));
+            comma_separated.push_str(", ");
+        }
+        comma_separated.pop();
+        comma_separated.pop();
+
+        write!(f, "[{}]", comma_separated)
     }
 }
 
