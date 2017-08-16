@@ -44,9 +44,6 @@ use cuckoo_sys::{call_cuckoo_description,
                  unload_cuckoo_lib};
 use error::CuckooMinerError;
 
-
-
-
 // OS-specific library extensions
 
 #[cfg(target_os = "linux")]

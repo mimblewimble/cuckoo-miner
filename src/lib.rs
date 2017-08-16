@@ -32,7 +32,8 @@ pub use error::CuckooMinerError;
 pub use miner::{CuckooMinerConfig,
                 CuckooMiner,
                 CuckooMinerSolution,
-                CuckooMinerJobHandle};
+                CuckooMinerJobHandle,
+                CuckooMinerDeviceStats};
 
 pub use manager::{CuckooPluginManager,
                   CuckooPluginCapabilities};

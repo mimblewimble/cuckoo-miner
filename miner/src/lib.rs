@@ -31,6 +31,11 @@ extern crate rand;
 extern crate byteorder;
 extern crate crypto;
 extern crate blake2_rfc as blake2;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+
 
 mod delegator;
 
@@ -38,6 +43,7 @@ pub mod miner;
 pub use miner::{CuckooMiner,
                 CuckooMinerConfig,
                 CuckooMinerSolution,
-                CuckooMinerJobHandle};
+                CuckooMinerJobHandle,
+                CuckooMinerDeviceStats};
 
 
