@@ -45,4 +45,5 @@ pub use manager::{load_cuckoo_lib,
                   call_cuckoo_read_from_output_queue,
                   call_cuckoo_start_processing,
                   call_cuckoo_stop_processing,
-                  call_cuckoo_hashes_since_last_call};
+                  call_cuckoo_hashes_since_last_call,
+                  call_cuckoo_get_stats};

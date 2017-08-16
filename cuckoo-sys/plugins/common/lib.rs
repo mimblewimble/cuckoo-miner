@@ -504,5 +504,62 @@ extern "C" {
     /// ```
 
     pub fn cuckoo_hashes_since_last_call() -> uint32_t;
-    
+ 
+    /// #Description 
+    ///
+    /// Retrieves a JSON list of the plugin's current stats for all running
+    /// devices. e.g:
+    /// ```
+    ///   [{
+    ///      device_id:"0",
+    ///      device_name:"NVIDIA GTX 1080",
+    ///      last_start_time: "23928329382",
+    ///      last_end_time: "23928359382",
+    ///      last_solution_time: "3382",
+    ///    },
+    ///    {
+    ///      device_id:"1",
+    ///      device_name:"NVIDIA GTX 1080ti",
+    ///      last_start_time: "23928329382",
+    ///      last_end_time: "23928359382",
+    ///      last_solution_time: "3382",
+    ///    }]
+    ///
+    /// ```
+    /// This should correspond to an easily deserialised structure on the 
+    /// rust side. It is up to the plugin to populate these properly.
+    ///
+    /// #Arguments
+    ///
+    /// * `stats_out_buf` (OUT) The name of the parameter to set.
+    ///
+    /// * `stats_len` (IN-OUT) Coming in, the maximum number of bytes to write to `stats_out_buf`,
+    /// coming out, the number of bytes written to `stats_out_buf`
+    ///
+    /// The implementing function should take care not to write more than `stats_len` to
+    /// the `stats_out` buffer, and should not allocate any memory
+    ///
+    /// #Returns
+    ///
+    /// 0 if the the stat list was successfully retrieved, 
+    /// 3 if there was not enough space in the buffer to write the list
+    ///
+    /// #Corresponding C (Unix)
+    /// 
+    /// ```
+    ///  extern "C" int cuckoo_get_stats(char *stats_out_buf,
+    ///                                       int* stats_len);
+    /// ```
+    ///
+    /// #Example
+    ///
+    /// 
+    /// ```
+    /// ```
+    ///
+
+    pub fn cuckoo_get_stats(stats_out_buf: *mut c_uchar, 
+                                stats_len: *mut size_t) -> uint32_t;
+
+   
 }
