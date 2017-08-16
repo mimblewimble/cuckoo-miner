@@ -44,6 +44,7 @@ type CuckooReadFromOutputQueue = unsafe extern fn(*mut uint32_t, *mut c_uchar) -
 type CuckooStartProcessing = unsafe extern fn()->uint32_t;
 type CuckooStopProcessing = unsafe extern fn()->uint32_t;
 type CuckooHashesSinceLastCall = unsafe extern fn()->uint32_t;
+type CuckooGetStats = unsafe extern fn(*mut c_uchar,*mut uint32_t) -> uint32_t;
 
 // Keep static references to the library and each call that a plugin can expose
 // wrapped in mutex, for theoretical thread-safety, though it's unlikely that
@@ -64,6 +65,7 @@ lazy_static!{
     static ref CUCKOO_START_PROCESSING: Mutex<Option<CuckooStartProcessing>> = Mutex::new(None);
     static ref CUCKOO_STOP_PROCESSING: Mutex<Option<CuckooStopProcessing>> = Mutex::new(None);
     static ref CUCKOO_HASHES_SINCE_LAST_CALL: Mutex<Option<CuckooHashesSinceLastCall>> = Mutex::new(None);
+    static ref CUCKOO_GET_STATS: Mutex<Option<CuckooGetStats>> = Mutex::new(None);
 }
 
 // Loads the library at lib_full_path into the LOADED_LIBRARY static,
@@ -98,6 +100,7 @@ fn load_lib(lib_full_path:&str) -> Result<(), CuckooMinerError> {
         let mut cuckoo_start_processing_ref = CUCKOO_START_PROCESSING.lock().unwrap();
         let mut cuckoo_stop_processing_ref = CUCKOO_STOP_PROCESSING.lock().unwrap();
         let mut cuckoo_hashes_since_last_call_ref = CUCKOO_HASHES_SINCE_LAST_CALL.lock().unwrap();
+        let mut cuckoo_get_stats_ref = CUCKOO_GET_STATS.lock().unwrap();
         unsafe {
             let fn_ref:CuckooCall = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_call\0")?;
             *cuckoo_call_ref = Some(fn_ref);
@@ -134,6 +137,9 @@ fn load_lib(lib_full_path:&str) -> Result<(), CuckooMinerError> {
 
             let fn_ref:CuckooHashesSinceLastCall = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_hashes_since_last_call\0")?;
             *cuckoo_hashes_since_last_call_ref = Some(fn_ref);
+            
+            let fn_ref:CuckooGetStats = *loaded_library_ref.as_mut().unwrap().get(b"cuckoo_get_stats\0")?;
+            *cuckoo_get_stats_ref = Some(fn_ref);
 
         }
     }
@@ -191,7 +197,10 @@ pub fn unload_cuckoo_lib(){
     let cuckoo_hashes_since_last_call_ref = CUCKOO_HASHES_SINCE_LAST_CALL.lock().unwrap();
     drop(cuckoo_hashes_since_last_call_ref);
 
-    let loaded_library_ref = LOADED_LIBRARY.lock().unwrap();
+    let cuckoo_get_stats_ref = CUCKOO_GET_STATS.lock().unwrap();
+    drop(cuckoo_get_stats_ref);
+
+   let loaded_library_ref = LOADED_LIBRARY.lock().unwrap();
     drop(loaded_library_ref);
 
     
@@ -710,6 +719,64 @@ pub fn call_cuckoo_hashes_since_last_call()
             String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
         Some(c) => unsafe {
                         return Ok(c());
+                   },
+        
+    };
+}
+
+/// #Description 
+///
+/// Retrieves a JSON list of the plugin's current stats for all running
+/// devices. e.g:
+/// ```
+///   [{
+///      device_id:"0",
+///      device_name:"NVIDIA GTX 1080",
+///      last_start_time: "23928329382",
+///      last_end_time: "23928359382",
+///      last_solution_time: "3382",
+///    },
+///    {
+///      device_id:"1",
+///      device_name:"NVIDIA GTX 1080ti",
+///      last_start_time: "23928329382",
+///      last_end_time: "23928359382",
+///      last_solution_time: "3382",
+///    }]
+///
+/// #Arguments
+///
+/// * `stat_bytes` (OUT) A reference to a block of [u8] bytes to fill with the JSON
+///    result array
+///
+/// * `stat_bytes_len` (IN-OUT) When called, this should contain the maximum number of bytes
+///    the plugin should write to `stat_bytes`. Upon return, this is filled with the number
+///    of bytes that were written to `stat_bytes`.
+///
+/// #Returns
+///
+/// 0 if the parameter list was retrived, and the result is stored in `stat_bytes`
+/// 3 if the buffer and size given was too small to store the stats 
+///
+/// #Example
+/// 
+/// ```
+///   let mut stat_bytes:[u8;1024]=[0;1024];
+///   let mut stat_bytes_len=stat_bytes.len() as u32;
+///   //get a list of parameters
+///   let stat_list=call_cuckoo_get_stats(&mut stat_bytes, &mut stat_bytes_len);
+/// ```
+///
+///
+
+pub fn call_cuckoo_get_stats(stat_bytes: &mut [u8], stat_bytes_len:&mut u32) 
+    -> Result<u32, CuckooMinerError>{
+    let cuckoo_get_stats_ref = CUCKOO_GET_STATS.lock().unwrap(); 
+    match *cuckoo_get_stats_ref {
+        None => return Err(CuckooMinerError::PluginNotLoadedError(
+            String::from("No miner plugin is loaded. Please call init() with the name of a valid mining plugin."))),
+        Some(c) => unsafe {
+                        return Ok(c(stat_bytes.as_mut_ptr(), stat_bytes_len));
                    },
         
     };
