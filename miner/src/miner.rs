@@ -123,14 +123,15 @@ use std::{thread, time};
 use std::{fmt,cmp};
 use std::collections::HashMap;
 
+use serde_json;
 use byteorder::{ByteOrder, BigEndian};
-
 use blake2::blake2b::Blake2b;
 
 use cuckoo_sys::{call_cuckoo, 
                  load_cuckoo_lib,
                  call_cuckoo_set_parameter,
-                 call_cuckoo_hashes_since_last_call};
+                 call_cuckoo_hashes_since_last_call,
+                 call_cuckoo_get_stats};
 
 use error::CuckooMinerError;
 
@@ -288,6 +289,31 @@ impl CuckooMinerConfig{
     }
 }
 
+/// Holds deserialised performance metrics returned from the
+/// plugin
+///
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CuckooMinerDeviceStats {
+    /// The internal device id
+    pub device_id:String,
+
+    /// The device name
+    pub device_name:String,
+
+    /// The time at which the device last began to search a hash (epoch in mills)
+    pub last_start_time:u64,
+
+    /// The time at which the device last completed a solution search (epoch in mills)
+    pub last_end_time: u64,
+
+    /// The amount of time the last solution search took (epoch in mills)
+    pub last_solution_time: u64,
+    
+    /// The total number of searched performed since init
+    pub iterations_completed: u32,
+}
+
 /// Handle to the miner's running job, used to read solutions
 /// or to control the job. Internal members are not exposed
 /// and all interactions should be via public functions
@@ -369,9 +395,34 @@ impl CuckooMinerJobHandle {
                 String::from("Please call init to load a miner plug-in")));
             }
         }
-    
     }
+    
+    /// #Description 
+    ///
+    /// Returns the number of hashes processed by the plugin since the last time
+    /// this function was called. 
+    ///
+    /// #Returns
+    ///
+    /// Ok(n) if successful, with n containing the number of hashes processed
+    /// since the last time this function was called.
+    /// A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) 
+    /// with specific detail if an error occurred.
 
+    pub fn get_stats(&self)->Result<Vec<CuckooMinerDeviceStats>, CuckooMinerError>{
+        let mut stats_bytes:[u8;2048]=[0;2048];
+        let mut stats_bytes_len=stats_bytes.len() as u32;
+        //get a list of parameters
+        call_cuckoo_get_stats(&mut stats_bytes, &mut stats_bytes_len)?;
+        let mut stats_vec:Vec<u8> = Vec::new();
+        //result contains null zero
+        for i in 0..stats_bytes_len {
+            stats_vec.push(stats_bytes[i as usize].clone());
+        }
+        let stats_json=String::from_utf8(stats_vec)?;
+        //println!("Stats_json: {}", stats_json);
+        Ok(serde_json::from_str(&stats_json).unwrap())
+    }
         
 }
 

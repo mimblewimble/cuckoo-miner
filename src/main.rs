@@ -51,7 +51,7 @@ fn main() {
         Err(e) => println!("{:?}",e),
     }
     //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins("simple_16").unwrap();
+    let caps = plugin_manager.get_available_plugins("cuda_30").unwrap();
 
     //Print all available plugins
     for c in &caps {
@@ -76,16 +76,18 @@ fn main() {
     //let solution = CuckooMinerSolution::new();
 
 
-    let pre_header="00000000000000118e0fe6bcfaa76c6795592339f27b6d330d8f9c4ac8e86171a66357d1\
-    d0fce808000000005971f14f0000000000000000000000000000000000000000000000000000000000000000\
-    3e1fcdd453ce51ffbb16dd200aeb9ef7375aec196e97094868428a7325e4a19b00";
-    let post_header="010a020364";
+    let pre_header="0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff\
+    ffffffffffffffff0000000033e51b800e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787\
+    faab45cdf12fe3a80e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a800";
+    let post_header="000000000000000a000000000000000a";
 
     //miner.notify(1, pre_header, post_header, false);
 
     let duration_in_seconds=60;
+    let report_interval=2;
 
     let deadline = time::get_time().sec + duration_in_seconds;
+    let mut report_time = time::get_time().sec + report_interval;
    
     while time::get_time().sec < deadline {
         
@@ -101,6 +103,10 @@ fn main() {
                 thread::sleep(std::time::Duration::from_millis(20));
                 break;    
                 
+            }
+            if time::get_time().sec >= report_time{
+                job_handle.get_stats();
+                report_time = time::get_time().sec + report_interval;
             }
 
         }
