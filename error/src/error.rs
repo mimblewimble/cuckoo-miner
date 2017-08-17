@@ -50,6 +50,9 @@ pub enum CuckooMinerError {
 
     /// Plugin processing can't start
     PluginProcessingError(String),
+
+    /// Error getting stats or stats not implemented
+    StatsError(String),
 }
 
 impl From<io::Error> for CuckooMinerError {

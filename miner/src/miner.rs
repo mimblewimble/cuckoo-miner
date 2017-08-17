@@ -421,7 +421,13 @@ impl CuckooMinerJobHandle {
         }
         let stats_json=String::from_utf8(stats_vec)?;
         //println!("Stats_json: {}", stats_json);
-        Ok(serde_json::from_str(&stats_json).unwrap())
+        
+        let result=serde_json::from_str(&stats_json);
+        if let Ok(r) = result {
+            return Ok(r);
+        } else {
+            return Err(CuckooMinerError::StatsError(String::from("Error retrieving stats from plugin")));
+        }
     }
         
 }
