@@ -93,7 +93,7 @@ fn main() {
         
         //these always get consumed after notify
         let miner = CuckooMiner::new(config.clone()).expect("");
-        let job_handle=miner.notify(1, pre_header, post_header, 0).unwrap();
+        let job_handle=miner.notify(1, pre_header, post_header, 10).unwrap();
 
         loop {
             if let Some(s) = job_handle.get_solution()  {
