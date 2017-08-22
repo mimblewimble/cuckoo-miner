@@ -31,10 +31,18 @@ fn main() {
 	let mut plugin_path = PathBuf::from(&path_str);
 	plugin_path.push("build");
 	plugin_path.push("plugins");
-	println!("cargo:rerun-if-changed=build.rs");
-	println!("cargo:rerun-if-changed=plugins");
-	println!("cargo:rerun-if-changed=plugins/cmake");
-	println!("cargo:rerun-if-changed=plugins/cuckoo/src");
+	//Collect the files and directories we care about
+	let dir_content = get_dir_content("plugins").unwrap();
+	for d in dir_content.directories {
+		let file_content = get_dir_content(d).unwrap();
+		for f in file_content.files {
+			println!("cargo:rerun-if-changed={}",f);
+		}
+	}
+	for f in dir_content.files{
+		println!("cargo:rerun-if-changed={}",f);
+	}
+	//panic!("marp");
 	let dst = Config::new("plugins")
 	                      //.define("FOO","BAR") //whatever flags go here
 	                      //.cflag("-foo") //and here
@@ -44,7 +52,8 @@ fn main() {
 	
 	println!("Plugin path: {:?}", plugin_path);
 	println!("OUT PATH: {:?}", out_path);
-	let options = CopyOptions::new();
+	let mut options = CopyOptions::new();
+	options.overwrite=true;
 	if let Err(e) = copy(plugin_path, out_path, &options) {
 		println!("{:?}", e);
 	}
