@@ -5,7 +5,6 @@ authors = ["yeastplume"]
 
 [workspace]
 members = ["miner", "error", "manager", "cuckoo-sys"]
-
 [dependencies]
 miner = { path = "miner", version="0.1.0" }
 error = { path = "error", version="0.1.0" }

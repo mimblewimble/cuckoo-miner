@@ -6,6 +6,7 @@ license = "MIT/Apache-2.0/BSD-3-Clause"
 description = "Rust bindings to John Tromp's Cuckoo Cycle Implementations"
 readme = "README.md"
 workspace = ".."
+build = "src/build.rs"
 
 [dependencies]
 libc = "0.2.24"
@@ -18,27 +19,27 @@ error = { path = "../error", version="0.1.0" }
 #Plugins
 
 #simple
-cuckoo_simple_12 = { path = "plugins/cuckoo_simple_12" }
-cuckoo_simple_16 = { path = "plugins/cuckoo_simple_16" }
-cuckoo_simple_20 = { path = "plugins/cuckoo_simple_20" }
-cuckoo_simple_25 = { path = "plugins/cuckoo_simple_25" }
-cuckoo_simple_28 = { path = "plugins/cuckoo_simple_28" }
-cuckoo_simple_30 = { path = "plugins/cuckoo_simple_30" }
-
-#edgetrim
-cuckoo_edgetrim_16 = { path = "plugins/cuckoo_edgetrim_16" }
-cuckoo_edgetrim_20 = { path = "plugins/cuckoo_edgetrim_20" }
-cuckoo_edgetrim_25 = { path = "plugins/cuckoo_edgetrim_25" }
-cuckoo_edgetrim_28 = { path = "plugins/cuckoo_edgetrim_28" }
-cuckoo_edgetrim_30 = { path = "plugins/cuckoo_edgetrim_30" }
-
-#tomato
-cuckoo_tomato_16 = { path = "plugins/cuckoo_tomato_16" }
-cuckoo_tomato_20 = { path = "plugins/cuckoo_tomato_20" }
-cuckoo_tomato_25 = { path = "plugins/cuckoo_tomato_25" }
-cuckoo_tomato_28 = { path = "plugins/cuckoo_tomato_28" }
-cuckoo_tomato_30 = { path = "plugins/cuckoo_tomato_30" }
-
+#cuckoo_simple_12 = { path = "plugins/cuckoo_simple_12" }
+#cuckoo_simple_16 = { path = "plugins/cuckoo_simple_16" }
+#cuckoo_simple_20 = { path = "plugins/cuckoo_simple_20" }
+#cuckoo_simple_25 = { path = "plugins/cuckoo_simple_25" }
+#cuckoo_simple_28 = { path = "plugins/cuckoo_simple_28" }
+#cuckoo_simple_30 = { path = "plugins/cuckoo_simple_30" }
+#
+##edgetrim
+#cuckoo_edgetrim_16 = { path = "plugins/cuckoo_edgetrim_16" }
+#cuckoo_edgetrim_20 = { path = "plugins/cuckoo_edgetrim_20" }
+#cuckoo_edgetrim_25 = { path = "plugins/cuckoo_edgetrim_25" }
+#cuckoo_edgetrim_28 = { path = "plugins/cuckoo_edgetrim_28" }
+#cuckoo_edgetrim_30 = { path = "plugins/cuckoo_edgetrim_30" }
+#
+##tomato
+#cuckoo_tomato_16 = { path = "plugins/cuckoo_tomato_16" }
+#cuckoo_tomato_20 = { path = "plugins/cuckoo_tomato_20" }
+#cuckoo_tomato_25 = { path = "plugins/cuckoo_tomato_25" }
+#cuckoo_tomato_28 = { path = "plugins/cuckoo_tomato_28" }
+#cuckoo_tomato_30 = { path = "plugins/cuckoo_tomato_30" }
+#
 #Mean miner is going to take some work to integrate
 #(not entirely sure it's finished)
 #cuckoo_mean_25 = { path = "plugins/cuckoo_mean_25" }
@@ -49,4 +50,5 @@ cuckoo_tomato_30 = { path = "plugins/cuckoo_tomato_30" }
 const-cstr = "0.2"
 
 [build-dependencies]
-gcc = "0.3.51"
+cmake = "0.1.24"
+fs_extra = "1.0.0"
