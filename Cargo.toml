@@ -5,19 +5,16 @@ authors = ["yeastplume"]
 
 [workspace]
 members = ["miner", "error", "manager", "cuckoo-sys"]
+
 [dependencies]
 miner = { path = "miner", version="0.1.0" }
 error = { path = "error", version="0.1.0" }
 manager = { path = "manager", version="0.1.0" }
-
 time = "^0.1"
-
 
 [dev-dependencies]
 rust-crypto = "0.2.36"
 blake2-rfc = "~0.2.17"
-
-
 
 [[bin]]
 name = "cuckoo_miner_test"

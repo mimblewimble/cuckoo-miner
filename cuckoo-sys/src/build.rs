@@ -30,13 +30,12 @@ fn main() {
 	out_path.pop();
 	let mut plugin_path = PathBuf::from(&path_str);
 	plugin_path.push("build");
-	plugin_path.push("miner-plugins");
+	plugin_path.push("plugins");
 	println!("cargo:rerun-if-changed=build.rs");
-	println!("cargo:rerun-if-changed=../plugins");
-	println!("cargo:rerun-if-changed=../plugins/cuckoo-miner-plugins");
-	println!("cargo:rerun-if-changed=../plugins/cuckoo-miner-plugins/cmake");
-	println!("cargo:rerun-if-changed=../plugins/cuckoo-miner-plugins/cuckoo/src");
-	let dst = Config::new("../plugins/cuckoo-miner-plugins")
+	println!("cargo:rerun-if-changed=plugins");
+	println!("cargo:rerun-if-changed=plugins/cmake");
+	println!("cargo:rerun-if-changed=plugins/cuckoo/src");
+	let dst = Config::new("plugins")
 	                      //.define("FOO","BAR") //whatever flags go here
 	                      //.cflag("-foo") //and here
 	                      .build_target("")
@@ -51,6 +50,5 @@ fn main() {
 	}
 
 	println!("cargo:rustc-link-search=native={}", dst.display());
-	println!("cargo:rustc-link-lib=dylib=cuckoo-miner-plugins");
 
 }
