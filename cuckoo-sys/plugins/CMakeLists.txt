@@ -47,7 +47,7 @@ foreach(CUCKOO_SIZE 16 20 25 28 30)
 endforeach(CUCKOO_SIZE)
 
 #matrix miner targets
-foreach(CUCKOO_SIZE 16 20 25 28 30)
+foreach(CUCKOO_SIZE 26 28 30)
     add_library(cuckoo_matrix_${CUCKOO_SIZE} SHARED ${MATRIX_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
