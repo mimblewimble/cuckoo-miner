@@ -51,7 +51,7 @@ fn main() {
         Err(e) => println!("{:?}",e),
     }
     //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins("simple_16").unwrap();
+    let caps = plugin_manager.get_available_plugins("matrix_30").unwrap();
 
     //Print all available plugins
     for c in &caps {
