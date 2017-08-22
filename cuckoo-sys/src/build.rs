@@ -18,11 +18,22 @@ extern crate cmake;
 extern crate fs_extra;
 
 use cmake::Config;
-use std::env;
+use std::{env,fs};
 use std::path::{PathBuf};
 use fs_extra::dir::*;
 
+/// Tests whether source cuckoo directory exists
+
+pub fn fail_on_empty_directory(name: &str){
+	if fs::read_dir(name).unwrap().count()==0 {
+		println!("The `{}` directory is empty. Did you forget to pull the submodules?", name);
+		println!("Try `git submodule update --init --recursive`");
+		panic!();
+	}
+}
+
 fn main() {
+	fail_on_empty_directory("plugins/cuckoo");
 	let path_str = env::var("OUT_DIR").unwrap();
 	let mut out_path = PathBuf::from(&path_str);
 	out_path.pop();
