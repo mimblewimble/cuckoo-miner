@@ -21,6 +21,9 @@ set (SIMPLE_MINER_SOURCES cuckoo/src/simple_miner.cpp ${BLAKE_2B})
 #cuckoo_miner (edgetrim) sources
 set (CUCKOO_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/cuckoo_miner.hpp cuckoo/src/cuckoo_miner.cpp ${BLAKE_2B})
 
+#matrix_miner sources
+set (MATRIX_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/matrix_miner.hpp cuckoo/src/matrix_miner.cpp ${BLAKE_2B})
+
 #tomato_miner sources
 set (TOMATO_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/tomato_miner.h cuckoo/src/tomato_miner.cpp ${BLAKE_2B} )
 
@@ -35,12 +38,20 @@ foreach(CUCKOO_SIZE 12 16 20 25 28 30)
     set_target_properties(cuckoo_simple_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -DEDGEBITS=${EDGEBITS}" )
 endforeach(CUCKOO_SIZE)
 
-##cuckoo edgetrim miner targets
+###cuckoo edgetrim miner targets
 foreach(CUCKOO_SIZE 16 20 25 28 30)
     add_library(cuckoo_edgetrim_${CUCKOO_SIZE} SHARED ${CUCKOO_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
     set_target_properties(cuckoo_edgetrim_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -DATOMIC -DEDGEBITS=${EDGEBITS}" )
+endforeach(CUCKOO_SIZE)
+
+#matrix miner targets
+foreach(CUCKOO_SIZE 16 20 25 28 30)
+    add_library(cuckoo_matrix_${CUCKOO_SIZE} SHARED ${MATRIX_MINER_SOURCES})
+    #get edgebits
+    math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
+    set_target_properties(cuckoo_matrix_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 -DNSIPHASH=8 -DEDGEBITS=${EDGEBITS}" )
 endforeach(CUCKOO_SIZE)
 
 ##cuckoo tomato miner targets
