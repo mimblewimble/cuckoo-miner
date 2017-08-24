@@ -33,13 +33,12 @@ Currently, the provided (and planned plugins are:)
 
 * cuckoo_simple (with Cuckoo Sizes ranging between 16-30), the basic implementation of the algorithm
 * cuckoo_edgetrim (with Cuckoo Sizes ranging between 16-30), the Cuckoo Cycle algorithm with edge trimming
-* cuckoo_cuda (with Cuckoo Sizes ranging between 16-30), Cuckoo algorithm optimised for NVidia GPUs 
-(not built by default, see [build docs](doc/build.md) for further information)
+* cuckoo_matrix (With Cuckoo size 26-30), currently the fastest CPU solver, with the largest memory requirements
+* cuckoo_cuda (with Cuckoo Sizes ranging between 16-30), Cuckoo algorithm optimised for NVidia GPUs, (only built if cuda build environment is installed)
 * cuckoo_tomato (with Cuckoo Sizes ranging between 16-30) Time-Memory tradeoff, much slower but with greatly reduced memory requirements
-* cuckoo_mean (planned)
 
-At the moment, these plugins are built as part of the project for convenience, but the intention is to move them to a separate cmake project that 
-will detect the current platform and capabilities and build plugins appropriately from there.
+These plugins are currently built by cmake as part of the cuckoo-sys module. The cmake scripts will attempt to detect the underlying environment
+as well as possible and build plugins accordingly (WIP)
 
 ## Installation and Building
 
