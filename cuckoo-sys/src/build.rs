@@ -17,10 +17,13 @@
 extern crate cmake;
 extern crate fs_extra;
 
+mod sanity;
+
 use cmake::Config;
 use std::{env,fs};
 use std::path::{PathBuf};
 use fs_extra::dir::*;
+use sanity::Finder;
 
 /// Tests whether source cuckoo directory exists
 
@@ -33,6 +36,15 @@ pub fn fail_on_empty_directory(name: &str){
 }
 
 fn main() {
+	let mut command_finder=Finder::new();
+	//dumb and quick test for windows, can parse later
+	let windows_sysinfo = command_finder.maybe_have("systeminfo");
+	if let Some(_) = windows_sysinfo {
+		//Windows plugins not supported for now.. bye!
+		return;
+	}	
+
+
 	fail_on_empty_directory("plugins/cuckoo");
 	let path_str = env::var("OUT_DIR").unwrap();
 	let mut out_path = PathBuf::from(&path_str);
