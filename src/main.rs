@@ -19,7 +19,6 @@ extern crate miner;
 extern crate error;
 extern crate manager;
 extern crate time;
-
 use std::thread;
 
 
@@ -36,7 +35,6 @@ static KNOWN_SOLUTION_16:[u32;42] = [671, 2624, 3044, 4429, 4682, 4734, 6727, 72
 29606, 30616, 30674, 30727, 31162, 31466, 31706];*/
 
 fn main() {
-
 	//this should have a solution under cuckoo25
     /*let test_header = [0xae,0x71,0xf3,0x6d,0xe6,0x4c,0x2d,0xde,
                        0x50,0xbb,0x29,0x93,0xb3,0x4e,0x61,0xd6,
@@ -51,18 +49,26 @@ fn main() {
 		Err(e) => println!("{:?}", e),
 	}
 	// Get a list of installed plugins and capabilities
-	let caps = plugin_manager.get_available_plugins("simple_16").unwrap();
+	let caps = plugin_manager.get_available_plugins("16").unwrap();
 
 	// Print all available plugins
 	for c in &caps {
-		println!("Found plugin: [{}]", c);
+		//println!("Found plugin: [{}]", c);
 	}
 
 	// Select a plugin somehow, and insert it into the miner configuration
 	// being created below
 
 	let mut config = CuckooMinerConfig::new();
-	config.plugin_full_path = caps[0].full_path.clone();
+	config.plugin_full_path = caps[1].full_path.clone();
+	println!("Plugin[0] is {}", caps[1].full_path);
+	let mut config2 = CuckooMinerConfig::new();
+	config2.plugin_full_path = caps[0].full_path.clone();
+	println!("Plugin[1] is {}", caps[0].full_path);
+	let mut config_vec = Vec::new();
+	config_vec.push(config);
+	config_vec.push(config2);
+
 	// config.parameter_list.insert(String::from("NUM_TRIMS"), 5);
 	// config.parameter_list.insert(String::from("NUM_THREADS"), 8);
 
@@ -92,7 +98,7 @@ fn main() {
 	while time::get_time().sec < deadline {
 
 		// these always get consumed after notify
-		let miner = CuckooMiner::new(config.clone()).expect("");
+		let miner = CuckooMiner::new(config_vec.clone()).expect("");
 		let job_handle = miner.notify(1, pre_header, post_header, 10).unwrap();
 
 		loop {
@@ -105,7 +111,7 @@ fn main() {
 
 			}
 			if time::get_time().sec >= report_time {
-				job_handle.get_stats();
+				job_handle.get_stats(0);
 				report_time = time::get_time().sec + report_interval;
 			}
 

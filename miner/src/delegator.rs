@@ -24,6 +24,7 @@ use std::mem::transmute;
 use rand::{self, Rng};
 use byteorder::{ByteOrder, BigEndian};
 use blake2::blake2b::Blake2b;
+use env_logger;
 
 use cuckoo_sys::PluginLibrary;
 use error::CuckooMinerError;
@@ -36,7 +37,7 @@ const MAX_TARGET: [u8; 8] = [0xf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 
 type JobSharedDataType = Arc<RwLock<JobSharedData>>;
 type JobControlDataType = Arc<RwLock<JobControlData>>;
-type PluginLibraryDataType = Arc<RwLock<PluginLibrary>>;
+type PluginLibrariesDataType = Arc<RwLock<Vec<PluginLibrary>>>;
 
 /// Data intended to be shared across threads
 pub struct JobSharedData {
@@ -115,13 +116,13 @@ pub struct Delegator {
 	control_data: JobControlDataType,
 
 	/// Loaded Plugin Library
-	library: PluginLibraryDataType,
+	libraries: PluginLibrariesDataType,
 }
 
 impl Delegator {
 	/// Create a new job delegator
 
-	pub fn new(job_id: u32, pre_nonce: &str, post_nonce: &str, difficulty: u64, library:PluginLibrary) -> Delegator {
+	pub fn new(job_id: u32, pre_nonce: &str, post_nonce: &str, difficulty: u64, librares:Vec<PluginLibrary>) -> Delegator {
 		Delegator {
 			shared_data: Arc::new(RwLock::new(JobSharedData::new(
 				job_id,
@@ -130,19 +131,20 @@ impl Delegator {
 				difficulty,
 			))),
 			control_data: Arc::new(RwLock::new(JobControlData::default())),
-			library: Arc::new(RwLock::new(library)),
+			libraries: Arc::new(RwLock::new(librares)),
 		}
 	}
 
 	/// Starts the job loop, and initialises the internal plugin
 
 	pub fn start_job_loop(self) -> Result<CuckooMinerJobHandle, CuckooMinerError> {
+	env_logger::init();
 		// this will block, waiting until previous job is cleared
 		// call_cuckoo_stop_processing();
 
 		let shared_data = self.shared_data.clone();
 		let control_data = self.control_data.clone();
-		let jh_library = self.library.clone();
+		let jh_library = self.libraries.clone();
 
 		thread::spawn(move || {
 			let result = self.job_loop();
@@ -241,7 +243,9 @@ impl Delegator {
 			s.is_running = true;
 		}
 
-		self.library.read().unwrap().call_cuckoo_start_processing();
+		for l in self.libraries.read().unwrap().iter() {
+			l.call_cuckoo_start_processing();
+		}
 
 		debug!("Cuckoo Miner Job loop processing");
 		let mut solution = CuckooMinerSolution::new();
@@ -254,41 +258,47 @@ impl Delegator {
 				break;
 			}
 
-			while self.library.read().unwrap().call_cuckoo_is_queue_under_limit() == 1 {
-
-				let (nonce, hash) = self.get_next_hash(&pre_nonce, &post_nonce);
-				// println!("Hash thread 1: {:?}", hash);
-				// TODO: make this a serialise operation instead
-				let nonce_bytes: [u8; 8] = unsafe { transmute(nonce.to_be()) };
-				self.library.read().unwrap().call_cuckoo_push_to_input_queue(&hash, &nonce_bytes);
+			for l in self.libraries.read().unwrap().iter() {
+				while l.call_cuckoo_is_queue_under_limit() == 1 {
+					let (nonce, hash) = self.get_next_hash(&pre_nonce, &post_nonce);
+					// println!("Hash thread 1: {:?}", hash);
+					// TODO: make this a serialise operation instead
+					let nonce_bytes: [u8; 8] = unsafe { transmute(nonce.to_be()) };
+					l.call_cuckoo_push_to_input_queue(&hash, &nonce_bytes);
+				}
 			}
 
+			let mut plugin_index=0;
+			for l in self.libraries.read().unwrap().iter() {
+				while l.call_cuckoo_read_from_output_queue(
+					&mut solution.solution_nonces,
+					&mut solution.nonce,
+				) != 0
+				{
+					// TODO: make this a serialise operation instead
+					let nonce = unsafe { transmute::<[u8; 8], u64>(solution.nonce) }.to_be();
 
-			while self.library.read().unwrap().call_cuckoo_read_from_output_queue(
-				&mut solution.solution_nonces,
-				&mut solution.nonce,
-			) != 0
-			{
-				// TODO: make this a serialise operation instead
-				let nonce = unsafe { transmute::<[u8; 8], u64>(solution.nonce) }.to_be();
+					if self.meets_difficulty(difficulty, solution) {
+						debug!(
+							"Cuckoo-miner plugin[{}]: Solution Found for Nonce:({}), {:?}",
+							plugin_index,
+							nonce,
+							solution
+						);
+						let mut s = self.shared_data.write().unwrap();
+						s.solutions.push(solution.clone());
+						plugin_index+=1;
+					}
 
-				if self.meets_difficulty(difficulty, solution) {
-					debug!(
-						"Cuckoo-miner: Solution Found for Nonce:({}), {:?}",
-						nonce,
-						solution
-					);
-					let mut s = self.shared_data.write().unwrap();
-					s.solutions.push(solution.clone());
 				}
-
-
 			}
 		}
 
 		// Do any cleanup
 		debug!("Telling job thread to stop... ");
-		self.library.read().unwrap().call_cuckoo_stop_processing();
+		for l in self.libraries.read().unwrap().iter() {
+			l.call_cuckoo_stop_processing();
+		}
 		debug!("Cuckoo-Miner: Job loop has exited.");
 		Ok(())
 	}

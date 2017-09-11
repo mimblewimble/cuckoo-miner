@@ -323,7 +323,7 @@ pub struct CuckooMinerJobHandle {
 	pub control_data: Arc<RwLock<JobControlData>>,
 
 	/// The loaded plugin
-	pub library: Arc<RwLock<PluginLibrary>>,
+	pub library: Arc<RwLock<Vec<PluginLibrary>>>,
 }
 
 impl CuckooMinerJobHandle {
@@ -385,8 +385,8 @@ impl CuckooMinerJobHandle {
 	/// A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
 	/// with specific detail if an error occurred.
 
-	pub fn get_hashes_since_last_call(&self) -> u32 {
-		return self.library.read().unwrap().call_cuckoo_hashes_since_last_call();
+	pub fn get_hashes_since_last_call(&self, plugin_index:usize) -> u32 {
+		return self.library.read().unwrap()[plugin_index].call_cuckoo_hashes_since_last_call();
 	}
 
 	/// #Description
@@ -401,11 +401,11 @@ impl CuckooMinerJobHandle {
 	/// A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
 	/// with specific detail if an error occurred.
 
-	pub fn get_stats(&self) -> Result<Vec<CuckooMinerDeviceStats>, CuckooMinerError> {
+	pub fn get_stats(&self, plugin_index:usize) -> Result<Vec<CuckooMinerDeviceStats>, CuckooMinerError> {
 		let mut stats_bytes: [u8; 2048] = [0; 2048];
 		let mut stats_bytes_len = stats_bytes.len() as u32;
 		// get a list of parameters
-		self.library.read().unwrap().call_cuckoo_get_stats(
+		self.library.read().unwrap()[plugin_index].call_cuckoo_get_stats(
 			&mut stats_bytes,
 			&mut stats_bytes_len,
 		);
@@ -433,14 +433,14 @@ impl CuckooMinerJobHandle {
 ///
 
 pub struct CuckooMiner {
-	/// The internal Configuration object
-	pub config: CuckooMinerConfig,
+	/// The internal Configuration objects, one for each loaded plugin
+	pub configs: Vec<CuckooMinerConfig>,
 
 	/// Delegator object, used when spawning a processing thread
 	delegator: Option<Delegator>,
 
 	/// Loaded plugin
-	library: PluginLibrary,
+	libraries: Vec<PluginLibrary>,
 }
 
 impl CuckooMiner {
@@ -466,23 +466,28 @@ impl CuckooMiner {
 	/// with specific detail is returned.
 	///
 
-	pub fn new(config: CuckooMinerConfig) -> Result<CuckooMiner, CuckooMinerError> {
-		CuckooMiner::init(config)
+	pub fn new(configs: Vec<CuckooMinerConfig>) -> Result<CuckooMiner, CuckooMinerError> {
+		CuckooMiner::init(configs)
 	}
 
 	/// Internal function to perform tha actual library loading
 
-	fn init(config: CuckooMinerConfig) -> Result<CuckooMiner, CuckooMinerError> {
-		let library = PluginLibrary::new(&config.plugin_full_path)?;
-		let mut ret_val=CuckooMiner {
-			config : config.clone(),
-			delegator : None,
-			library : library
-		};
-		// set any parameters provided in the config
-		for (name, value) in ret_val.config.parameter_list.clone() {
-			ret_val.set_parameter(name.clone(), value.clone())?;
+	fn init(configs: Vec<CuckooMinerConfig>) -> Result<CuckooMiner, CuckooMinerError> {
+		let mut lib_vec=Vec::new();
+		for c in &configs {
+			let lib=PluginLibrary::new(&c.plugin_full_path)?;
+			for (name, value) in c.parameter_list.clone() {
+				CuckooMiner::set_parameter(name.clone(), value.clone(), &lib)?;
+			}
+			lib_vec.push(lib);
 		}
+
+		let ret_val=CuckooMiner {
+			configs : configs.clone(),
+			delegator : None,
+			libraries : lib_vec,
+		};
+
 		Ok(ret_val)
 	}
 
@@ -504,8 +509,8 @@ impl CuckooMiner {
 	/// with specific detail is returned.
 	///
 
-	pub fn set_parameter(&mut self, name: String, value: u32) -> Result<(), CuckooMinerError> {
-		let return_code = self.library.call_cuckoo_set_parameter(
+	pub fn set_parameter(name: String, value: u32, library:&PluginLibrary) -> Result<(), CuckooMinerError> {
+		let return_code = library.call_cuckoo_set_parameter(
 			name.as_bytes(),
 			value,
 		);
@@ -572,8 +577,9 @@ impl CuckooMiner {
 		&self,
 		header: &[u8],
 		solution: &mut CuckooMinerSolution,
+		plugin_index: usize
 	) -> Result<bool, CuckooMinerError> {
-		let result = self.library.call_cuckoo(
+		let result = self.libraries[plugin_index].call_cuckoo(
 			header,
 			&mut solution.solution_nonces,
 		);
@@ -643,7 +649,7 @@ impl CuckooMiner {
 	) -> Result<CuckooMinerJobHandle, CuckooMinerError> {
 
 		//Note this gives up the plugin to the job thread
-		self.delegator = Some(Delegator::new(job_id, pre_nonce, post_nonce, difficulty, self.library));
+		self.delegator = Some(Delegator::new(job_id, pre_nonce, post_nonce, difficulty, self.libraries));
 		Ok(self.delegator.unwrap().start_job_loop().unwrap())
 	}
 }
