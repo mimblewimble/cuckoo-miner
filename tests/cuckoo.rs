@@ -155,9 +155,9 @@ impl Cuckoo {
 
 /// Utility to transform a 8 bytes of a byte array into a u64.
 fn u8_to_u64(p: [u8; 32], i: usize) -> u64 {
-	(p[i] as u64) | (p[i + 1] as u64) << 8 | (p[i + 2] as u64) << 16 | (p[i + 3] as u64) << 24 |
-	(p[i + 4] as u64) << 32 | (p[i + 5] as u64) << 40 |
-	(p[i + 6] as u64) << 48 | (p[i + 7] as u64) << 56
+	(p[i] as u64) | (p[i + 1] as u64) << 8 | (p[i + 2] as u64) << 16 |
+		(p[i + 3] as u64) << 24 | (p[i + 4] as u64) << 32 | (p[i + 5] as u64) << 40 |
+		(p[i + 6] as u64) << 48 | (p[i + 7] as u64) << 56
 }
 
 /// Implements siphash 2-4 specialized for a 4 u64 array key and a u64 nonce

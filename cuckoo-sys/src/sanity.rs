@@ -10,59 +10,65 @@
 
 //! Sanity check for environment before attempting to run cmake build
 //! shamelessly adapted from:
-//! https://raw.githubusercontent.com/rust-lang/rust/master/src/bootstrap/sanity.rs
+//! https://raw.githubusercontent.
+//! com/rust-lang/rust/master/src/bootstrap/sanity.rs
 //! more of this will be adapted later
 
 use std::collections::HashMap;
 use std::env;
 use std::ffi::{OsString, OsStr};
-//use std::fs;
-//use std::process::Command;
+// use std::fs;
+// use std::process::Command;
 use std::path::PathBuf;
 
-//use build_helper::output;
+// use build_helper::output;
 
-//use Build;
+// use Build;
 
 pub struct Finder {
-    cache: HashMap<OsString, Option<PathBuf>>,
-    path: OsString,
+	cache: HashMap<OsString, Option<PathBuf>>,
+	path: OsString,
 }
 
 impl Finder {
-    pub fn new() -> Self {
-        Self {
-            cache: HashMap::new(),
-            path: env::var_os("PATH").unwrap_or_default()
-        }
-    }
+	pub fn new() -> Self {
+		Self {
+			cache: HashMap::new(),
+			path: env::var_os("PATH").unwrap_or_default(),
+		}
+	}
 
-    pub fn maybe_have<S: AsRef<OsStr>>(&mut self, cmd: S) -> Option<PathBuf> {
-        let cmd: OsString = cmd.as_ref().into();
-        let path = self.path.clone();
-        self.cache.entry(cmd.clone()).or_insert_with(|| {
-            for path in env::split_paths(&path) {
-                let target = path.join(&cmd);
-                let mut cmd_alt = cmd.clone();
-                cmd_alt.push(".exe");
-                if target.is_file() || // some/path/git
+	pub fn maybe_have<S: AsRef<OsStr>>(&mut self, cmd: S) -> Option<PathBuf> {
+		let cmd: OsString = cmd.as_ref().into();
+		let path = self.path.clone();
+		self.cache
+			.entry(cmd.clone())
+			.or_insert_with(|| {
+				for path in env::split_paths(&path) {
+					let target = path.join(&cmd);
+					let mut cmd_alt = cmd.clone();
+					cmd_alt.push(".exe");
+					if target.is_file() || // some/path/git
                 target.with_extension("exe").exists() || // some/path/git.exe
-                target.join(&cmd_alt).exists() { // some/path/git/git.exe
-                    return Some(target);
-                }
-            }
-            None
-        }).clone()
-    }
+                target.join(&cmd_alt).exists()
+					{
+						// some/path/git/git.exe
+						return Some(target);
+					}
+				}
+				None
+			})
+			.clone()
+	}
 
-    /*pub fn must_have<S: AsRef<OsStr>>(&mut self, cmd: S) -> PathBuf {
+	/*pub fn must_have<S: AsRef<OsStr>>(&mut self, cmd: S) -> PathBuf {
         self.maybe_have(&cmd).unwrap_or_else(|| {
             panic!("\n\ncouldn't find required command: {:?}\n\n", cmd.as_ref());
         })
     }*/
 }
 
-//Just use finder for now
+// Just use finder for now
 
 /*pub fn check(build: &mut Build) {
     let path = env::var_os("PATH").unwrap_or_default();

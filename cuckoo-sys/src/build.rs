@@ -20,29 +20,32 @@ extern crate fs_extra;
 mod sanity;
 
 use cmake::Config;
-use std::{env,fs};
-use std::path::{PathBuf};
+use std::{env, fs};
+use std::path::PathBuf;
 use fs_extra::dir::*;
 use sanity::Finder;
 
 /// Tests whether source cuckoo directory exists
 
-pub fn fail_on_empty_directory(name: &str){
-	if fs::read_dir(name).unwrap().count()==0 {
-		println!("The `{}` directory is empty. Did you forget to pull the submodules?", name);
+pub fn fail_on_empty_directory(name: &str) {
+	if fs::read_dir(name).unwrap().count() == 0 {
+		println!(
+			"The `{}` directory is empty. Did you forget to pull the submodules?",
+			name
+		);
 		println!("Try `git submodule update --init --recursive`");
 		panic!();
 	}
 }
 
 fn main() {
-	let mut command_finder=Finder::new();
-	//dumb and quick test for windows, can parse later
+	let mut command_finder = Finder::new();
+	// dumb and quick test for windows, can parse later
 	let windows_sysinfo = command_finder.maybe_have("systeminfo");
 	if let Some(_) = windows_sysinfo {
-		//Windows plugins not supported for now.. bye!
+		// Windows plugins not supported for now.. bye!
 		return;
-	}	
+	}
 
 
 	fail_on_empty_directory("plugins/cuckoo");
@@ -54,29 +57,29 @@ fn main() {
 	let mut plugin_path = PathBuf::from(&path_str);
 	plugin_path.push("build");
 	plugin_path.push("plugins");
-	//Collect the files and directories we care about
+	// Collect the files and directories we care about
 	let dir_content = get_dir_content("plugins").unwrap();
 	for d in dir_content.directories {
 		let file_content = get_dir_content(d).unwrap();
 		for f in file_content.files {
-			println!("cargo:rerun-if-changed={}",f);
+			println!("cargo:rerun-if-changed={}", f);
 		}
 	}
-	for f in dir_content.files{
-		println!("cargo:rerun-if-changed={}",f);
+	for f in dir_content.files {
+		println!("cargo:rerun-if-changed={}", f);
 	}
-	//panic!("marp");
+	// panic!("marp");
 	let dst = Config::new("plugins")
 	                      //.define("FOO","BAR") //whatever flags go here
 	                      //.cflag("-foo") //and here
 	                      .build_target("")
 	                      .build();
-	
-	
+
+
 	println!("Plugin path: {:?}", plugin_path);
 	println!("OUT PATH: {:?}", out_path);
 	let mut options = CopyOptions::new();
-	options.overwrite=true;
+	options.overwrite = true;
 	if let Err(e) = copy(plugin_path, out_path, &options) {
 		println!("{:?}", e);
 	}
