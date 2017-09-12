@@ -251,15 +251,10 @@ impl PluginLibrary {
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
-	///  # #[cfg(target_os = "linux")]
-	///  # static DLL_SUFFIX: &str = ".so";
-	///  # #[cfg(target_os = "macos")]
-	///  # static DLL_SUFFIX: &str = ".dylib";
-	///  # #[cfg(target_os = "windows")]
-	///  # static DLL_SUFFIX: &str = ".dll";
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/libcuckoo_lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///
@@ -278,58 +273,53 @@ impl PluginLibrary {
 	/// #Description
 	///
 	/// Call to the cuckoo_call function of the currently loaded plugin, which
-	/// will perform
-	/// a Cuckoo Cycle on the given seed, returning the first solution (a
-	/// length 42 cycle)
-	/// that is found. The implementation details are dependent on particular
-	/// loaded plugin.
+	/// will perform a Cuckoo Cycle on the given seed, returning the first 
+	/// solution (a length 42 cycle) that is found. The implementation details 
+	/// are dependent on particular loaded plugin.
 	///
 	/// #Arguments
 	///
 	/// * `header` (IN) A reference to a block of [u8] bytes to use for the
-	/// seed to the
-	/// internal SIPHASH function which generates edge locations in the
-	/// graph. In practice,
-	/// this is a SHA3 hash of a Grin blockheader, but from the plugin's
-	/// perspective this
-	///    can be anything.
+	/// seed to the internal SIPHASH function which generates edge locations 
+	/// in the graph. In practice, this is a SHA3 hash of a Grin blockheader, 
+	/// but from the plugin's perspective this can be anything.
 	///
 	/// * `solutions` (OUT) A caller-allocated array of 42 unsigned bytes. This
-	/// currently must
-	/// be of size 42, corresponding to a conventional cuckoo-cycle solution
-	/// length.
-	/// If a solution is found, the solution nonces will be stored in this
-	/// array, otherwise,
-	///    they will be left untouched.
+	/// currently must be of size 42, corresponding to a conventional 
+	/// cuckoo-cycle solution length. If a solution is found, the solution 
+	/// nonces will be stored in this array, otherwise, they will be left 
+	/// untouched.
 	///
 	/// #Returns
 	///
-	/// Ok(1) if a solution is found, with the 42 solution nonces contained
-	/// within
-	/// `sol_nonces`. Returns Ok(0) if no solution is found and `sol_nonces`
-	/// remains
-	/// untouched. A
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// will be returned if there is no plugin loaded, or if there is an error
-	/// calling the function.
+	/// 1 if a solution is found, with the 42 solution nonces contained
+	/// within `sol_nonces`. 0 if no solution is found and `sol_nonces`
+	/// remains untouched.
 	///
 	/// #Example
 	///
-	/// ```text
-	///     let pl = PluginLibrary::new("/path/to/plugin");
-	///     match pl.call_cuckoo(header,
-	///                       &mut solution.solution_nonces) {
-	///         Ok(result) => {
-	///             match result {
-	///                 1 => Ok(true),
-	///                 0 => Ok(false),
-	/// _ =>
-	/// Err(CuckooMinerError::UnexpectedResultError(result))
-	///             },
-	///             Err(e) => Err(CuckooMinerError::PluginNotLoadedError(
-	/// String::from("Please call init to load a miner
-	/// plug-in"))),
-	///      }
+	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
+	///
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///  let pl = PluginLibrary::new(plugin_path).unwrap();
+	///
+	///  let header:[u8;40] = [0;40];
+	///  let mut solution:[u32; 42] = [0;42];
+	///  let result=pl.call_cuckoo(&header, &mut solution);
+	///  if result==0 {
+	///    println!("Solution Found!");
+	///  } else {
+	///    println!("No Solution Found");
+	///  }
+	///
 	/// ```
 	///
 
@@ -373,15 +363,10 @@ impl PluginLibrary {
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
-	///  # #[cfg(target_os = "linux")]
-	///  # static DLL_SUFFIX: &str = ".so";
-	///  # #[cfg(target_os = "macos")]
-	///  # static DLL_SUFFIX: &str = ".dylib";
-	///  # #[cfg(target_os = "windows")]
-	///  # static DLL_SUFFIX: &str = ".dll";
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/libcuckoo_lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///
@@ -443,15 +428,10 @@ impl PluginLibrary {
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
-	///  # #[cfg(target_os = "linux")]
-	///  # static DLL_SUFFIX: &str = ".so";
-	///  # #[cfg(target_os = "macos")]
-	///  # static DLL_SUFFIX: &str = ".dylib";
-	///  # #[cfg(target_os = "windows")]
-	///  # static DLL_SUFFIX: &str = ".dll";
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/libcuckoo_lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///
@@ -497,15 +477,10 @@ impl PluginLibrary {
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
-	///  # #[cfg(target_os = "linux")]
-	///  # static DLL_SUFFIX: &str = ".so";
-	///  # #[cfg(target_os = "macos")]
-	///  # static DLL_SUFFIX: &str = ".dylib";
-	///  # #[cfg(target_os = "windows")]
-	///  # static DLL_SUFFIX: &str = ".dll";
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/libcuckoo_lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///
@@ -533,17 +508,28 @@ impl PluginLibrary {
 	///
 	/// #Returns
 	///
-	/// 0 if the parameter was retrived, and the result is stored in `value`
+	/// 0 if the parameter was retrieved, and the result is stored in `value`
 	/// 1 if the parameter does not exist
-	/// 2 if the parameter exists, but is outside the allowed range set by the
-	/// plugin
+	/// 2 if the parameter exists, but the provided value is outside the 
+	/// allowed range determined by the plugin
+	/// 4 if the provided parameter name is too long
 	///
 	/// #Example
 	///
-	/// ```text
-	///   let pl = PluginLibrary::new("/path/to/plugin");
-	///   let name = "NUM_THREADS";
-	///   let return_code = pl.call_cuckoo_set_parameter(name.as_bytes(), 8)?;
+	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
+	///
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  let name = "NUM_THREADS";
+	///  let return_code = pl.call_cuckoo_set_parameter(name.as_bytes(), 8);
 	/// ```
 	///
 

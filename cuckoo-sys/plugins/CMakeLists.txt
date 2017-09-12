@@ -37,18 +37,18 @@ set (CUDA_MINER_SOURCES cuckoo/src/cuda_miner.cu ${BLAKE_2B} )
 
 ###cuckoo edgetrim (lean_cpu) miner targets
 foreach(CUCKOO_SIZE 16 30)
-    add_library(cuckoo_lean_cpu_${CUCKOO_SIZE} SHARED ${CUCKOO_MINER_SOURCES})
+    add_library(lean_cpu_${CUCKOO_SIZE} SHARED ${CUCKOO_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-    set_target_properties(cuckoo_lean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -DATOMIC -DEDGEBITS=${EDGEBITS}" )
+    set_target_properties(lean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -DATOMIC -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin" )
 endforeach(CUCKOO_SIZE)
 
 #matrix miner (mean_cpu) targets
 foreach(CUCKOO_SIZE 30)
-    add_library(cuckoo_mean_cpu_${CUCKOO_SIZE} SHARED ${MATRIX_MINER_SOURCES})
+    add_library(mean_cpu_${CUCKOO_SIZE} SHARED ${MATRIX_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-    set_target_properties(cuckoo_mean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 -DNSIPHASH=8 -DEDGEBITS=${EDGEBITS}" )
+    set_target_properties(mean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 -DNSIPHASH=8 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
 endforeach(CUCKOO_SIZE)
 
 # Cuda
@@ -57,13 +57,14 @@ if(WITH_CUDA)
     include("cmake/find_cuda.cmake")
     IF (CUDA_FOUND)
     #TODO: detect or make this a flag, if gcc 5 is installed separately for cuda
-	set (CUDA_HOST_COMPILER "/usr/bin/gcc-5")
-	set (CUDA_PROPAGATE_HOST_FLAGS ON)
+      set (CUDA_HOST_COMPILER "/usr/bin/gcc-5")
+      set (CUDA_PROPAGATE_HOST_FLAGS ON)
         ##cuckoo tomato miner targets
         foreach(CUCKOO_SIZE 30)
             #get edgebits
             math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-	    cuda_add_library(cuckoo_lean_cuda_${CUCKOO_SIZE} SHARED ${CUDA_MINER_SOURCES} OPTIONS "-lssl -DEDGEBITS=${EDGEBITS}")
+        cuda_add_library(lean_cuda_${CUCKOO_SIZE} SHARED ${CUDA_MINER_SOURCES} OPTIONS "-lssl -DEDGEBITS=${EDGEBITS}")
+        set_target_properties(lean_cuda_${CUCKOO_SIZE} PROPERTIES PREFIX "" SUFFIX ".cuckooplugin")
         endforeach(CUCKOO_SIZE)
     endif(CUDA_FOUND)
 endif(WITH_CUDA)

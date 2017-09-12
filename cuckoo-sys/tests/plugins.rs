@@ -23,23 +23,30 @@ use std::path::PathBuf;
 use error::CuckooMinerError;
 use cuckoo_sys::PluginLibrary;
 
-// OS-specific library extensions
-#[cfg(target_os = "linux")]
-static DLL_SUFFIX: &str = ".so";
-#[cfg(target_os = "macos")]
-static DLL_SUFFIX: &str = ".dylib";
-#[cfg(target_os = "windows")]
-static DLL_SUFFIX: &str = ".dll";
+static DLL_SUFFIX: &str = ".cuckooplugin";
 
 const TEST_PLUGIN_LIBS_CORE : [&str;3] = [
-	"libcuckoo_lean_cpu_16",
-	"libcuckoo_lean_cpu_30",
-	"libcuckoo_mean_cpu_30",
+	"lean_cpu_16",
+	"lean_cpu_30",
+	"mean_cpu_30",
 ];
 
 const TEST_PLUGIN_LIBS_OPTIONAL : [&str;1] = [
-	"libcuckoo_lean_cuda_30",
+	"lean_cuda_30",
 ];
+
+//Helper to convert from hex string
+fn from_hex_string(in_str: &str) -> Vec<u8> {
+	let mut bytes = Vec::new();
+	for i in 0..(in_str.len() / 2) {
+		let res = u8::from_str_radix(&in_str[2 * i..2 * i + 2], 16);
+		match res {
+			Ok(v) => bytes.push(v),
+			Err(e) => println!("Problem with hex: {}", e),
+		}
+	}
+	bytes
+}
 
 //Helper to load a plugin library
 fn load_plugin_lib(plugin:&str) -> Result<PluginLibrary, CuckooMinerError> {
@@ -227,14 +234,14 @@ fn call_cuckoo_get_parameter_tests(pl: &PluginLibrary){
 	assert!(num_threads > 0);
 	assert!(return_value == 0);
 
-//normal param that's not there
+	//normal param that's not there
 	let name = "SANDWICHES";
 	let mut num_sandwiches:u32 = 0;
 	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), &mut num_sandwiches);
 	assert!(num_sandwiches == 0);
 	assert!(return_value == 1);
 
-//normal param that's not there and is too long
+	//normal param that's not there and is too long
 	let name = "SANDWICHESSANDWICHESSANDWICHESSANDWICHESSANDWICHESSANDWICHESANDWICHESSAES";
 	let mut num_sandwiches:u32 = 0;
 	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), &mut num_sandwiches);
@@ -250,6 +257,96 @@ fn cuckoo_get_parameter(){
 	for p in plugins.into_iter() {
 		for _ in 0..iterations {
 			call_cuckoo_get_parameter_tests(&p);
+		}
+	}
+}
+
+// Helper to test call_cuckoo_set_parameter and return results
+// Ensures that all plugins *probably* don't overwrite
+// their buffers as they contain an null zero somewhere 
+// within the rust-enforced length
+
+fn call_cuckoo_set_parameter_tests(pl: &PluginLibrary){
+	println!("Plugin: {}", pl.lib_full_path);
+	//normal param that should be there
+	let name = "NUM_THREADS";
+	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 16);
+	assert!(return_value == 0);
+
+	//param is there, but calling it with a value outside its expected range
+	let name = "NUM_THREADS";
+	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 99999999);
+	assert!(return_value == 2);
+
+	//normal param that's not there
+	let name = "SANDWICHES";
+	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 8);
+	assert!(return_value == 1);
+
+	//normal param that's not there and is too long
+	let name = "SANDWICHESSANDWICHESSANDWICHESSANDWICHESSANDWICHESSANDWICHESANDWICHESSAES";
+	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 8);
+	assert!(return_value == 4);
+
+	//get that one back and check value
+	let name = "NUM_THREADS";
+	let mut num_threads:u32 = 0;
+	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), &mut num_threads);
+	println!("Num Threads: {}", num_threads);
+	assert!(return_value == 0);
+	assert!(num_threads == 16);
+}
+
+//tests call_cuckoo_get_parameter() on all available plugins
+#[test]
+fn cuckoo_set_parameter(){
+	let iterations = 100;
+	let plugins = load_all_plugins();
+	for p in plugins.into_iter() {
+		for _ in 0..iterations {
+			call_cuckoo_set_parameter_tests(&p);
+		}
+	}
+}
+
+// Helper to test cuckoo_call
+// at this level, given the time involved we're just going to
+// do a sanity check that the same known hashe will indeed give
+// a solution consistently across plugin implementations
+
+fn cuckoo_call_tests(pl: &PluginLibrary){
+	println!("Plugin: {}", pl.lib_full_path);
+	//normal param that should be there
+	let known_30_hash="11c5059b4d4053131323fdfab6a6509d73ef22\
+		9aedc4073d5995c6edced5a3e6";
+	let known_16_hash="5f16f104018fc651c00a280ba7a8b48db80b30\
+		20eed60f393bdcb17d0e646538";
+
+	//The hash above should produce a solution at cuckoo 30
+	let mut header = from_hex_string(known_30_hash);
+	//or 16, if needed
+	if pl.lib_full_path.contains("16") {
+		header = from_hex_string(known_16_hash);
+	}
+
+	let mut solution:[u32; 42] = [0;42];
+	let result=pl.call_cuckoo(&header, &mut solution);
+	if result==1 {
+	  println!("Solution Found!");
+	} else {
+	  println!("No Solution Found");
+	}
+	assert!(result==1);
+}
+
+//tests call_cuckoo_get_parameter() on all available plugins
+#[test]
+fn cuckoo_call(){
+	let iterations = 1;
+	let plugins = load_all_plugins();
+	for p in plugins.into_iter() {
+		for _ in 0..iterations {
+			cuckoo_call_tests(&p);
 		}
 	}
 }
