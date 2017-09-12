@@ -50,6 +50,7 @@ type CuckooGetStats = unsafe extern "C" fn(*mut c_uchar, *mut uint32_t) -> uint3
 /// Struct to hold instances of loaded plugins
 
 pub struct PluginLibrary {
+	pub lib_full_path: String,
 	loaded_library: Mutex<libloading::Library>,
 	cuckoo_init: Mutex<CuckooInit>,
 	cuckoo_call: Mutex<CuckooCall>,
@@ -79,14 +80,16 @@ impl PluginLibrary {
 		}
 
 		let loaded_library = result.unwrap();
-		PluginLibrary::load_symbols(loaded_library)
+		PluginLibrary::load_symbols(loaded_library, lib_full_path)
 	}
 
 	fn load_symbols(
 		loaded_library: libloading::Library,
+		path: &str
 	) -> Result<PluginLibrary, CuckooMinerError> {
 		unsafe {
 			let ret_val = PluginLibrary {
+				lib_full_path: String::from(path),
 				cuckoo_init: {
 					let cuckoo_init: libloading::Symbol<CuckooInit> =
 						loaded_library.get(b"cuckoo_init\0").unwrap();
@@ -186,7 +189,7 @@ impl PluginLibrary {
 	/// Nothing
 	///
 
-	pub fn unload_symbols(&self) {
+	pub fn unload(&self) {
 		let cuckoo_get_parameter_ref = self.cuckoo_get_parameter.lock().unwrap();
 		drop(cuckoo_get_parameter_ref);
 
@@ -230,8 +233,8 @@ impl PluginLibrary {
 	/// #Description
 	///
 	/// Initialises the cuckoo plugin, mostly allowing it to write a list of
-	/// its accepted
-	/// parameters. This should be called just after the plugin is loaded
+	/// its accepted parameters. This should be called just after the plugin
+	/// is loaded, and before anything else is called.
 	///
 	/// #Arguments
 	///
@@ -241,6 +244,28 @@ impl PluginLibrary {
 	///
 	/// * Nothing
 	///
+	/// #Example
+	///
+	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
+	///
+	///  # #[cfg(target_os = "linux")]
+	///  # static DLL_SUFFIX: &str = ".so";
+	///  # #[cfg(target_os = "macos")]
+	///  # static DLL_SUFFIX: &str = ".dylib";
+	///  # #[cfg(target_os = "windows")]
+	///  # static DLL_SUFFIX: &str = ".dll";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/libcuckoo_lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  pl.call_cuckoo_init();
+	/// ```
 	///
 
 	pub fn call_cuckoo_init(&self) {
@@ -290,8 +315,9 @@ impl PluginLibrary {
 	///
 	/// #Example
 	///
-	/// ```
-	///     match call_cuckoo(header,
+	/// ```text
+	///     let pl = PluginLibrary::new("/path/to/plugin");
+	///     match pl.call_cuckoo(header,
 	///                       &mut solution.solution_nonces) {
 	///         Ok(result) => {
 	///             match result {
@@ -313,11 +339,9 @@ impl PluginLibrary {
 	}
 
 	/// #Description
-	/// Call to the call_cuckoo_description function of the currently loaded
-	/// plugin, which will
-	/// return various information about the plugin, including it's name,
-	/// description, and
-	/// other information to be added soon.
+	/// Call to the call_cuckoo_description function of the loaded
+	/// plugin, which will return various information about the plugin, including
+	/// its name, description, and other information (to be added as needed).
 	///
 	/// #Arguments
 	///
@@ -328,45 +352,56 @@ impl PluginLibrary {
 	/// * `name_bytes_len` (IN-OUT) When called, this should contain the
 	/// maximum number of bytes
 	/// the plugin should write to `name_bytes`. Upon return, this is filled
-	/// with the number
-	/// of bytes that were written to `name_bytes`.
+	/// with the number of bytes that were written to `name_bytes`.
 	///
 	/// * `description_bytes` (OUT) A caller-allocated u8 array to which the
-	/// plugin will write its
-	/// description.
+	/// plugin will write its description.
 	///
 	/// * `description_bytes_len` (IN-OUT) When called, this should contain the
-	/// maximum number of bytes
-	/// the plugin should write to `description_bytes`. Upon return, this is
-	/// filled with the number
-	/// of bytes that were written to `description_bytes`.
-	///
+	/// maximum number of bytes the plugin should write to `description_bytes`. 
+	/// Upon return, this is filled with the number of bytes that were written 
+	/// to `description_bytes`.
 	///
 	/// #Returns
-	///
-	/// Ok() if the call was successful, otherwise a
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html) with
-	/// specific details
-	/// of the error
+	/// Nothing (Values are in OUT parameters). If the provided buffer was too short
+	/// the values of name_bytes_len and description_bytes_len will be 0
 	///
 	/// #Example
 	///
 	/// ```
-	///  load_cuckoo_lib(&full_path)?;
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
+	///
+	///  # #[cfg(target_os = "linux")]
+	///  # static DLL_SUFFIX: &str = ".so";
+	///  # #[cfg(target_os = "macos")]
+	///  # static DLL_SUFFIX: &str = ".dylib";
+	///  # #[cfg(target_os = "windows")]
+	///  # static DLL_SUFFIX: &str = ".dll";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/libcuckoo_lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  pl.call_cuckoo_init();
+	///
 	///  let mut name_bytes:[u8;256]=[0;256];
 	///  let mut description_bytes:[u8;256]=[0;256];
-	///  let mut name_len=name_bytes.len() as u32;
+	///  let mut name_bytes_len=name_bytes.len() as u32;
 	///  let mut desc_len=description_bytes.len() as u32;
-	///  call_cuckoo_description(&mut name_bytes, &mut name_len,
+	///  pl.call_cuckoo_description(&mut name_bytes, &mut name_bytes_len,
 	///                          &mut description_bytes, &mut desc_len);
 	/// ```
 	///
 
 	pub fn call_cuckoo_description(
 		&self,
-		name_bytes: &mut [u8; 256],
+		name_bytes: &mut [u8],
 		name_bytes_len: &mut u32,
-		description_bytes: &mut [u8; 256],
+		description_bytes: &mut [u8],
 		description_bytes_len: &mut u32,
 	) {
 		let cuckoo_description_ref = self.cuckoo_description.lock().unwrap();
@@ -383,37 +418,50 @@ impl PluginLibrary {
 	/// #Description
 	///
 	/// Call to the cuckoo_call_parameter_list function of the currently loaded
-	/// plugin,
-	/// which will provide an informative JSON array of the parameters that the
-	/// plugin supports, as well
-	/// as their descriptions and range of values.
+	/// plugin, which will provide an informative JSON array of the parameters that the
+	/// plugin supports, as well as their descriptions and range of values.
 	///
 	/// #Arguments
 	///
 	/// * `param_list_bytes` (OUT) A reference to a block of [u8] bytes to fill
-	/// with the JSON
-	///    result array
+	/// with the JSON result array
 	///
 	/// * `param_list_len` (IN-OUT) When called, this should contain the
-	/// maximum number of bytes
-	/// the plugin should write to `param_list_bytes`. Upon return, this is
-	/// filled with the number
-	///    of bytes that were written to `param_list_bytes`.
+	/// maximum number of bytes the plugin should write to `param_list_bytes`.
+	/// Upon return, this is filled with the number of bytes that were written to 
+	/// `param_list_bytes`.
 	///
 	/// #Returns
 	///
-	/// 0 if the parameter list was retrived, and the result is stored in
-	/// `param_list_bytes`
-	/// 3 if the buffer and size given was too small to store the parameters
+	/// 0 if okay, with the result is stored in `param_list_bytes`
+	/// 3 if the provided array is too short
 	///
 	/// #Example
 	///
 	/// ```
-	///   let mut param_list_bytes:[u8;1024]=[0;1024];
-	///   let mut param_list_len=param_list_bytes.len() as u32;
-	///   //get a list of parameters
-	/// let parameter_list=call_cuckoo_parameter_list(&mut param_list_bytes,
-	/// &mut param_list_len);
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
+	///
+	///  # #[cfg(target_os = "linux")]
+	///  # static DLL_SUFFIX: &str = ".so";
+	///  # #[cfg(target_os = "macos")]
+	///  # static DLL_SUFFIX: &str = ".dylib";
+	///  # #[cfg(target_os = "windows")]
+	///  # static DLL_SUFFIX: &str = ".dll";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/libcuckoo_lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  pl.call_cuckoo_init();
+	///  let mut param_list_bytes:[u8;1024]=[0;1024];
+	///  let mut param_list_len=param_list_bytes.len() as u32;
+	///  //get a list of json parameters
+	///  let parameter_list=pl.call_cuckoo_parameter_list(&mut param_list_bytes,
+	///    &mut param_list_len);
 	/// ```
 	///
 
@@ -441,13 +489,31 @@ impl PluginLibrary {
 	///
 	/// 0 if the parameter was retrived, and the result is stored in `value`
 	/// 1 if the parameter does not exist
+	/// 4 if the provided parameter name was too long
 	///
 	/// #Example
-	///
 	/// ```
-	///   let String name = "NUM_THREADS";
-	///   let mut value:u32 = 0;
-	///   let return_code = call_cuckoo_get_parameter(name.as_bytes(), &value)?;
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
+	///
+	///  # #[cfg(target_os = "linux")]
+	///  # static DLL_SUFFIX: &str = ".so";
+	///  # #[cfg(target_os = "macos")]
+	///  # static DLL_SUFFIX: &str = ".dylib";
+	///  # #[cfg(target_os = "windows")]
+	///  # static DLL_SUFFIX: &str = ".dll";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/libcuckoo_lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  pl.call_cuckoo_init();
+	///  let name = "NUM_THREADS";
+	///  let mut num_threads:u32 = 0;
+	///  let ret_val = pl.call_cuckoo_get_parameter(name.as_bytes(), &mut num_threads);
 	/// ```
 	///
 
@@ -456,8 +522,6 @@ impl PluginLibrary {
 		unsafe { cuckoo_get_parameter_ref(name_bytes.as_ptr(), name_bytes.len() as u32, value) }
 	}
 
-	/// #Description
-	///
 	/// Sets the value of a parameter in the currently loaded plugin
 	///
 	/// #Arguments
@@ -476,9 +540,10 @@ impl PluginLibrary {
 	///
 	/// #Example
 	///
-	/// ```
-	///   let String name = "NUM_THREADS";
-	///   let return_code = call_cuckoo_set_parameter(name.as_bytes(), 8)?;
+	/// ```text
+	///   let pl = PluginLibrary::new("/path/to/plugin");
+	///   let name = "NUM_THREADS";
+	///   let return_code = pl.call_cuckoo_set_parameter(name.as_bytes(), 8)?;
 	/// ```
 	///
 
@@ -536,10 +601,11 @@ impl PluginLibrary {
 	///
 	/// #Example
 	///
-	/// ```
+	/// ```text
+	///  let pl = PluginLibrary::new("/path/to/plugin");
 	///  let (nonce, hash) = self.get_next_hash(&pre_nonce, &post_nonce);
 	///  let nonce_bytes:[u8;8] = unsafe{transmute(nonce.to_be())};
-	///  call_cuckoo_push_to_input_queue(&hash, &nonce_bytes)?;
+	///  pl.call_cuckoo_push_to_input_queue(&hash, &nonce_bytes)?;
 	/// ```
 	///
 
@@ -581,11 +647,14 @@ impl PluginLibrary {
 	/// #Example
 	///
 	///
-	/// ```
-	///     let mut sol_nonces[u32;42]=[0;42];
-	///     let mut nonce[u8;8]=[0;8];  //Initialise this with a u64
-	/// while call_cuckoo_read_from_output_queue(&mut sol_nonces, &mut
-	/// nonce).unwrap()!=0 {
+	/// ```text
+	///     let pl = PluginLibrary::new("/path/to/plugin");
+	///     //.
+	///     //.
+	///     //.
+	///     let mut sol_nonces=[u32;42];
+	///     let mut nonce=[u8;8];  //Initialise this with a u64
+	///     while pl.call_cuckoo_read_from_output_queue(&mut sol_nonces, &mut nonce).unwrap()!=0 {
 	///        ...
 	///     }
 	/// ```
@@ -623,7 +692,7 @@ impl PluginLibrary {
 	///
 	/// #Corresponding C (Unix)
 	///
-	/// ```
+	/// ```text
 	///  extern "C" int cuckoo_start_processing();
 	/// ```
 
@@ -655,7 +724,7 @@ impl PluginLibrary {
 	///
 	/// #Corresponding C (Unix)
 	///
-	/// ```
+	/// ```text
 	///  extern "C" int cuckoo_stop_processing();
 	/// ```
 
@@ -683,8 +752,7 @@ impl PluginLibrary {
 	/// with specific detail is returned if an error is encountered.
 	///
 	/// #Corresponding C (Unix)
-	///
-	/// ```
+	/// ```text
 	///  extern "C" int cuckoo_stop_processing();
 	/// ```
 
@@ -697,7 +765,8 @@ impl PluginLibrary {
 	///
 	/// Retrieves a JSON list of the plugin's current stats for all running
 	/// devices. e.g:
-	/// ```
+	///
+	/// ```text
 	///   [{
 	///      device_id:"0",
 	///      device_name:"NVIDIA GTX 1080",
@@ -712,7 +781,7 @@ impl PluginLibrary {
 	///      last_end_time: "23928359382",
 	///      last_solution_time: "3382",
 	///    }]
-	///
+	/// ```
 	/// #Arguments
 	///
 	/// * `stat_bytes` (OUT) A reference to a block of [u8] bytes to fill with
@@ -733,12 +802,12 @@ impl PluginLibrary {
 	///
 	/// #Example
 	///
-	/// ```
+	/// ```text
 	///   let mut stat_bytes:[u8;1024]=[0;1024];
 	///   let mut stat_bytes_len=stat_bytes.len() as u32;
 	///   //get a list of parameters
-	/// let stat_list=call_cuckoo_get_stats(&mut stat_bytes, &mut
-	/// stat_bytes_len);
+	///   let stat_list=call_cuckoo_get_stats(&mut stat_bytes, &mut
+	///   stat_bytes_len);
 	/// ```
 	///
 	///

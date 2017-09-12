@@ -7,9 +7,9 @@ set (CMAKE_CXX_FLAGS "--std=c++11")
 set (OPT "-O3")
 set (DOPT "-DPREFETCH")
 
-set (FLAGS "-Wall -Wno-format -Wno-deprecated-declarations -D_POSIX_C_SOURCE=200112L ${OPT} ${DOPT} -I. ${CPPFLAGS} -pthread")
+set (FLAGS "-Wno-format -Wno-deprecated-declarations -D_POSIX_C_SOURCE=200112L ${OPT} ${DOPT} -I. ${CPPFLAGS} -pthread")
 set (GPP_FLAGS "-march=native -m64 ${FLAGS}")
-set (CFLAGS "-Wall -Wno-format -fomit-frame-pointer ${OPT}")
+set (CFLAGS "-Wno-format -fomit-frame-pointer ${OPT}")
 set (GCC_FLAGS "-m64 -std=gnu11 ${CFLAGS}")
 
 #blake2b prerequisite
