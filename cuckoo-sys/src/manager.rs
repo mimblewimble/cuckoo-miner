@@ -42,9 +42,11 @@ type CuckooIsQueueUnderLimit = unsafe extern "C" fn() -> uint32_t;
 type CuckooPushToInputQueue = unsafe extern "C" fn(*const c_uchar, uint32_t, *const c_uchar)
                                                    -> uint32_t;
 type CuckooReadFromOutputQueue = unsafe extern "C" fn(*mut uint32_t, *mut c_uchar) -> uint32_t;
+type CuckooClearQueues = unsafe extern "C" fn();
 type CuckooStartProcessing = unsafe extern "C" fn() -> uint32_t;
 type CuckooStopProcessing = unsafe extern "C" fn() -> uint32_t;
 type CuckooHashesSinceLastCall = unsafe extern "C" fn() -> uint32_t;
+type CuckooHasProcessingStopped = unsafe extern "C" fn() -> uint32_t;
 type CuckooGetStats = unsafe extern "C" fn(*mut c_uchar, *mut uint32_t) -> uint32_t;
 
 /// Struct to hold instances of loaded plugins
@@ -59,11 +61,13 @@ pub struct PluginLibrary {
 	cuckoo_get_parameter: Mutex<CuckooGetParameter>,
 	cuckoo_set_parameter: Mutex<CuckooSetParameter>,
 	cuckoo_is_queue_under_limit: Mutex<CuckooIsQueueUnderLimit>,
+	cuckoo_clear_queues: Mutex<CuckooClearQueues>,
 	cuckoo_push_to_input_queue: Mutex<CuckooPushToInputQueue>,
 	cuckoo_read_from_output_queue: Mutex<CuckooReadFromOutputQueue>,
 	cuckoo_start_processing: Mutex<CuckooStartProcessing>,
 	cuckoo_stop_processing: Mutex<CuckooStopProcessing>,
 	cuckoo_hashes_since_last_call: Mutex<CuckooHashesSinceLastCall>,
+	cuckoo_has_processing_stopped: Mutex<CuckooHasProcessingStopped>,
 	cuckoo_get_stats: Mutex<CuckooGetStats>,
 }
 
@@ -132,6 +136,12 @@ impl PluginLibrary {
 					Mutex::new(*cuckoo_is_queue_under_limit.into_raw())
 				},
 
+				cuckoo_clear_queues: {
+					let cuckoo_clear_queues:libloading::Symbol<CuckooClearQueues> =
+						loaded_library.get(b"cuckoo_clear_queues\0").unwrap();
+					Mutex::new(*cuckoo_clear_queues.into_raw())
+				},
+
 				cuckoo_push_to_input_queue: {
 					let cuckoo_push_to_input_queue:libloading::Symbol<CuckooPushToInputQueue> =
 						loaded_library.get(b"cuckoo_push_to_input_queue\0").unwrap();
@@ -154,6 +164,12 @@ impl PluginLibrary {
 					let cuckoo_stop_processing:libloading::Symbol<CuckooStopProcessing> =
 						loaded_library.get(b"cuckoo_stop_processing\0").unwrap();
 					Mutex::new(*cuckoo_stop_processing.into_raw())
+				},
+
+				cuckoo_has_processing_stopped: {
+					let cuckoo_has_processing_stopped:libloading::Symbol<CuckooHasProcessingStopped> =
+						loaded_library.get(b"cuckoo_has_processing_stopped\0").unwrap();
+					Mutex::new(*cuckoo_has_processing_stopped.into_raw())
 				},
 
 				cuckoo_hashes_since_last_call: {
@@ -208,6 +224,9 @@ impl PluginLibrary {
 		let cuckoo_is_queue_under_limit_ref = self.cuckoo_is_queue_under_limit.lock().unwrap();
 		drop(cuckoo_is_queue_under_limit_ref);
 
+		let cuckoo_clear_queues_ref = self.cuckoo_clear_queues.lock().unwrap();
+		drop(cuckoo_clear_queues_ref);
+
 		let cuckoo_push_to_input_queue_ref = self.cuckoo_push_to_input_queue.lock().unwrap();
 		drop(cuckoo_push_to_input_queue_ref);
 
@@ -219,6 +238,9 @@ impl PluginLibrary {
 
 		let cuckoo_stop_processing_ref = self.cuckoo_stop_processing.lock().unwrap();
 		drop(cuckoo_stop_processing_ref);
+
+		let cuckoo_has_processing_stopped_ref = self.cuckoo_has_processing_stopped.lock().unwrap();
+		drop(cuckoo_has_processing_stopped_ref);
 
 		let cuckoo_hashes_since_last_call_ref = self.cuckoo_hashes_since_last_call.lock().unwrap();
 		drop(cuckoo_hashes_since_last_call_ref);
@@ -565,40 +587,94 @@ impl PluginLibrary {
 	/// #Arguments
 	///
 	/// * `hash` (IN) A block of bytes to use for the seed to the internal
-	/// SIPHASH function
-	/// which generates edge locations in the graph. In practice, this is a
-	/// BLAKE2 hash
-	/// of a Grin blockheader, but from the plugin's perspective this can be
-	/// anything.
+	/// SIPHASH function which generates edge locations in the graph. In 
+	/// practice, this is a BLAKE2 hash of a Grin blockheader, but from the 
+	/// plugin's perspective this can be anything.
 	///
 	/// * `nonce` (IN) The nonce that was used to generate this hash, for
-	/// identification
-	///   purposes in the solution queue
+	/// identification purposes in the solution queue
 	///
 	/// #Returns
 	///
-	/// Ok(1) if the hash was added to the queue, Ok(0) otherwise (if shutting
-	/// down or queue
-	/// is full.
-	/// Otherwise, a
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// with specific detail is returned if an error is encountered.
+	/// 0 if the hash was successfully added to the queue
+	/// 1 if the queue is full
+	/// 2 if the length of the hash is greater than the plugin allows
+	/// 4 if the plugin has been told to shutdown
 	///
+	/// #Unsafe
+	///
+	/// Provided values are copied within the plugin, and will not be
+	/// modified
 	///
 	/// #Example
+	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
 	///
-	/// ```text
-	///  let pl = PluginLibrary::new("/path/to/plugin");
-	///  let (nonce, hash) = self.get_next_hash(&pre_nonce, &post_nonce);
-	///  let nonce_bytes:[u8;8] = unsafe{transmute(nonce.to_be())};
-	///  pl.call_cuckoo_push_to_input_queue(&hash, &nonce_bytes)?;
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  //Processing started after call to cuckoo_start_processing()
+	///  //a test hash of zeroes
+	///  let hash:[u8;32]=[0;32];
+	///  //test nonce (u64, basically) should be unique
+	///  let nonce:[u8;8]=[0;8];
+	///  let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
 	/// ```
 	///
 
-	pub fn call_cuckoo_push_to_input_queue(&self, hash: &[u8], nonce: &[u8]) -> u32 {
+	pub fn call_cuckoo_push_to_input_queue(&self, hash: &[u8], nonce: &[u8;8]) -> u32 {
 		let cuckoo_push_to_input_queue_ref = self.cuckoo_push_to_input_queue.lock().unwrap();
 		unsafe { cuckoo_push_to_input_queue_ref(hash.as_ptr(), hash.len() as u32, nonce.as_ptr()) }
 	}
+
+	/// #Description
+	///
+	/// Clears the queues of all data. Also resets the 'should_quit' flag so queue
+	/// entry can start again.
+	///
+	/// #Arguments
+	///
+	/// * None
+	///
+	/// #Returns
+	///
+	/// * Nothing
+	///
+	/// #Example
+	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
+	///
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  //Processing started after call to cuckoo_start_processing()
+	///  //a test hash of zeroes
+	///  let hash:[u8;32]=[0;32];
+	///  //test nonce (u64, basically) should be unique
+	///  let nonce:[u8;8]=[0;8];
+	///  let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+	///  //clear queues
+	///  pl.call_cuckoo_clear_queues();
+	/// ```
+	///
+
+	pub fn call_cuckoo_clear_queues(&self) {
+		let cuckoo_clear_queues_ref = self.cuckoo_clear_queues.lock().unwrap();
+		unsafe { cuckoo_clear_queues_ref() }
+	}
+
 
 	/// #Description
 	///
@@ -660,8 +736,10 @@ impl PluginLibrary {
 	/// Starts asyncronous processing. The plugin will start reading hashes
 	/// from the input queue, delegate them internally as it sees fit, and
 	/// put solutions into the output queue. It is up to the plugin
-	/// implementation
-	/// to manage how the workload is spread across devices/threads.
+	/// implementation to manage how the workload is spread across 
+	/// devices/threads. Once processing is started, communication with
+	/// the started process happens via reading and writing from the
+	/// input and output queues.
 	///
 	/// #Arguments
 	///
@@ -669,17 +747,29 @@ impl PluginLibrary {
 	///
 	/// #Returns
 	///
-	/// * Ok(1) if processing was successfully started, 0 otherwise (TBD return
-	/// codes)
-	/// with a return code from the plugin.
-	/// Otherwise, a
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// with specific detail is returned if an error is encountered.
+	/// * 1 if processing was successfully started 
+	/// * Another value if procesing failed to start (return codes TBD)
 	///
-	/// #Corresponding C (Unix)
+	/// #Unsafe
 	///
-	/// ```text
-	///  extern "C" int cuckoo_start_processing();
+	/// The caller is reponsible for calling call_cuckoo_stop_processing()
+	/// before exiting its thread, which will signal the internally detached
+	/// thread to stop processing, clean up, and exit.
+	///
+	/// #Example
+	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
+	///
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  let ret_val=pl.call_cuckoo_start_processing();
 	/// ```
 
 	pub fn call_cuckoo_start_processing(&self) -> u32 {
@@ -718,6 +808,48 @@ impl PluginLibrary {
 		let cuckoo_stop_processing_ref = self.cuckoo_stop_processing.lock().unwrap();
 		unsafe { cuckoo_stop_processing_ref() }
 	}
+
+	/// #Description
+	///
+	/// Returns whether all internal processing within the plugin has stopped,
+	/// meaning it's safe to exit the calling thread after a call to 
+	/// cuckoo_stop_processing()
+	/// 
+	/// #Arguments
+	///
+	/// * None
+	///
+	/// #Returns
+	///
+	/// 1 if all internal processing has been stopped.
+	/// 0 if processing activity is still in progress
+	///
+	/// #Example
+	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
+	///
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  let ret_val=pl.call_cuckoo_start_processing();
+	///  //Things happen in between, within a loop
+	///  pl.call_cuckoo_stop_processing();
+	///  while pl.call_cuckoo_has_processing_stopped() == 0 {
+	///     //don't continue/exit thread until plugin is stopped
+	///  }
+	/// ```
+
+	pub fn call_cuckoo_has_processing_stopped(&self) -> u32 {
+		let cuckoo_has_processing_stopped_ref = self.cuckoo_has_processing_stopped.lock().unwrap();
+		unsafe { cuckoo_has_processing_stopped_ref() }
+	}
+
 
 	/// #Description
 	///

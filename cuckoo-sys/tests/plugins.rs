@@ -19,6 +19,7 @@ extern crate cuckoo_sys;
 extern crate error;
 
 use std::path::PathBuf;
+use std::{thread, time};
 
 use error::CuckooMinerError;
 use cuckoo_sys::PluginLibrary;
@@ -339,14 +340,110 @@ fn cuckoo_call_tests(pl: &PluginLibrary){
 	assert!(result==1);
 }
 
-//tests call_cuckoo_get_parameter() on all available plugins
+//tests cuckoo_call() on all available plugins
 #[test]
 fn cuckoo_call(){
-	let iterations = 1;
+	let iterations = 0;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
 		for _ in 0..iterations {
 			cuckoo_call_tests(&p);
+		}
+	}
+}
+
+// Helper to test call_cuckoo_start_processing
+// Starts up queue, lets it spin for a bit, 
+// then shuts it down. Should be no segfaults
+// and everything cleared up cleanly
+
+fn call_cuckoo_start_processing_tests(pl: &PluginLibrary){
+	println!("Plugin: {}", pl.lib_full_path);
+	//Just start processing
+	let ret_val=pl.call_cuckoo_start_processing();
+
+	let wait_time = time::Duration::from_millis(25);
+
+	thread::sleep(wait_time);
+	pl.call_cuckoo_stop_processing();
+
+	//wait for internal processing to finish
+	while pl.call_cuckoo_has_processing_stopped()==0{};
+
+	println!("{}",ret_val);
+	assert!(ret_val==0);
+}
+
+//tests call_cuckoo_start_processing 
+//on all available plugins
+#[test]
+fn call_cuckoo_start_processing(){
+	let iterations = 10;
+	let plugins = load_all_plugins();
+	for p in plugins.into_iter() {
+		for _ in 0..iterations {
+			call_cuckoo_start_processing_tests(&p);
+		}
+	}
+}
+
+// Helper to test call_cuckoo_push_to_input_queue
+
+fn call_cuckoo_push_to_input_queue_tests(pl: &PluginLibrary){
+	println!("Plugin: {}", pl.lib_full_path);
+
+	//hash too long
+	let hash:[u8;42]=[0;42];
+	let nonce:[u8;8]=[0;8];
+	println!("HASH LEN {}", hash.len());
+	let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+	println!("Result: {}",result);
+	assert!(result==2);
+
+	//basic push
+	let hash:[u8;32]=[0;32];
+	let nonce:[u8;8]=[0;8];
+	let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+	assert!(result==0);
+
+	//push until queue is full
+	for i in 0..10000 {
+		let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+		if result==1 {
+			break;
+		}
+		//Should have been full long before now
+		assert!(i!=10000);
+	}
+
+	//should be full
+	let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+	assert!(result==1);
+
+	//only do this on smaller test cuckoo, or we'll be here forever
+	if pl.lib_full_path.contains("16"){
+		pl.call_cuckoo_start_processing();
+		let wait_time = time::Duration::from_millis(100);
+		thread::sleep(wait_time);
+		pl.call_cuckoo_stop_processing();
+		//wait for internal processing to finish
+		while pl.call_cuckoo_has_processing_stopped()==0{};
+	}
+
+	//Clear queues and reset internal 'should_quit' flag
+	pl.call_cuckoo_clear_queues();
+
+}
+
+//tests call_cuckoo_push_to_input_queue
+//on all available plugins
+#[test]
+fn call_cuckoo_push_to_input_queue(){
+	let iterations = 10;
+	let plugins = load_all_plugins();
+	for p in plugins.into_iter() {
+		for _ in 0..iterations {
+			call_cuckoo_push_to_input_queue_tests(&p);
 		}
 	}
 }
