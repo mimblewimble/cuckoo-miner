@@ -45,6 +45,7 @@ type CuckooReadFromOutputQueue = unsafe extern "C" fn(*mut uint32_t, *mut c_ucha
 type CuckooClearQueues = unsafe extern "C" fn();
 type CuckooStartProcessing = unsafe extern "C" fn() -> uint32_t;
 type CuckooStopProcessing = unsafe extern "C" fn() -> uint32_t;
+type CuckooResetProcessing = unsafe extern "C" fn() -> uint32_t;
 type CuckooHashesSinceLastCall = unsafe extern "C" fn() -> uint32_t;
 type CuckooHasProcessingStopped = unsafe extern "C" fn() -> uint32_t;
 type CuckooGetStats = unsafe extern "C" fn(*mut c_uchar, *mut uint32_t) -> uint32_t;
@@ -66,6 +67,7 @@ pub struct PluginLibrary {
 	cuckoo_read_from_output_queue: Mutex<CuckooReadFromOutputQueue>,
 	cuckoo_start_processing: Mutex<CuckooStartProcessing>,
 	cuckoo_stop_processing: Mutex<CuckooStopProcessing>,
+	cuckoo_reset_processing: Mutex<CuckooResetProcessing>,
 	cuckoo_hashes_since_last_call: Mutex<CuckooHashesSinceLastCall>,
 	cuckoo_has_processing_stopped: Mutex<CuckooHasProcessingStopped>,
 	cuckoo_get_stats: Mutex<CuckooGetStats>,
@@ -166,6 +168,12 @@ impl PluginLibrary {
 					Mutex::new(*cuckoo_stop_processing.into_raw())
 				},
 
+				cuckoo_reset_processing: {
+					let cuckoo_reset_processing:libloading::Symbol<CuckooResetProcessing> =
+						loaded_library.get(b"cuckoo_reset_processing\0").unwrap();
+					Mutex::new(*cuckoo_reset_processing.into_raw())
+				},
+
 				cuckoo_has_processing_stopped: {
 					let cuckoo_has_processing_stopped:libloading::Symbol<CuckooHasProcessingStopped> =
 						loaded_library.get(b"cuckoo_has_processing_stopped\0").unwrap();
@@ -238,6 +246,9 @@ impl PluginLibrary {
 
 		let cuckoo_stop_processing_ref = self.cuckoo_stop_processing.lock().unwrap();
 		drop(cuckoo_stop_processing_ref);
+
+		let cuckoo_reset_processing_ref = self.cuckoo_reset_processing.lock().unwrap();
+		drop(cuckoo_reset_processing_ref);
 
 		let cuckoo_has_processing_stopped_ref = self.cuckoo_has_processing_stopped.lock().unwrap();
 		drop(cuckoo_has_processing_stopped_ref);
@@ -635,8 +646,7 @@ impl PluginLibrary {
 
 	/// #Description
 	///
-	/// Clears the queues of all data. Also resets the 'should_quit' flag so queue
-	/// entry can start again.
+	/// Clears internal queues of all hashes.
 	///
 	/// #Arguments
 	///
@@ -679,46 +689,49 @@ impl PluginLibrary {
 	/// #Description
 	///
 	/// Reads the next solution from the output queue, if one exists. Only
-	/// solutions which meet
-	/// the target difficulty specified in the preceeding call to 'notify' will
-	/// be placed in the
-	///  output queue. Read solutions are popped from the queue.
-	/// Does not block, and intended to be called continually as part of a
-	/// mining loop.
+	/// solutions which meet the target difficulty specified in the preceeding 
+	/// call to 'notify' will be placed in the output queue. Read solutions 
+	/// are popped from the queue. Does not block, and intended to be called
+	/// continually as part of a mining loop.
 	///
 	/// #Arguments
 	///
 	/// * `sol_nonces` (OUT) A block of 42 u32s in which the solution nonces
-	/// will be stored,
-	///    if any exist.
+	/// will be stored, if any exist.
 	///
 	/// * `nonce` (OUT) A block of 8 u8s representing a Big-Endian u64, used
-	/// for identification
-	/// purposes so the caller can reconstruct the header used to generate
-	/// the solution
-	///
+	/// for identification purposes so the caller can reconstruct the header 
+	/// used to generate the solution.
 	///
 	/// #Returns
 	///
-	/// Ok(1) if a solution was popped from the queue, Ok(0) if not solution is
-	/// available.
-	/// Otherwise, a
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// with specific detail is returned if an error is encountered.
+	/// 1 if a solution was popped from the queue
+	/// 0 if a solution is not available
 	///
 	/// #Example
+	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
 	///
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
-	/// ```text
-	///     let pl = PluginLibrary::new("/path/to/plugin");
-	///     //.
-	///     //.
-	///     //.
-	///     let mut sol_nonces=[u32;42];
-	///     let mut nonce=[u8;8];  //Initialise this with a u64
-	///     while pl.call_cuckoo_read_from_output_queue(&mut sol_nonces, &mut nonce).unwrap()!=0 {
-	///        ...
-	///     }
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  //Processing started after call to cuckoo_start_processing()
+	///  //a test hash of zeroes
+	///  let hash:[u8;32]=[0;32];
+	///  //test nonce (u64, basically) should be unique
+	///  let nonce:[u8;8]=[0;8];
+	///  let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+	///
+	///  //within loop
+	///  let mut sols:[u32; 42] = [0; 42];
+	///  let mut nonce: [u8; 8] = [0;8];
+	///  let found = pl.call_cuckoo_read_from_output_queue(&mut sols, &mut nonce);
 	/// ```
 	///
 
@@ -780,10 +793,11 @@ impl PluginLibrary {
 	/// #Description
 	///
 	/// Stops asyncronous processing. The plugin should signal to shut down
-	/// processing,
-	/// as quickly as possible, and clean up all threads/devices/memory it may
-	/// have
-	/// allocated. This function should not block
+	/// processing, as quickly as possible, clean up all threads/devices/memory 
+	/// it may have allocated, and clear its queues. Note this merely sets
+	/// a flag indicating that the threads started by 'cuckoo_start_processing'
+	/// should shut down, and will return instantly. Use 'cuckoo_has_processing_stopped'
+	/// to check on the shutdown status.
 	///
 	/// #Arguments
 	///
@@ -791,22 +805,73 @@ impl PluginLibrary {
 	///
 	/// #Returns
 	///
-	/// * Ok(1) if processing was successfully stopped, 0 otherwise (TBD return
-	/// codes)
-	/// with a return code from the plugin.
-	/// Otherwise, a
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// with specific detail is returned if an error is encountered.
+	/// * 1 in all cases, indicating the stop flag was set..
 	///
-	/// #Corresponding C (Unix)
+	/// #Example
+	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
 	///
-	/// ```text
-	///  extern "C" int cuckoo_stop_processing();
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  let mut ret_val=pl.call_cuckoo_start_processing();
+	///  //Send hashes into queue, read results, etc
+	///  ret_val=pl.call_cuckoo_stop_processing();
+	///  while pl.call_cuckoo_has_processing_stopped() == 0 {
+	///     //don't continue/exit thread until plugin is stopped
+	///  }
 	/// ```
 
 	pub fn call_cuckoo_stop_processing(&self) -> u32 {
 		let cuckoo_stop_processing_ref = self.cuckoo_stop_processing.lock().unwrap();
 		unsafe { cuckoo_stop_processing_ref() }
+	}
+
+	/// #Description
+	///
+	/// Resets the internal processing flag so that processing may begin again.
+	///
+	/// #Arguments
+	///
+	/// * None
+	///
+	/// #Returns
+	///
+	/// * 1 in all cases, indicating the stop flag was reset
+	///
+	/// #Example
+	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
+	///
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  let mut ret_val=pl.call_cuckoo_start_processing();
+	///  //Send hashes into queue, read results, etc
+	///  ret_val=pl.call_cuckoo_stop_processing();
+	///  while pl.call_cuckoo_has_processing_stopped() == 0 {
+	///     //don't continue/exit thread until plugin is stopped
+	///  }
+	///  // later on
+	///  pl.call_cuckoo_reset_processing();
+	///  //restart
+	/// ```
+
+	pub fn call_cuckoo_reset_processing(&self) -> u32 {
+		let cuckoo_reset_processing_ref = self.cuckoo_reset_processing.lock().unwrap();
+		unsafe { cuckoo_reset_processing_ref() }
 	}
 
 	/// #Description
@@ -882,7 +947,9 @@ impl PluginLibrary {
 	/// #Description
 	///
 	/// Retrieves a JSON list of the plugin's current stats for all running
-	/// devices. e.g:
+	/// devices. In the case of a plugin running GPUs in parallel, it should
+	/// be a list of running devices. In the case of a CPU plugin, it will
+	/// most likely be a single CPU. e.g:
 	///
 	/// ```text
 	///   [{
@@ -903,31 +970,40 @@ impl PluginLibrary {
 	/// #Arguments
 	///
 	/// * `stat_bytes` (OUT) A reference to a block of [u8] bytes to fill with
-	/// the JSON
-	///    result array
+	/// the JSON result array
 	///
 	/// * `stat_bytes_len` (IN-OUT) When called, this should contain the
-	/// maximum number of bytes
-	/// the plugin should write to `stat_bytes`. Upon return, this is filled
-	/// with the number
-	///    of bytes that were written to `stat_bytes`.
+	/// maximum number of bytes the plugin should write to `stat_bytes`. Upon return, 
+	/// this is filled with the number of bytes that were written to `stat_bytes`.
 	///
 	/// #Returns
 	///
-	/// 0 if the parameter list was retrived, and the result is stored in
-	/// `stat_bytes`
-	/// 3 if the buffer and size given was too small to store the stats
+	/// 0 if okay, with the result is stored in `stat_bytes`
+	/// 3 if the provided array is too short
 	///
 	/// #Example
 	///
-	/// ```text
-	///   let mut stat_bytes:[u8;1024]=[0;1024];
-	///   let mut stat_bytes_len=stat_bytes.len() as u32;
-	///   //get a list of parameters
-	///   let stat_list=call_cuckoo_get_stats(&mut stat_bytes, &mut
-	///   stat_bytes_len);
 	/// ```
+	///  # use cuckoo_sys::PluginLibrary;
+	///  # use std::env;
+	///  # use std::path::PathBuf;
 	///
+	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
+	///
+	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///
+	///  # let plugin_path = d.to_str().unwrap();
+	///
+	///  let pl=PluginLibrary::new(plugin_path).unwrap();
+	///  pl.call_cuckoo_init();
+	///  ///start plugin+processing, and then within the loop:
+	///  let mut stat_bytes:[u8;1024]=[0;1024];
+	///  let mut stat_len=stat_bytes.len() as u32;
+	///  //get a list of json parameters
+	///  let parameter_list=pl.call_cuckoo_get_stats(&mut stat_bytes,
+	///    &mut stat_len);
+	/// ```
 	///
 
 	pub fn call_cuckoo_get_stats(&self, stat_bytes: &mut [u8], stat_bytes_len: &mut u32) -> u32 {

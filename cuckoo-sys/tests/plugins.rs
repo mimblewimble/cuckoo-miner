@@ -20,6 +20,7 @@ extern crate error;
 
 use std::path::PathBuf;
 use std::{thread, time};
+use std::time::Instant;
 
 use error::CuckooMinerError;
 use cuckoo_sys::PluginLibrary;
@@ -35,6 +36,13 @@ const TEST_PLUGIN_LIBS_CORE : [&str;3] = [
 const TEST_PLUGIN_LIBS_OPTIONAL : [&str;1] = [
 	"lean_cuda_30",
 ];
+
+//hashes known to return a solution at cuckoo 30 and 16
+static KNOWN_30_HASH:&str = "11c5059b4d4053131323fdfab6a6509d73ef22\
+9aedc4073d5995c6edced5a3e6";
+
+static KNOWN_16_HASH:&str = "5f16f104018fc651c00a280ba7a8b48db80b30\
+20eed60f393bdcb17d0e646538";
 
 //Helper to convert from hex string
 fn from_hex_string(in_str: &str) -> Vec<u8> {
@@ -56,7 +64,7 @@ fn load_plugin_lib(plugin:&str) -> Result<PluginLibrary, CuckooMinerError> {
 	PluginLibrary::new(d.to_str().unwrap())
 }
 
-//Helper to load all known plugin libraries
+//Helper to load all plugin libraries specified above
 fn load_all_plugins() -> Vec<PluginLibrary>{
 	let mut plugin_libs:Vec<PluginLibrary> = Vec::new();
 	for p in TEST_PLUGIN_LIBS_CORE.into_iter(){
@@ -317,17 +325,12 @@ fn cuckoo_set_parameter(){
 
 fn cuckoo_call_tests(pl: &PluginLibrary){
 	println!("Plugin: {}", pl.lib_full_path);
-	//normal param that should be there
-	let known_30_hash="11c5059b4d4053131323fdfab6a6509d73ef22\
-		9aedc4073d5995c6edced5a3e6";
-	let known_16_hash="5f16f104018fc651c00a280ba7a8b48db80b30\
-		20eed60f393bdcb17d0e646538";
 
-	//The hash above should produce a solution at cuckoo 30
-	let mut header = from_hex_string(known_30_hash);
+	//Known Hash
+	let mut header = from_hex_string(KNOWN_30_HASH);
 	//or 16, if needed
 	if pl.lib_full_path.contains("16") {
-		header = from_hex_string(known_16_hash);
+		header = from_hex_string(KNOWN_16_HASH);
 	}
 
 	let mut solution:[u32; 42] = [0;42];
@@ -336,6 +339,7 @@ fn cuckoo_call_tests(pl: &PluginLibrary){
 	  println!("Solution Found!");
 	} else {
 	  println!("No Solution Found");
+		println!("Header {:?}", header);
 	}
 	assert!(result==1);
 }
@@ -343,7 +347,7 @@ fn cuckoo_call_tests(pl: &PluginLibrary){
 //tests cuckoo_call() on all available plugins
 #[test]
 fn cuckoo_call(){
-	let iterations = 0;
+	let iterations = 1;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
 		for _ in 0..iterations {
@@ -369,6 +373,7 @@ fn call_cuckoo_start_processing_tests(pl: &PluginLibrary){
 
 	//wait for internal processing to finish
 	while pl.call_cuckoo_has_processing_stopped()==0{};
+	pl.call_cuckoo_reset_processing();
 
 	println!("{}",ret_val);
 	assert!(ret_val==0);
@@ -432,7 +437,7 @@ fn call_cuckoo_push_to_input_queue_tests(pl: &PluginLibrary){
 
 	//Clear queues and reset internal 'should_quit' flag
 	pl.call_cuckoo_clear_queues();
-
+	pl.call_cuckoo_reset_processing();
 }
 
 //tests call_cuckoo_push_to_input_queue
@@ -446,4 +451,216 @@ fn call_cuckoo_push_to_input_queue(){
 			call_cuckoo_push_to_input_queue_tests(&p);
 		}
 	}
+}
+
+// Helper to test call_cuckoo_stop_processing
+// basically, when a plugin is told to shut down,
+// it should immediately stop its processing,
+// clean up all alocated memory, and terminate 
+// its processing thread. This will check to ensure each plugin 
+// does so, and does so within a reasonable time frame 
+
+fn call_cuckoo_stop_processing_tests(pl: &PluginLibrary){
+	println!("Plugin: {}", pl.lib_full_path);
+
+	//push anything to input queue
+	let hash:[u8;32]=[0;32];
+	let nonce:[u8;8]=[0;8];
+	let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+	println!("Result: {}", result);
+	assert!(result==0);
+
+	//start processing, which should take non-trivial time
+	//in most cases
+	let ret_val=pl.call_cuckoo_start_processing();
+	assert!(ret_val==0);
+
+	//Give it a bit to start up
+	let wait_time = time::Duration::from_millis(25);
+	thread::sleep(wait_time);
+
+	let start=Instant::now();
+
+	//Now stop
+	pl.call_cuckoo_stop_processing();
+
+	//wait for internal processing to finish
+	while pl.call_cuckoo_has_processing_stopped()==0{};
+	pl.call_cuckoo_reset_processing();
+
+	let elapsed=start.elapsed();
+	let elapsed_ms=(elapsed.as_secs() * 1_000) + (elapsed.subsec_nanos() / 1_000_000) as u64;
+	println!("Shutdown elapsed_ms: {}",elapsed_ms);
+
+	//will give each plugin half a second for now
+	//but give cuda libs a pass for now, as they're hard to stop
+	if !pl.lib_full_path.contains("cuda"){
+		assert!(elapsed_ms<=500);
+	}
+}
+
+//tests call_cuckoo_start_processing 
+//on all available plugins
+#[test]
+fn call_cuckoo_stop_processing(){
+	let iterations = 5;
+	let plugins = load_all_plugins();
+	for p in plugins.into_iter() {
+		for _ in 0..iterations {
+			call_cuckoo_stop_processing_tests(&p);
+		}
+	}
+
+	let pl = load_plugin_lib("lean_cuda_30").unwrap();
+	call_cuckoo_stop_processing_tests(&pl);
+}
+
+// Helper to test call_cuckoo_read_from_output_queue
+// will basically test that each plugin comes back
+// with a known solution in async mode
+
+fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
+	println!("Plugin: {}", pl.lib_full_path);
+
+	//Known Hash
+	let mut header = from_hex_string(KNOWN_30_HASH);
+	//or 16, if needed
+	if pl.lib_full_path.contains("16") {
+		header = from_hex_string(KNOWN_16_HASH);
+	}
+	//Just zero nonce here, for ID
+	let nonce:[u8;8]=[0;8];
+	let result=pl.call_cuckoo_push_to_input_queue(&header, &nonce);
+	println!("Result: {}", result);
+	assert!(result==0);
+
+	//start processing
+	let ret_val=pl.call_cuckoo_start_processing();
+	assert!(ret_val==0);
+	//Record time now, because we don't want to wait forever
+	let start=Instant::now();
+
+	//if 2 minutes has elapsed, there's no solution
+	let max_time_ms=120000;
+
+	let mut sols:[u32; 42] = [0; 42];
+	let mut nonce: [u8; 8] = [0;8];
+	loop {
+		let found = pl.call_cuckoo_read_from_output_queue(&mut sols, &mut nonce);
+		if found == 1 {
+			println!("Found solution");
+			break;
+		}
+		let elapsed=start.elapsed();
+		let elapsed_ms=(elapsed.as_secs() * 1_000) + (elapsed.subsec_nanos() / 1_000_000) as u64;
+		if elapsed_ms > max_time_ms{
+			panic!("Known solution not found");
+		}
+	}
+	
+	//Now stop
+	pl.call_cuckoo_stop_processing();
+
+	//wait for internal processing to finish
+	while pl.call_cuckoo_has_processing_stopped()==0{};
+	pl.call_cuckoo_reset_processing();
+}
+
+//tests call_cuckoo_read_from_output_queue() on all available
+//plugins
+
+#[test]
+fn call_cuckoo_read_from_output_queue(){
+	let iterations = 1;
+	let plugins = load_all_plugins();
+	for p in plugins.into_iter() {
+		for _ in 0..iterations {
+			call_cuckoo_read_from_output_queue_tests(&p);
+		}
+	}
+}
+
+// Helper to test call_cuckoo_get_stats and return results
+// Ensures that all plugins *probably* don't overwrite
+// their buffers as they contain an null zero somewhere 
+// within the rust-enforced length
+
+fn call_cuckoo_get_stats_test(pl: &PluginLibrary){
+	///Test normal value
+	const LENGTH:usize = 1024;
+	let mut stat_bytes:[u8;LENGTH]=[0;LENGTH];
+	let mut stat_bytes_len=stat_bytes.len() as u32;
+	let ret_val=pl.call_cuckoo_get_stats(&mut stat_bytes,
+		&mut stat_bytes_len);
+	let result_list = String::from_utf8(stat_bytes.to_vec()).unwrap();
+	let result_list_null_index = result_list.find('\0');
+	
+	//Check name is less than rust-enforced length,
+	//if there's no \0 the plugin is likely overwriting the buffer
+	println!("Plugin: {}", pl.lib_full_path);
+	assert!(ret_val==0);
+	println!("Stat List: **{}**", result_list);
+	assert!(result_list.len()>0);
+	assert!(result_list_null_index != None);
+	println!("Null Index: {}", result_list_null_index.unwrap());
+
+	//Basic form check... json parsing can be checked higher up
+	assert!(result_list.contains("["));
+	assert!(result_list.contains("]"));
+
+	//Check buffer too small
+	const TOO_SMALL:usize = 50;
+	let mut stat_bytes:[u8;TOO_SMALL]=[0;TOO_SMALL];
+	let mut stat_bytes_len=stat_bytes.len() as u32;
+	let ret_val=pl.call_cuckoo_get_stats(&mut stat_bytes,
+		&mut stat_bytes_len);
+	
+	assert!(ret_val==3);
+
+	//Now start up processing and check values
+	//Known Hash
+	let mut header = from_hex_string(KNOWN_30_HASH);
+	//or 16, if needed
+	if pl.lib_full_path.contains("16") {
+		header = from_hex_string(KNOWN_16_HASH);
+	}
+	//Just zero nonce here, for ID
+	let nonce:[u8;8]=[0;8];
+	let result=pl.call_cuckoo_push_to_input_queue(&header, &nonce);
+	println!("Result: {}", result);
+	assert!(result==0);
+
+	//start processing
+	let ret_val=pl.call_cuckoo_start_processing();
+	assert!(ret_val==0);
+	//Record time now, because we don't want to wait forever
+	let start=Instant::now();
+
+	let wait_time = time::Duration::from_millis(5000);
+	thread::sleep(wait_time);
+
+	let ret_val=pl.call_cuckoo_get_stats(&mut stat_bytes,
+			&mut stat_bytes_len);
+	let result_list = String::from_utf8(stat_bytes.to_vec()).unwrap();
+	//let result_list_null_index = result_list.find('\0');
+	assert!(ret_val==0);
+	
+	println!("Stats after starting: {}", result_list);
+	
+
+}
+
+//tests call_cuckoo_parameter_list() on all available plugins
+#[test]
+fn call_cuckoo_get_stats(){
+	/*let iterations = 100;
+	let plugins = load_all_plugins();
+	for p in plugins.into_iter() {
+		for _ in 0..iterations {
+			call_cuckoo_get_stats_tests(&p);
+		}
+	}*/
+	let pl = load_plugin_lib("lean_cuda_30").unwrap();
+	call_cuckoo_get_stats_test(&pl);
+	panic!();
 }
