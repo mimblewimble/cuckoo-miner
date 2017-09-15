@@ -20,7 +20,9 @@ extern crate error;
 extern crate manager;
 extern crate time;
 
+mod common;
 
+use std::path::PathBuf;
 
 use error::CuckooMinerError;
 use miner::{CuckooMinerConfig, CuckooMinerSolution, CuckooMiner};
@@ -29,18 +31,15 @@ use manager::{CuckooPluginManager, CuckooPluginCapabilities};
 // Helper function, tests a particular miner implementation against a known set
 // that should have a result
 fn mine_for_duration(plugin_filter: &str, duration_in_seconds: i64) {
-
-
-	let pre_header = "00000000000000118e0fe6bcfaa76c6795592339f27b6d330d8f9c4ac8e86171a66357d1\
-    d0fce808000000005971f14f0000000000000000000000000000000000000000000000000000000000000000\
-    3e1fcdd453ce51ffbb16dd200aeb9ef7375aec196e97094868428a7325e4a19b00";
-	let post_header = "010a020364";
+	let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	d.push("../target/debug/plugins/");
 
 	// First, load and query the plugins in the given directory
 	let mut plugin_manager = CuckooPluginManager::new().unwrap();
 	let result = plugin_manager
-		.load_plugin_dir(String::from("target/debug"))
+		.load_plugin_dir(String::from(d.to_str().unwrap()))
 		.expect("");
+
 	// Get a list of installed plugins and capabilities
 	let caps = plugin_manager.get_available_plugins(plugin_filter).unwrap();
 
@@ -48,14 +47,20 @@ fn mine_for_duration(plugin_filter: &str, duration_in_seconds: i64) {
 	config.plugin_full_path = caps[0].full_path.clone();
 
   let mut config_vec=Vec::new();
-	config_vec.push(config);
+	config_vec.push(config.clone());
+
+	let stat_check_interval = 3;
 	let deadline = time::get_time().sec + duration_in_seconds;
+	let mut next_stat_check = time::get_time().sec + stat_check_interval;
 
 	while time::get_time().sec < deadline {
 
+		println!("Test mining indefinitely, looking for difficulty > 0");
+		println!("Loaded from: {}", config.plugin_full_path);
+
 		// these always get consumed after a notify
-		let mut miner = CuckooMiner::new(config_vec).expect("");
-		let job_handle = miner.notify(1, pre_header, post_header, 10).unwrap();
+		let miner = CuckooMiner::new(config_vec.clone()).expect("");
+		let job_handle = miner.notify(1, common::SAMPLE_GRIN_PRE_HEADER_1, common::SAMPLE_GRIN_POST_HEADER_1, 0).unwrap();
 
 		loop {
 			if let Some(s) = job_handle.get_solution() {
@@ -64,21 +69,28 @@ fn mine_for_duration(plugin_filter: &str, duration_in_seconds: i64) {
 				job_handle.stop_jobs();
 				std::thread::sleep(std::time::Duration::from_millis(20));
 				break;
-
 			}
-			if time::get_time().sec < deadline {
+			if time::get_time().sec >= next_stat_check {
+				let stats_vec=job_handle.get_stats(0).unwrap();
+				for s in stats_vec.into_iter() {
+					let last_solution_time_secs = s.last_solution_time as f64 / 1000.0;
+					let last_hashes_per_sec = 1.0 / last_solution_time_secs;
+					println!("Plugin 0 - Device {} ({}) - Last Solution time: {}; Solutions per second: {:.*}", 
+					s.device_id, s.device_name, last_solution_time_secs, 3, last_hashes_per_sec);
+					next_stat_check = time::get_time().sec + stat_check_interval;
+				}
+			}
+			if time::get_time().sec > deadline {
 				println!("Stopping jobs and waiting for cleanup");
 				job_handle.stop_jobs();
 				break;
 			}
-
 		}
 	}
 }
 
 #[test]
 fn mine_async() {
-	mine_for_duration("simple_16", 5);
-	std::thread::sleep(std::time::Duration::from_millis(20));
-	mine_for_duration("edgetrim_16", 5);
+	mine_for_duration("mean_cpu_30", 60); //std::thread::sleep(std::time::Duration::from_millis(20));
+	//mine_for_duration("edgetrim_16", 5);
 }

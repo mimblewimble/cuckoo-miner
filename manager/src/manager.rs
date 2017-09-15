@@ -44,12 +44,7 @@ use error::CuckooMinerError;
 
 // OS-specific library extensions
 
-#[cfg(target_os = "linux")]
-static DLL_SUFFIX: &str = ".so";
-#[cfg(target_os = "macos")]
-static DLL_SUFFIX: &str = ".dylib";
-#[cfg(target_os = "windows")]
-static DLL_SUFFIX: &str = ".dll";
+static DLL_SUFFIX: &str = "cuckooplugin";
 
 // Helper function to get the absolute path from a relative path
 
@@ -322,7 +317,7 @@ impl CuckooPluginManager {
 		let param_list_json = String::from_utf8(param_list_vec)?;
 		caps.parameters = serde_json::from_str(&param_list_json).unwrap();
 
-		library.unload_symbols();
+		library.unload();
 
 		return Ok(caps);
 	}
@@ -337,7 +332,7 @@ impl CuckooPluginManager {
 		plugin_dir: &str,
 	) -> Result<Vec<CuckooPluginCapabilities>, CuckooMinerError> {
 		let lib_full_path = abspath(Path::new(&plugin_dir));
-		let glob_search_path = format!("{}/*cuckoo*{}", lib_full_path, DLL_SUFFIX);
+		let glob_search_path = format!("{}/*.{}", lib_full_path, DLL_SUFFIX);
 
 		let mut result_vec: Vec<CuckooPluginCapabilities> = Vec::new();
 

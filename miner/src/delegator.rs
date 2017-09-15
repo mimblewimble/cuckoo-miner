@@ -36,7 +36,7 @@ use CuckooMinerSolution;
 const MAX_TARGET: [u8; 8] = [0xf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 
 type JobSharedDataType = Arc<RwLock<JobSharedData>>;
-type JobControlDataType = Arc<RwLock<JobControlData>>;
+type JobControlDataType = Arc<RwLock<bool>>;
 type PluginLibrariesDataType = Arc<RwLock<Vec<PluginLibrary>>>;
 
 /// Data intended to be shared across threads
@@ -83,27 +83,6 @@ impl JobSharedData {
 	}
 }
 
-/// An internal structure to flag job control,
-/// stopping mining threads, etc.
-
-pub struct JobControlData {
-	/// Whether the mining job is running
-	pub is_running: bool,
-
-	/// Whether the mining job is in the
-	/// process of shutting down
-	pub is_stopping: bool,
-}
-
-impl Default for JobControlData {
-	fn default() -> JobControlData {
-		JobControlData {
-			is_running: false,
-			is_stopping: false,
-		}
-	}
-}
-
 /// Internal structure which controls and runs processing jobs.
 ///
 ///
@@ -113,7 +92,7 @@ pub struct Delegator {
 	shared_data: JobSharedDataType,
 
 	/// Job control flags which are shared across threads
-	control_data: JobControlDataType,
+	stop_flag: JobControlDataType,
 
 	/// Loaded Plugin Library
 	libraries: PluginLibrariesDataType,
@@ -122,7 +101,7 @@ pub struct Delegator {
 impl Delegator {
 	/// Create a new job delegator
 
-	pub fn new(job_id: u32, pre_nonce: &str, post_nonce: &str, difficulty: u64, librares:Vec<PluginLibrary>) -> Delegator {
+	pub fn new(job_id: u32, pre_nonce: &str, post_nonce: &str, difficulty: u64, libraries:Vec<PluginLibrary>) -> Delegator {
 		Delegator {
 			shared_data: Arc::new(RwLock::new(JobSharedData::new(
 				job_id,
@@ -130,8 +109,8 @@ impl Delegator {
 				post_nonce,
 				difficulty,
 			))),
-			control_data: Arc::new(RwLock::new(JobControlData::default())),
-			libraries: Arc::new(RwLock::new(librares)),
+			stop_flag: Arc::new(RwLock::new(false)),
+			libraries: Arc::new(RwLock::new(libraries)),
 		}
 	}
 
@@ -143,7 +122,7 @@ impl Delegator {
 		// call_cuckoo_stop_processing();
 
 		let shared_data = self.shared_data.clone();
-		let control_data = self.control_data.clone();
+		let stop_flag = self.stop_flag.clone();
 		let jh_library = self.libraries.clone();
 
 		thread::spawn(move || {
@@ -154,7 +133,7 @@ impl Delegator {
 		});
 		Ok(CuckooMinerJobHandle {
 			shared_data: shared_data,
-			control_data: control_data,
+			stop_flag: stop_flag,
 			library: jh_library,
 		})
 	}
@@ -238,11 +217,7 @@ impl Delegator {
 			"Cuckoo-miner: Searching for solution >= difficulty {}",
 			difficulty
 		);
-		{
-			let mut s = self.control_data.write().unwrap();
-			s.is_running = true;
-		}
-
+	
 		for l in self.libraries.read().unwrap().iter() {
 			l.call_cuckoo_start_processing();
 		}
@@ -253,9 +228,11 @@ impl Delegator {
 		loop {
 			// Check if it's time to stop
 
-			let s = self.control_data.read().unwrap();
-			if !s.is_running {
-				break;
+			{
+				let s = self.stop_flag.read().unwrap();
+				if *s {
+					break;
+				}
 			}
 
 			for l in self.libraries.read().unwrap().iter() {
@@ -299,7 +276,11 @@ impl Delegator {
 		for l in self.libraries.read().unwrap().iter() {
 			l.call_cuckoo_stop_processing();
 		}
-		debug!("Cuckoo-Miner: Job loop has exited.");
+		for l in self.libraries.read().unwrap().iter() {
+			//wait for internal processing to finish
+			while l.call_cuckoo_has_processing_stopped()==0{};
+			l.call_cuckoo_reset_processing();
+		}
 		Ok(())
 	}
 }

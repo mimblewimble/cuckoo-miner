@@ -136,7 +136,7 @@ use cuckoo_sys::PluginLibrary;
 
 use error::CuckooMinerError;
 
-use delegator::{Delegator, JobControlData, JobSharedData};
+use delegator::{Delegator, JobSharedData};
 
 // Hardcoded assumption for now that the solution size will be 42 will be
 // maintained, to avoid having to allocate memory within the called C functions
@@ -319,8 +319,8 @@ pub struct CuckooMinerJobHandle {
 	/// Data shared across threads
 	pub shared_data: Arc<RwLock<JobSharedData>>,
 
-	/// Job control flags
-	pub control_data: Arc<RwLock<JobControlData>>,
+	/// Job control flag
+	pub stop_flag: Arc<RwLock<bool>>,
 
 	/// The loaded plugin
 	pub library: Arc<RwLock<Vec<PluginLibrary>>>,
@@ -368,25 +368,9 @@ impl CuckooMinerJobHandle {
 
 	pub fn stop_jobs(&self) {
 		debug!("Stop jobs called");
-		let mut r = self.control_data.write().unwrap();
-		r.is_running = false;
-		debug!("Stop jobs unlocked?");
-	}
-
-	/// #Description
-	///
-	/// Returns the number of hashes processed by the plugin since the last time
-	/// this function was called.
-	///
-	/// #Returns
-	///
-	/// Ok(n) if successful, with n containing the number of hashes processed
-	/// since the last time this function was called.
-	/// A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// with specific detail if an error occurred.
-
-	pub fn get_hashes_since_last_call(&self, plugin_index:usize) -> u32 {
-		return self.library.read().unwrap()[plugin_index].call_cuckoo_hashes_since_last_call();
+		let mut r = self.stop_flag.write().unwrap();
+		*r = true;
+		debug!("Stop jobs flag set");
 	}
 
 	/// #Description
