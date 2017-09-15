@@ -46,7 +46,6 @@ type CuckooClearQueues = unsafe extern "C" fn();
 type CuckooStartProcessing = unsafe extern "C" fn() -> uint32_t;
 type CuckooStopProcessing = unsafe extern "C" fn() -> uint32_t;
 type CuckooResetProcessing = unsafe extern "C" fn() -> uint32_t;
-type CuckooHashesSinceLastCall = unsafe extern "C" fn() -> uint32_t;
 type CuckooHasProcessingStopped = unsafe extern "C" fn() -> uint32_t;
 type CuckooGetStats = unsafe extern "C" fn(*mut c_uchar, *mut uint32_t) -> uint32_t;
 
@@ -68,7 +67,6 @@ pub struct PluginLibrary {
 	cuckoo_start_processing: Mutex<CuckooStartProcessing>,
 	cuckoo_stop_processing: Mutex<CuckooStopProcessing>,
 	cuckoo_reset_processing: Mutex<CuckooResetProcessing>,
-	cuckoo_hashes_since_last_call: Mutex<CuckooHashesSinceLastCall>,
 	cuckoo_has_processing_stopped: Mutex<CuckooHasProcessingStopped>,
 	cuckoo_get_stats: Mutex<CuckooGetStats>,
 }
@@ -180,12 +178,6 @@ impl PluginLibrary {
 					Mutex::new(*cuckoo_has_processing_stopped.into_raw())
 				},
 
-				cuckoo_hashes_since_last_call: {
-					let cuckoo_hashes_since_last_call:libloading::Symbol<CuckooHashesSinceLastCall> =
-						loaded_library.get(b"cuckoo_hashes_since_last_call\0").unwrap();
-					Mutex::new(*cuckoo_hashes_since_last_call.into_raw())
-				},
-
 				cuckoo_get_stats: {
 					let cuckoo_get_stats: libloading::Symbol<CuckooGetStats> =
 						loaded_library.get(b"cuckoo_get_stats\0").unwrap();
@@ -252,9 +244,6 @@ impl PluginLibrary {
 
 		let cuckoo_has_processing_stopped_ref = self.cuckoo_has_processing_stopped.lock().unwrap();
 		drop(cuckoo_has_processing_stopped_ref);
-
-		let cuckoo_hashes_since_last_call_ref = self.cuckoo_hashes_since_last_call.lock().unwrap();
-		drop(cuckoo_hashes_since_last_call_ref);
 
 		let cuckoo_get_stats_ref = self.cuckoo_get_stats.lock().unwrap();
 		drop(cuckoo_get_stats_ref);
@@ -913,35 +902,6 @@ impl PluginLibrary {
 	pub fn call_cuckoo_has_processing_stopped(&self) -> u32 {
 		let cuckoo_has_processing_stopped_ref = self.cuckoo_has_processing_stopped.lock().unwrap();
 		unsafe { cuckoo_has_processing_stopped_ref() }
-	}
-
-
-	/// #Description
-	///
-	/// A simple metric function that returns the number of hashes the plugin
-	/// has processed since this function was last called. It is up to the
-	/// plugin implementation to keep track of this count.
-	///
-	/// #Arguments
-	///
-	/// * None
-	///
-	/// #Returns
-	///
-	/// * Ok(h) with the number of hashes processed since this function was
-	/// last called.
-	/// Otherwise, a
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// with specific detail is returned if an error is encountered.
-	///
-	/// #Corresponding C (Unix)
-	/// ```text
-	///  extern "C" int cuckoo_stop_processing();
-	/// ```
-
-	pub fn call_cuckoo_hashes_since_last_call(&self) -> u32 {
-		let cuckoo_hashes_since_last_call_ref = self.cuckoo_hashes_since_last_call.lock().unwrap();
-		unsafe { cuckoo_hashes_since_last_call_ref() }
 	}
 
 	/// #Description

@@ -27,6 +27,9 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
+#![feature(alloc_system)]
+extern crate alloc_system;
+
 extern crate libloading as libloading;
 extern crate libc;
 extern crate error;

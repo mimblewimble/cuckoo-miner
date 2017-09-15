@@ -511,8 +511,8 @@ fn call_cuckoo_stop_processing(){
 		}
 	}
 
-	let pl = load_plugin_lib("lean_cuda_30").unwrap();
-	call_cuckoo_stop_processing_tests(&pl);
+	/*let pl = load_plugin_lib("lean_cuda_30").unwrap();
+	call_cuckoo_stop_processing_tests(&pl);*/
 }
 
 // Helper to test call_cuckoo_read_from_output_queue
@@ -558,12 +558,13 @@ fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
 		}
 	}
 	
-	//Now stop
+	//now stop
 	pl.call_cuckoo_stop_processing();
 
 	//wait for internal processing to finish
 	while pl.call_cuckoo_has_processing_stopped()==0{};
 	pl.call_cuckoo_reset_processing();
+	
 }
 
 //tests call_cuckoo_read_from_output_queue() on all available
@@ -578,6 +579,8 @@ fn call_cuckoo_read_from_output_queue(){
 			call_cuckoo_read_from_output_queue_tests(&p);
 		}
 	}
+	/*let pl = load_plugin_lib("lean_cuda_30").unwrap();
+	call_cuckoo_read_from_output_queue_tests(&pl);*/
 }
 
 // Helper to test call_cuckoo_get_stats and return results
@@ -609,7 +612,7 @@ fn call_cuckoo_get_stats_test(pl: &PluginLibrary){
 	assert!(result_list.contains("]"));
 
 	//Check buffer too small
-	const TOO_SMALL:usize = 50;
+	const TOO_SMALL:usize = 10;
 	let mut stat_bytes:[u8;TOO_SMALL]=[0;TOO_SMALL];
 	let mut stat_bytes_len=stat_bytes.len() as u32;
 	let ret_val=pl.call_cuckoo_get_stats(&mut stat_bytes,
@@ -633,34 +636,43 @@ fn call_cuckoo_get_stats_test(pl: &PluginLibrary){
 	//start processing
 	let ret_val=pl.call_cuckoo_start_processing();
 	assert!(ret_val==0);
-	//Record time now, because we don't want to wait forever
-	let start=Instant::now();
 
-	let wait_time = time::Duration::from_millis(5000);
+	//Not going to wait around to test values here,
+	//will to that higher up as part of other tests
+	//in the interests of time
+
+	let wait_time = time::Duration::from_millis(2000);
 	thread::sleep(wait_time);
 
+	let mut stat_bytes:[u8;LENGTH]=[0;LENGTH];
+	let mut stat_bytes_len=stat_bytes.len() as u32;
 	let ret_val=pl.call_cuckoo_get_stats(&mut stat_bytes,
 			&mut stat_bytes_len);
+	println!("Ret val: {}", ret_val);
 	let result_list = String::from_utf8(stat_bytes.to_vec()).unwrap();
 	//let result_list_null_index = result_list.find('\0');
 	assert!(ret_val==0);
 	
 	println!("Stats after starting: {}", result_list);
-	
 
+	//now stop
+	pl.call_cuckoo_stop_processing();
+
+	//wait for internal processing to finish
+	while pl.call_cuckoo_has_processing_stopped()==0{};
+	pl.call_cuckoo_reset_processing();
 }
 
 //tests call_cuckoo_parameter_list() on all available plugins
 #[test]
 fn call_cuckoo_get_stats(){
-	/*let iterations = 100;
+	let iterations = 2;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
 		for _ in 0..iterations {
-			call_cuckoo_get_stats_tests(&p);
+			call_cuckoo_get_stats_test(&p);
 		}
-	}*/
-	let pl = load_plugin_lib("lean_cuda_30").unwrap();
-	call_cuckoo_get_stats_test(&pl);
-	panic!();
+	}
+	/*let pl = load_plugin_lib("lean_cpu_30").unwrap();
+	call_cuckoo_get_stats_test(&pl);*/
 }
