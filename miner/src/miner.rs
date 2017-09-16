@@ -136,7 +136,7 @@ use cuckoo_sys::PluginLibrary;
 
 use error::CuckooMinerError;
 
-use delegator::{Delegator, JobSharedData};
+use delegator::{Delegator, JobControlData, JobSharedData};
 
 // Hardcoded assumption for now that the solution size will be 42 will be
 // maintained, to avoid having to allocate memory within the called C functions
@@ -320,7 +320,7 @@ pub struct CuckooMinerJobHandle {
 	pub shared_data: Arc<RwLock<JobSharedData>>,
 
 	/// Job control flag
-	pub stop_flag: Arc<RwLock<bool>>,
+	pub control_data: Arc<RwLock<JobControlData>>,
 
 	/// The loaded plugin
 	pub library: Arc<RwLock<Vec<PluginLibrary>>>,
@@ -359,8 +359,8 @@ impl CuckooMinerJobHandle {
 	/// #Description
 	///
 	/// Stops the current job, and signals for the loaded plugin to stop
-	/// processing
-	/// and perform any cleanup it needs to do.
+	/// processing and perform any cleanup it needs to do. Blocks until
+	/// the jobs have completed
 	///
 	/// #Returns
 	///
@@ -368,9 +368,18 @@ impl CuckooMinerJobHandle {
 
 	pub fn stop_jobs(&self) {
 		debug!("Stop jobs called");
-		let mut r = self.stop_flag.write().unwrap();
-		*r = true;
+		{ 
+			let mut r = self.control_data.write().unwrap();
+			r.stop_flag = true;
+		}
 		debug!("Stop jobs flag set");
+		loop {
+			let r = self.control_data.read().unwrap();
+			if r.has_stopped {
+				break;
+			}
+		}
+		debug!("All jobs have stopped");
 	}
 
 	/// #Description

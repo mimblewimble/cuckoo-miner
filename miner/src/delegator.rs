@@ -36,7 +36,7 @@ use CuckooMinerSolution;
 const MAX_TARGET: [u8; 8] = [0xf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 
 type JobSharedDataType = Arc<RwLock<JobSharedData>>;
-type JobControlDataType = Arc<RwLock<bool>>;
+type JobControlDataType = Arc<RwLock<JobControlData>>;
 type PluginLibrariesDataType = Arc<RwLock<Vec<PluginLibrary>>>;
 
 /// Data intended to be shared across threads
@@ -83,6 +83,25 @@ impl JobSharedData {
 	}
 }
 
+/// an internal structure to flag job control
+
+pub struct JobControlData {
+	/// Whether the mining job is running
+	pub stop_flag: bool,
+
+	/// Whether all plugins have stopped
+	pub has_stopped: bool,
+}
+
+impl Default for JobControlData {
+	fn default() -> JobControlData {
+		JobControlData {
+			stop_flag: false,
+			has_stopped: false,
+		}
+	}
+}
+
 /// Internal structure which controls and runs processing jobs.
 ///
 ///
@@ -92,7 +111,7 @@ pub struct Delegator {
 	shared_data: JobSharedDataType,
 
 	/// Job control flags which are shared across threads
-	stop_flag: JobControlDataType,
+	control_data: JobControlDataType,
 
 	/// Loaded Plugin Library
 	libraries: PluginLibrariesDataType,
@@ -109,7 +128,7 @@ impl Delegator {
 				post_nonce,
 				difficulty,
 			))),
-			stop_flag: Arc::new(RwLock::new(false)),
+			control_data: Arc::new(RwLock::new(JobControlData::default())),
 			libraries: Arc::new(RwLock::new(libraries)),
 		}
 	}
@@ -122,7 +141,7 @@ impl Delegator {
 		// call_cuckoo_stop_processing();
 
 		let shared_data = self.shared_data.clone();
-		let stop_flag = self.stop_flag.clone();
+		let control_data = self.control_data.clone();
 		let jh_library = self.libraries.clone();
 
 		thread::spawn(move || {
@@ -133,7 +152,7 @@ impl Delegator {
 		});
 		Ok(CuckooMinerJobHandle {
 			shared_data: shared_data,
-			stop_flag: stop_flag,
+			control_data: control_data,
 			library: jh_library,
 		})
 	}
@@ -227,14 +246,12 @@ impl Delegator {
 
 		loop {
 			// Check if it's time to stop
-
 			{
-				let s = self.stop_flag.read().unwrap();
-				if *s {
+				let s = self.control_data.read().unwrap();
+				if s.stop_flag {
 					break;
 				}
 			}
-
 			for l in self.libraries.read().unwrap().iter() {
 				while l.call_cuckoo_is_queue_under_limit() == 1 {
 					let (nonce, hash) = self.get_next_hash(&pre_nonce, &post_nonce);
@@ -272,7 +289,6 @@ impl Delegator {
 		}
 
 		// Do any cleanup
-		debug!("Telling job thread to stop... ");
 		for l in self.libraries.read().unwrap().iter() {
 			l.call_cuckoo_stop_processing();
 		}
@@ -281,6 +297,8 @@ impl Delegator {
 			while l.call_cuckoo_has_processing_stopped()==0{};
 			l.call_cuckoo_reset_processing();
 		}
+		let mut s = self.control_data.write().unwrap();
+		s.has_stopped=true;
 		Ok(())
 	}
 }

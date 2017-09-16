@@ -463,20 +463,23 @@ fn call_cuckoo_push_to_input_queue(){
 fn call_cuckoo_stop_processing_tests(pl: &PluginLibrary){
 	println!("Plugin: {}", pl.lib_full_path);
 
-	//push anything to input queue
-	let hash:[u8;32]=[0;32];
-	let nonce:[u8;8]=[0;8];
-	let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
-	println!("Result: {}", result);
-	assert!(result==0);
-
 	//start processing, which should take non-trivial time
 	//in most cases
 	let ret_val=pl.call_cuckoo_start_processing();
 	assert!(ret_val==0);
 
-	//Give it a bit to start up
-	let wait_time = time::Duration::from_millis(25);
+	//push anything to input queue
+	let mut hash:[u8;32]=[0;32];
+	let nonce:[u8;8]=[0;8];
+	//push a few hashes into the queue
+	for i in 0..100 {
+		hash[0]=i;
+		let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+		assert!(result==0);
+	}
+
+	//Give it a bit to start up and process a bit
+	let wait_time = time::Duration::from_millis(15000);
 	thread::sleep(wait_time);
 
 	let start=Instant::now();
@@ -499,20 +502,20 @@ fn call_cuckoo_stop_processing_tests(pl: &PluginLibrary){
 	}
 }
 
-//tests call_cuckoo_start_processing 
+//tests call_cuckoo_stop_processing
 //on all available plugins
 #[test]
 fn call_cuckoo_stop_processing(){
-	let iterations = 5;
-	let plugins = load_all_plugins();
+	let iterations = 1;
+	/*let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
 		for _ in 0..iterations {
 			call_cuckoo_stop_processing_tests(&p);
 		}
-	}
+	}*/
 
-	/*let pl = load_plugin_lib("lean_cuda_30").unwrap();
-	call_cuckoo_stop_processing_tests(&pl);*/
+	let pl = load_plugin_lib("lean_cuda_30").unwrap();
+	call_cuckoo_stop_processing_tests(&pl);
 }
 
 // Helper to test call_cuckoo_read_from_output_queue
