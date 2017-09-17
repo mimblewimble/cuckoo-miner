@@ -29,13 +29,13 @@ use miner::{CuckooMinerConfig, CuckooMinerSolution, CuckooMiner};
 use manager::{CuckooPluginManager, CuckooPluginCapabilities};
 
 // Helper function, tests a particular miner implementation against a known set
-// that should have a result
-fn mine_for_duration(full_path: &str, duration_in_seconds: i64) {
-	let mut config = CuckooMinerConfig::new();
-	config.plugin_full_path = String::from(full_path);
-
-  let mut config_vec=Vec::new();
-	config_vec.push(config.clone());
+fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
+	let mut config_vec=Vec::new();
+	for p in full_paths.into_iter() {
+		let mut config = CuckooMinerConfig::new();
+		config.plugin_full_path = String::from(p);
+		config_vec.push(config);
+	}
 
 	let stat_check_interval = 3;
 	let deadline = time::get_time().sec + duration_in_seconds;
@@ -44,8 +44,12 @@ fn mine_for_duration(full_path: &str, duration_in_seconds: i64) {
 
 	while time::get_time().sec < deadline {
 
-		println!("Test mining indefinitely, looking for difficulty > 0");
-		println!("Loaded from: {}", config.plugin_full_path);
+		println!("Test mining for {} seconds, looking for difficulty > 0", duration_in_seconds);
+		let mut i=0;
+		for c in config_vec.clone().into_iter(){
+			println!("Plugin {}: {}", i, c.plugin_full_path);
+			i+=1;
+		}
 
 		// these always get consumed after a notify
 		let miner = CuckooMiner::new(config_vec.clone()).expect("");
@@ -58,17 +62,25 @@ fn mine_for_duration(full_path: &str, duration_in_seconds: i64) {
 				continue;
 			}
 			if time::get_time().sec >= next_stat_check {
-				let stats_vec=job_handle.get_stats(0).unwrap();
-				for s in stats_vec.into_iter() {
-					let last_solution_time_secs = s.last_solution_time as f64 / 1000.0;
-					let last_hashes_per_sec = 1.0 / last_solution_time_secs;
-					println!("Plugin 0 - Device {} ({}) - Last Solution time: {}; Solutions per second: {:.*}", 
-					s.device_id, s.device_name, last_solution_time_secs, 3, last_hashes_per_sec);
-					next_stat_check = time::get_time().sec + stat_check_interval;
-					if last_solution_time_secs > 0.0 {
-						stats_updated = true;
+				let mut sps_total=0.0;
+				for index in 0..config_vec.len() {
+					let stats_vec=job_handle.get_stats(index).unwrap();
+					for s in stats_vec.into_iter() {
+						let last_solution_time_secs = s.last_solution_time as f64 / 1000.0;
+						let last_hashes_per_sec = 1.0 / last_solution_time_secs;
+						println!("Plugin {} - Device {} ({}) - Last Solution time: {}; Solutions per second: {:.*}", 
+						index,s.device_id, s.device_name, last_solution_time_secs, 3, last_hashes_per_sec);
+						if last_hashes_per_sec.is_finite() {
+							sps_total+=last_hashes_per_sec;
+						}
+						if last_solution_time_secs > 0.0 {
+							stats_updated = true;
+						}
+						i+=1;
 					}
 				}
+				println!("Total solutions per second: {}", sps_total);
+				next_stat_check = time::get_time().sec + stat_check_interval;
 			}
 			if time::get_time().sec > deadline {
 				println!("Stopping jobs and waiting for cleanup");
@@ -80,22 +92,38 @@ fn mine_for_duration(full_path: &str, duration_in_seconds: i64) {
 	assert!(stats_updated==true);
 }
 
+//mines for a bit on each available plugin, one after the other
 #[test]
-fn mine_async() {
-	let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	d.push("../target/debug/plugins/");
-
-	// get all plugins in directory
-	let mut plugin_manager = CuckooPluginManager::new().unwrap();
-	let result = plugin_manager
-		.load_plugin_dir(String::from(d.to_str().unwrap()))
-		.expect("");
-
-	// Get a list of installed plugins and capabilities
-	let caps = plugin_manager.get_available_plugins("mean_cpu").unwrap();
-
+fn on_commit_mine_single_plugin_async() {
+	let caps = common::get_plugin_vec("");
 	for c in &caps {
-		mine_for_duration(&c.full_path, 75); //std::thread::sleep(std::time::Duration::from_millis(20));
+	 let mut plugin_path_vec:Vec<&str> = Vec::new();
+		plugin_path_vec.push(&c.full_path);
+		mine_async_for_duration(plugin_path_vec, 75); 
 	}
+}
 
+//Same as above, but only for cuda
+#[test]
+fn on_cuda_commit_mine_single_plugin_async() {
+	let caps = common::get_plugin_vec("cuda");
+	for c in &caps {
+	 let mut plugin_path_vec:Vec<&str> = Vec::new();
+		plugin_path_vec.push(&c.full_path);
+		mine_async_for_duration(plugin_path_vec, 75); 
+	}
+}
+
+//Mines for a bit on all available plugins at once
+//(won't be efficient, but should stress-tes plugins nicely)
+#[test]
+fn on_commit_mine_all_plugins_async() {
+	// Get a list of installed plugins and capabilities
+	// only do cuckoo 30s
+	let caps = common::get_plugin_vec("30");
+	let mut plugin_path_vec:Vec<&str> = Vec::new();
+	for c in &caps {
+		plugin_path_vec.push(&c.full_path);
+	}
+	mine_async_for_duration(plugin_path_vec, 75); 
 }

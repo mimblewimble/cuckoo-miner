@@ -14,27 +14,24 @@
 
 //! Main interface for callers into cuckoo-miner. Provides functionality
 //! to load a mining plugin, send it a Cuckoo Cycle POW problem, and
-//! return any result solutions that may be found.
+//! return any resulting solutions.
 //!
-//! The miner can be run in one of two modes, syncronous and async modes.
+//! The miner can be run in either syncronous or asynchronous mode
 //!
-//! Syncronous mode uses the 'mine' function, and takes a complete hash,
-//! processes it via the plugin's 'call_cuckoo' function, and returns the
-//! result.
+//! Syncronous mode uses the `mine` function,, which takes a complete hash,
+//! processes it within the calling thread via the plugin's `call_cuckoo` function, 
+//! and returns the result.
 //!
-//! Async or queued mode uses the 'notify' function, and takes pre-nonce and
-//! post-nonce
-//! parts of the header, and mutates it internally, sending potential solutions
-//! hashes
-//! into the plugin's internal queue for processing. Solutions are placed into
-//! an
-//! output queue, which the calling thread can read ascynronously via a job
-//! handle.
+//! Asynchronous mode uses the `notify` function, which takes the pre-nonce and
+//! post-nonce parts of a block header, mutates it internally with a nonce, and
+//! inserts the resulting hash into the plugin's internal queue for processing.
+//! Solutions are placed into an output queue, which the calling thread can 
+//! read ascynronously via a job handle.
 //!
 //! Examples of using either mode follow:
 //!
 //! #Example - Sync mode
-//! ```
+//! ```text
 //!  let mut config = CuckooMinerConfig::new();
 //!  config.plugin_full_path = caps[0].full_path.clone();
 //!
@@ -64,7 +61,7 @@
 //! ```
 //!
 //! #Example - Async mode
-//! ```
+//! ```text
 //!  let mut config = CuckooMinerConfig::new();
 //!  config.plugin_full_path = caps[0].full_path.clone();
 //!
@@ -584,8 +581,32 @@ impl CuckooMiner {
 			0 => Ok(false),
 			_ => Err(CuckooMinerError::UnexpectedResultError(result)),
 		}
+	}
 
+	pub fn get_stats(&self, plugin_index:usize) -> Result<Vec<CuckooMinerDeviceStats>, CuckooMinerError> {
+		let mut stats_bytes: [u8; 2048] = [0; 2048];
+		let mut stats_bytes_len = stats_bytes.len() as u32;
+		// get a list of parameters
+		self.libraries[plugin_index].call_cuckoo_get_stats(
+			&mut stats_bytes,
+			&mut stats_bytes_len,
+		);
+		let mut stats_vec: Vec<u8> = Vec::new();
+		// result contains null zero
+		for i in 0..stats_bytes_len {
+			stats_vec.push(stats_bytes[i as usize].clone());
+		}
+		let stats_json = String::from_utf8(stats_vec)?;
+		// println!("Stats_json: {}", stats_json);
 
+		let result = serde_json::from_str(&stats_json);
+		if let Ok(r) = result {
+			return Ok(r);
+		} else {
+			return Err(CuckooMinerError::StatsError(
+				String::from("Error retrieving stats from plugin"),
+			));
+		}
 	}
 
 	/// #Description

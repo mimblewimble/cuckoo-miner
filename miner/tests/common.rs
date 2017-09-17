@@ -15,6 +15,14 @@
 
 //! Common values and functions that can be used in all mining tests
 
+extern crate error;
+extern crate manager;
+
+use std::path::PathBuf;
+
+use error::CuckooMinerError;
+use manager::{CuckooPluginManager, CuckooPluginCapabilities};
+
 //Helper to convert from hex string
 //avoids a lot of awkward byte array initialisation below
 pub fn from_hex_string(in_str: &str) -> Vec<u8> {
@@ -57,5 +65,18 @@ pub const KNOWN_16_HASH_1:&str = "5f16f104018fc651c00a280ba7a8b48db80b30\
 20eed60f393bdcb17d0e646538";
 
 
+// Helper to load plugins
+pub fn get_plugin_vec(filter: &str) -> Vec<CuckooPluginCapabilities>{
+	let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	d.push("../target/debug/plugins/");
 
+	// get all plugins in directory
+	let mut plugin_manager = CuckooPluginManager::new().unwrap();
+	plugin_manager
+		.load_plugin_dir(String::from(d.to_str().unwrap()))
+		.expect("");
+
+	// Get a list of installed plugins and capabilities
+	plugin_manager.get_available_plugins(filter).unwrap()
+}
 
