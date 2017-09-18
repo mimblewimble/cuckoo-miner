@@ -2,23 +2,34 @@
 name = "cuckoo_miner"
 version = "0.1.0"
 authors = ["yeastplume"]
-
-[workspace]
-members = ["miner", "error", "manager", "cuckoo-sys"]
+license = "MIT/Apache-2.0/BSD-3-Clause"
+description = "Rust bindings to John Tromp's Cuckoo Cycle Implementations"
+readme = "README.md"
+build = "src/build.rs"
 
 [dependencies]
-miner = { path = "miner", version="0.1.0" }
-error = { path = "error", version="0.1.0" }
-manager = { path = "manager", version="0.1.0" }
 time = "^0.1"
+env_logger="^0.3.5"
+rust-crypto = "0.2.36"
+log = "^0.3"
+rand = "^0.3"
+byteorder = "^0.5"
+blake2-rfc = "~0.2.17"
+regex = "~0.2.2"
+glob = "0.2.11"
+serde = "~1.0.8"
+serde_derive = "~1.0.8"
+serde_json = "~1.0.2"
+libc = "0.2.24"
+libloading = "0.4.1"
 
 [dev-dependencies]
-rust-crypto = "0.2.36"
-blake2-rfc = "~0.2.17"
+const-cstr = "0.2"
+
+[build-dependencies]
+cmake = "0.1.24"
+fs_extra = "1.0.0"
 
 [[bin]]
 name = "cuckoo_miner_test"
 path = "src/main.rs"
-
-
-

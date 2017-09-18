@@ -15,15 +15,13 @@
 //! Testing/Sample app using the cuckoo_miner lib
 //!
 
-extern crate miner;
-extern crate error;
-extern crate manager;
+extern crate cuckoo_miner as cuckoo;
 extern crate time;
 use std::thread;
 
 
-use miner::{CuckooMiner, CuckooMinerConfig};
-use manager::CuckooPluginManager;
+use cuckoo::{CuckooMiner, CuckooMinerConfig};
+use cuckoo::CuckooPluginManager;
 
 /*static KNOWN_SEED_16:[u8;32] = [0xd9, 0x93, 0xac, 0x4a, 0xe3, 0xc7, 0xf9, 0xeb, 
                                 0x34, 0xb2, 0x2e, 0x86, 0x85, 0x25, 0x64, 0xa9,

@@ -188,13 +188,36 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
-extern crate error;
-extern crate miner;
-extern crate manager;
+#[macro_use]
+extern crate log;
+extern crate env_logger;
 
-pub use error::CuckooMinerError;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 
-pub use miner::{CuckooMinerConfig, CuckooMiner, CuckooMinerSolution, CuckooMinerJobHandle,
+extern crate regex;
+extern crate rand;
+extern crate byteorder;
+extern crate crypto;
+extern crate blake2_rfc as blake2;
+
+extern crate libloading as libloading;
+extern crate libc;
+
+extern crate glob;
+
+mod error;
+mod miner;
+mod manager;
+mod cuckoo_sys;
+
+pub use error::error::CuckooMinerError;
+
+pub use miner::miner::{CuckooMinerConfig, CuckooMiner, CuckooMinerSolution, CuckooMinerJobHandle,
                 CuckooMinerDeviceStats};
 
-pub use manager::{CuckooPluginManager, CuckooPluginCapabilities};
+pub use manager::manager::{CuckooPluginManager, CuckooPluginCapabilities};
+
+pub use cuckoo_sys::manager::PluginLibrary;
