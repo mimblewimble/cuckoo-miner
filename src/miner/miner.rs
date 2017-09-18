@@ -39,7 +39,7 @@ const CUCKOO_SOLUTION_SIZE: usize = 42;
 /// it's assumed that a solution will be 42 bytes. The `solution_nonces`
 /// member is statically allocated here, and will be filled in
 /// by a plugin upon finding a solution.
-///
+
 #[derive(Copy)]
 pub struct CuckooMinerSolution {
 	/// An array allocated in rust that will be filled
@@ -219,6 +219,7 @@ pub struct CuckooMinerJobHandle {
 }
 
 impl CuckooMinerJobHandle {
+
 	/// #Description
 	///
 	/// Returns a solution if one is currently waiting.
@@ -227,8 +228,9 @@ impl CuckooMinerJobHandle {
 	///
 	/// If a solution was found and is waiting in the plugin's input queue,
 	/// returns
-	/// Ok([CuckooMinerSolution](struct.CuckooMinerSolution.html)). If there
-	/// no solution waiting, returns None
+	/// * Ok([CuckooMinerSolution](struct.CuckooMinerSolution.html)) if a
+	/// solution is waiting in the queue. 
+	/// * None if no solution is waiting
 
 	pub fn get_solution(&self) -> Option<CuckooMinerSolution> {
 		// just to prevent endless needless locking of this
@@ -276,15 +278,17 @@ impl CuckooMinerJobHandle {
 
 	/// #Description
 	///
-	/// Returns the number of hashes processed by the plugin since the last time
-	/// this function was called.
+	/// Returns an vector of [CuckooMinerDeviceStats](struct.CuckooMinerDeviceStats.html)
+	/// which will contain information about every device currently mining within the plugin.
+	/// In CPU based plugins, this will generally only contain the CPU device, but in plugins
+	/// that access multiple devices (such as cuda) the vector will contain information for
+	/// each currently engaged device. 
 	///
 	/// #Returns
 	///
-	/// Ok(n) if successful, with n containing the number of hashes processed
-	/// since the last time this function was called.
-	/// A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// with specific detail if an error occurred.
+	/// * Ok([CuckooMinerDeviceStats](struct.CuckooMinerDeviceStats.html)) if successful
+	/// * A [CuckooMinerError](enum.CuckooMinerError.html) with specific detail if an
+	/// error occurred
 
 	pub fn get_stats(&self, plugin_index:usize) -> Result<Vec<CuckooMinerDeviceStats>, CuckooMinerError> {
 		let mut stats_bytes: [u8; 2048] = [0; 2048];
@@ -315,7 +319,6 @@ impl CuckooMinerJobHandle {
 
 /// An instance of a miner, which loads a cuckoo-miner plugin
 /// and calls its mine function according to the provided configuration
-///
 
 pub struct CuckooMiner {
 	/// The internal Configuration objects, one for each loaded plugin
@@ -335,21 +338,18 @@ impl CuckooMiner {
 	///
 	/// #Arguments
 	///
-	/// * `config` an instance of
-	/// [CuckooMinerConfig](struct.CuckooMinerConfig.html), that
-	/// must be filled with the full path name of a valid mining plugin. It may
-	/// also contain
-	/// values in its `parameter_list` field, which will be automatically set
-	/// in the plugin
+	/// * `configs` an vector of
+	/// [CuckooMinerConfigs](struct.CuckooMinerConfig.html), one for each plugin
+	/// that is to be loaded and run, and each of which contains
+	/// the full path name of a valid mining plugin. Each config struct may
+	/// also contain values in its `parameter_list` field, which will be automatically set
+	/// in the specified plugin. 
 	///
 	/// #Returns
 	///
-	/// If successful, Ok() is returned and the specified plugin has been
-	/// loaded internally.
-	/// Otherwise a
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// with specific detail is returned.
-	///
+	/// * `Ok()` if successful, and the specified plugin has been loaded internally.
+	/// * Otherwise a [CuckooMinerError](enum.CuckooMinerError.html)
+	/// with specific detail
 
 	pub fn new(configs: Vec<CuckooMinerConfig>) -> Result<CuckooMiner, CuckooMinerError> {
 		CuckooMiner::init(configs)
@@ -378,7 +378,7 @@ impl CuckooMiner {
 
 	/// #Description
 	///
-	/// Sets a parameter in the currently loaded plugin
+	/// Sets a parameter in the loaded plugin
 	///
 	/// #Arguments
 	///
@@ -388,9 +388,9 @@ impl CuckooMiner {
 	///
 	/// #Returns
 	///
-	/// If successful, Ok() is returned and the parameter has been set.
-	/// Otherwise a
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
+	/// *`Ok()` if successful and the parameter has been set.
+	/// * Otherwise a
+	/// [CuckooMinerError](enum.CuckooMinerError.html)
 	/// with specific detail is returned.
 	///
 
@@ -420,13 +420,11 @@ impl CuckooMiner {
 	/// #Description
 	///
 	/// Synchronous call to the cuckoo_call function of the currently loaded
-	/// plugin, which
-	/// will perform
+	/// plugin, which will perform
 	/// a Cuckoo Cycle on the given seed, filling the first solution (a length
-	/// 42 cycle)
-	/// that is found in the provided
+	/// 42 cycle) that is found in the provided
 	/// [CuckooMinerSolution](struct.CuckooMinerSolution.html) structure.
-	/// The implementation details are dependent on particular loaded plugin.
+	/// The implementation details are dependent on the particular loaded plugin.
 	/// Values provided
 	/// to the loaded plugin are contained in the internal
 	/// [CuckooMinerConfig](struct.CuckooMinerConfig.html)
@@ -438,14 +436,12 @@ impl CuckooMiner {
 	/// internal SIPHASH function which generates edge locations in the
 	/// graph. In practice,
 	/// this is a SHA3 hash of a Grin blockheader, but from the plugin's
-	/// perspective this
-	///    can be anything.
+	/// perspective this can be anything.
 	///
 	/// * `solution` (OUT) An empty
 	/// [CuckooMinerSolution](struct.CuckooMinerSolution.html).
 	/// If a solution is found, this structure will contain a list of
-	/// solution nonces,
-	///    otherwise, it will remain untouched.
+	/// solution nonces, otherwise, it will remain untouched.
 	///
 	/// #Returns
 	///
@@ -453,10 +449,8 @@ impl CuckooMiner {
 	/// contained within
 	/// the provided [CuckooMinerSolution](struct.CuckooMinerSolution.html).
 	/// * Ok(false) if no solution is found and `solution` remains untouched.
-	/// * A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// if there is no plugin loaded, or if there is an error calling the
-	/// function.
-	///
+	/// * A [CuckooMinerError](enum.CuckooMinerError.html)
+	/// if there is an error calling the function.
 
 	pub fn mine(
 		&self,
@@ -477,6 +471,19 @@ impl CuckooMiner {
 			_ => Err(CuckooMinerError::UnexpectedResultError(result)),
 		}
 	}
+
+	/// #Description
+	///
+	/// Returns an vector of [CuckooMinerDeviceStats](struct.CuckooMinerDeviceStats.html)
+	/// which will contain information about every device currently mining within the plugin.
+	/// When called in syncronous mode, this wil only ever return a vector with a single value
+	/// containing stats on the currently running device. 
+	///
+	/// #Returns
+	///
+	/// * Ok([CuckooMinerDeviceStats](struct.CuckooMinerDeviceStats.html)) if successful
+	/// * A [CuckooMinerError](enum.CuckooMinerError.html) with specific detail if an
+	/// error occurred
 
 	pub fn get_stats(&self, plugin_index:usize) -> Result<Vec<CuckooMinerDeviceStats>, CuckooMinerError> {
 		let mut stats_bytes: [u8; 2048] = [0; 2048];
@@ -506,7 +513,7 @@ impl CuckooMiner {
 
 	/// #Description
 	///
-	/// An asynchronous stratum-esque version of the plugin miner, which takes
+	/// An asynchronous -esque version of the plugin miner, which takes
 	/// parts of the header and the target difficulty as input, and begins
 	/// asyncronous processing to find a solution. The loaded plugin is
 	/// responsible
@@ -543,10 +550,9 @@ impl CuckooMiner {
 	/// * Ok([CuckooMinerJobHandle](struct.CuckooMinerJobHandle.html)) if the
 	/// job
 	/// is successfully started.
-	/// * A [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
+	/// * A [CuckooMinerError](enum.CuckooMinerError.html)
 	/// if there is no plugin loaded, or if there is an error calling the
 	/// function.
-	///
 
 	pub fn notify(
 		mut self,

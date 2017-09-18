@@ -136,7 +136,7 @@ impl Delegator {
 	/// Starts the job loop, and initialises the internal plugin
 
 	pub fn start_job_loop(self) -> Result<CuckooMinerJobHandle, CuckooMinerError> {
-	env_logger::init();
+	env_logger::init().unwrap();
 		// this will block, waiting until previous job is cleared
 		// call_cuckoo_stop_processing();
 

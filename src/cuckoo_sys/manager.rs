@@ -17,6 +17,11 @@
 //! be using the high level interfaces found in the config, manager, and
 //! miner modules. These functions are meant for internal cuckoo-miner crates,
 //! and will not be exposed to other projects including the cuckoo-miner crate.
+//!
+//! Note that plugins are shared libraries, not objects. You can have multiple
+//! instances of a PluginLibrary, but all of them will reference the same
+//! loaded code. Plugins aren't threadsafe, so only one thread should ever
+//! be calling a particular plugin at a time.
 
 use std::sync::Mutex;
 
@@ -52,6 +57,7 @@ type CuckooGetStats = unsafe extern "C" fn(*mut c_uchar, *mut uint32_t) -> uint3
 /// Struct to hold instances of loaded plugins
 
 pub struct PluginLibrary {
+	//The full file path to the plugin loaded by this instance
 	pub lib_full_path: String,
 	loaded_library: Mutex<libloading::Library>,
 	cuckoo_init: Mutex<CuckooInit>,
@@ -72,6 +78,8 @@ pub struct PluginLibrary {
 }
 
 impl PluginLibrary {
+	//Loads the library at the specified path
+
 	pub fn new(lib_full_path: &str) -> Result<PluginLibrary, CuckooMinerError> {
 		debug!("Loading miner plugin: {}", &lib_full_path);
 

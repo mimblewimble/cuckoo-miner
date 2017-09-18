@@ -14,20 +14,26 @@
 
 //! Main interface for the cuckoo_miner plugin manager, which queries
 //! all available plugins in a particular directory and returns their
-//! descriptions, parameters, and capabilities
+//! descriptions, parameters, and capabilities.
 //!
 //! #Example
 //! ```
-//!  let mut plugin_manager = CuckooPluginManager::new().unwrap();
-//! let result=plugin_manager.load_plugin_dir(String::from("target/debug")).
-//! expect("");
-//!  //Get a list of installed plugins and capabilities
-//!  let caps = plugin_manager.get_available_plugins("").unwrap();
+//! extern crate cuckoo_miner as cuckoo;
+//! use std::path::PathBuf;
+//! let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+//! d.push("target/debug/plugins/");
 //!
-//!  //Print all available plugins
-//!  for c in &caps {
-//!     println!("Found plugin: [{}]", c);
-//!  }
+//! // load plugin manager
+//! let mut plugin_manager = cuckoo::CuckooPluginManager::new().unwrap();
+//! plugin_manager
+//! 	.load_plugin_dir(String::from(d.to_str().unwrap()))
+//! 	.expect("");
+//!
+//!	let caps = plugin_manager.get_available_plugins("").unwrap();
+//! //Print all available plugins
+//! for c in &caps {
+//!    println!("Found plugin: [{}]", c);
+//! }
 /// ```
 
 use std::fmt;
@@ -102,8 +108,7 @@ impl fmt::Display for CuckooPluginCapabilities {
 
 /// Holds a set of plugin parameter descriptions returned from a plugin
 /// as deserialised from json
-///
-///
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CuckooPluginParameter {
 	/// The name of the parameter
@@ -123,9 +128,8 @@ pub struct CuckooPluginParameter {
 }
 
 /// A structure that loads and queries all of the plugins in a particular
-/// directory via their
-/// cuckoo_description function
-///
+/// directory via their [`cuckoo_description`]
+/// (struct.PluginLibrary.html#method.call_cuckoo_description) method
 
 pub struct CuckooPluginManager {
 	// The current directory
@@ -158,8 +162,8 @@ impl CuckooPluginManager {
 	///
 	/// #Returns
 	///
-	/// Ok if successful a
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
+	/// * `Ok` if successful 
+	/// * a [CuckooMinerError](enum.CuckooMinerError.html)
 	/// with specific detail if an error is encountered.
 	///
 
@@ -172,10 +176,8 @@ impl CuckooPluginManager {
 	/// Loads all available plugins in the specified directory one by one,
 	/// calls their cuckoo_description functions, and stores an internal vector
 	/// of [CuckooPluginCapabilities](struct.CuckooPluginCapabilities.html)
-	/// representing the currently
-	/// installed plugins on the system. This will parse any dll
-	/// with the name 'cuckoo' in it, with suffix depending on the host os
-	/// (.so on unix, .dylib on mac, .dll on windows(not implemented as of yet))
+	/// representing the plugins in the directory. This will parse any file
+	/// with the extension `.cuckooplugin`.
 	///
 	/// #Arguments
 	///
@@ -185,10 +187,9 @@ impl CuckooPluginManager {
 	///
 	/// #Returns
 	///
-	/// Ok if successful a
-	/// [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
-	/// with specific detail if an error is encountered. Populates the internal
-	/// list of plugins for the given directory.
+	/// * `Ok` if successful 
+	/// * [CuckooMinerError](enum.CuckooMinerError.html)
+	/// with specific detail if an error is encountered. 
 	///
 
 	pub fn load_plugin_dir(&mut self, plugin_dir: String) -> Result<(), CuckooMinerError> {
@@ -201,43 +202,50 @@ impl CuckooPluginManager {
 	/// #Description
 	///
 	/// Returns an list of
-	/// [CuckooPluginCapabilities](../../config/types/struct.
-	/// CuckooPluginCapabilities.html)
-	/// representing the currently
-	/// installed plugins in the currently loaded directory. Can optionally
-	/// take a filter,
+	/// [CuckooPluginCapabilities](struct.CuckooPluginCapabilities.html)
+	/// representing the currently installed plugins in the currently 
+	/// loaded directory. Can optionally take a filter,
 	/// which will limit the returned plugins to those with the occurrence of a
 	/// particular string in their name.
 	///
 	/// #Arguments
 	///
 	/// * `filter` If an empty string, return all of the plugins found in the
-	/// directory.
-	/// otherwise, only return plugins containing a ocurrence of this string in
-	/// their file
-	/// name.
+	/// directory. Otherwise, only return plugins containing a occurrence of this 
+	/// string in their filename.
 	///
 	/// #Returns
 	///
-	/// If successful, a Result containing a vector of
+	/// *If successful, a Result containing a vector of
 	/// [CuckooPluginCapabilities](struct.CuckooPluginCapabilities.html) ,
 	/// one for each plugin successfully read from the plugin directory,
 	/// filtered as requested.
-	/// If there is an error loading plugins from the given directory,
-	/// a [CuckooMinerError](../../error/error/enum.CuckooMinerError.html)
+	/// *If there is an error loading plugins from the given directory,
+	/// a [CuckooMinerError](enum.CuckooMinerError.html)
 	/// will be returned outlining more specific details.
 	///
 	/// #Example
 	///
 	/// ```
-	/// let caps=manager.get_available_plugins("")?;
+	/// extern crate cuckoo_miner as cuckoo;
+  /// use std::path::PathBuf;	
+	/// let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	/// d.push("target/debug/plugins/");
+	///
+	/// // load plugin manager
+	/// let mut plugin_manager = cuckoo::CuckooPluginManager::new().unwrap();
+	/// plugin_manager
+	/// 	.load_plugin_dir(String::from(d.to_str().unwrap()))
+	/// 	.expect("");
+	///
+	///	let caps = plugin_manager.get_available_plugins("").unwrap();
+	///
 	/// //Print all available plugins
 	/// for c in &caps {
 	///     println!("Found plugin: [{}]", c);
 	/// }
 	/// ```
 	///
-
 
 	pub fn get_available_plugins(
 		&mut self,
@@ -324,8 +332,6 @@ impl CuckooPluginManager {
 
 	/// Loads and fills out the internal plugin capabilites vector from the
 	/// given directory.
-	///
-	///
 
 	fn load_all_plugin_caps(
 		&mut self,
