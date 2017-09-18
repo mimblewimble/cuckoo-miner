@@ -10,41 +10,10 @@ build = "src/build.rs"
 
 [dependencies]
 libc = "0.2.24"
-libloading = "0.4.0"
-lazy_static = "0.2.8"
+libloading = "0.4.1"
 log = "^0.3"
 
 error = { path = "../error", version="0.1.0" }
-
-#Plugins
-
-#simple
-#cuckoo_simple_12 = { path = "plugins/cuckoo_simple_12" }
-#cuckoo_simple_16 = { path = "plugins/cuckoo_simple_16" }
-#cuckoo_simple_20 = { path = "plugins/cuckoo_simple_20" }
-#cuckoo_simple_25 = { path = "plugins/cuckoo_simple_25" }
-#cuckoo_simple_28 = { path = "plugins/cuckoo_simple_28" }
-#cuckoo_simple_30 = { path = "plugins/cuckoo_simple_30" }
-#
-##edgetrim
-#cuckoo_edgetrim_16 = { path = "plugins/cuckoo_edgetrim_16" }
-#cuckoo_edgetrim_20 = { path = "plugins/cuckoo_edgetrim_20" }
-#cuckoo_edgetrim_25 = { path = "plugins/cuckoo_edgetrim_25" }
-#cuckoo_edgetrim_28 = { path = "plugins/cuckoo_edgetrim_28" }
-#cuckoo_edgetrim_30 = { path = "plugins/cuckoo_edgetrim_30" }
-#
-##tomato
-#cuckoo_tomato_16 = { path = "plugins/cuckoo_tomato_16" }
-#cuckoo_tomato_20 = { path = "plugins/cuckoo_tomato_20" }
-#cuckoo_tomato_25 = { path = "plugins/cuckoo_tomato_25" }
-#cuckoo_tomato_28 = { path = "plugins/cuckoo_tomato_28" }
-#cuckoo_tomato_30 = { path = "plugins/cuckoo_tomato_30" }
-#
-#Mean miner is going to take some work to integrate
-#(not entirely sure it's finished)
-#cuckoo_mean_25 = { path = "plugins/cuckoo_mean_25" }
-#cuckoo_mean_28 = { path = "plugins/cuckoo_mean_28" }
-
 
 [dev-dependencies]
 const-cstr = "0.2"

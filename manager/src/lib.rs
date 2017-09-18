@@ -16,7 +16,7 @@
 //! of mining plugins installed on the system. It is meant as a helper
 //! to users of cuckoo-miner, to allow quick enumeration of all mining plugins,
 //! and return information about whether a particular plugin can be run
-//! on the host system. 
+//! on the host system.
 //!
 //! Although a plugin can only return its name and description at the moment,
 //! it will be extended in future to allow for other information such as
@@ -44,6 +44,4 @@ extern crate serde_derive;
 extern crate serde_json;
 
 pub mod manager;
-pub use manager::{CuckooPluginManager,
-                  CuckooPluginCapabilities};
-
+pub use manager::{CuckooPluginManager, CuckooPluginCapabilities};

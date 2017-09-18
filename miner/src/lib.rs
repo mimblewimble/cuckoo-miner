@@ -40,10 +40,5 @@ extern crate serde_json;
 mod delegator;
 
 pub mod miner;
-pub use miner::{CuckooMiner,
-                CuckooMinerConfig,
-                CuckooMinerSolution,
-                CuckooMinerJobHandle,
+pub use miner::{CuckooMiner, CuckooMinerConfig, CuckooMinerSolution, CuckooMinerJobHandle,
                 CuckooMinerDeviceStats};
-
-

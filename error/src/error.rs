@@ -31,6 +31,9 @@ pub enum CuckooMinerError {
 
     PluginNotLoadedError(String),
 
+    /// Occurs when trying to load plugin function that doesn't exist
+    PluginSymbolNotFoundError(String),
+
     /// Occurs when attempting to load a plugin that doesn't exist
 
     PluginNotFoundError(String),

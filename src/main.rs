@@ -19,7 +19,6 @@ extern crate miner;
 extern crate error;
 extern crate manager;
 extern crate time;
-
 use std::thread;
 
 
@@ -36,88 +35,95 @@ static KNOWN_SOLUTION_16:[u32;42] = [671, 2624, 3044, 4429, 4682, 4734, 6727, 72
 29606, 30616, 30674, 30727, 31162, 31466, 31706];*/
 
 fn main() {
-
-    //this should have a solution under cuckoo25
+	//this should have a solution under cuckoo25
     /*let test_header = [0xae,0x71,0xf3,0x6d,0xe6,0x4c,0x2d,0xde,
                        0x50,0xbb,0x29,0x93,0xb3,0x4e,0x61,0xd6,
                        0xfb,0xa2,0xbe,0xe0,0xd0,0x52,0xcb,0x2d,
                        0xc9,0x56,0x06,0x4f,0x8a,0x8a,0xcd,0x54];*/
 
-    //First, load and query the plugins in the given directory
-    let mut plugin_manager = CuckooPluginManager::new().unwrap();
-    let result=plugin_manager.load_plugin_dir(String::from("target/debug/plugins"));
-    match result {
-        Ok(_) => {},
-        Err(e) => println!("{:?}",e),
-    }
-    //Get a list of installed plugins and capabilities
-    let caps = plugin_manager.get_available_plugins("matrix_30").unwrap();
+	// First, load and query the plugins in the given directory
+	let mut plugin_manager = CuckooPluginManager::new().unwrap();
+	let result = plugin_manager.load_plugin_dir(String::from("target/debug/plugins"));
+	match result {
+		Ok(_) => {}
+		Err(e) => println!("{:?}", e),
+	}
+	// Get a list of installed plugins and capabilities
+	let caps = plugin_manager.get_available_plugins("16").unwrap();
 
-    //Print all available plugins
-    for c in &caps {
-        println!("Found plugin: [{}]", c);
-    }
+	// Print all available plugins
+	for c in &caps {
+		//println!("Found plugin: [{}]", c);
+	}
 
-    //Select a plugin somehow, and insert it into the miner configuration
-    //being created below
-    
-    let mut config = CuckooMinerConfig::new();
-    config.plugin_full_path = caps[0].full_path.clone();
-    //config.parameter_list.insert(String::from("NUM_TRIMS"), 5);
-    //config.parameter_list.insert(String::from("NUM_THREADS"), 8);
-    
-    //Build a new miner with this info, which will load
-    //the associated plugin and 
-    
-    
+	// Select a plugin somehow, and insert it into the miner configuration
+	// being created below
 
-    //Keep a structure to hold the solution.. this will be
-    //filled out by the plugin
-    //let solution = CuckooMinerSolution::new();
+	let mut config = CuckooMinerConfig::new();
+	config.plugin_full_path = caps[1].full_path.clone();
+	println!("Plugin[0] is {}", caps[1].full_path);
+	let mut config2 = CuckooMinerConfig::new();
+	config2.plugin_full_path = caps[0].full_path.clone();
+	println!("Plugin[1] is {}", caps[0].full_path);
+	let mut config_vec = Vec::new();
+	config_vec.push(config);
+	config_vec.push(config2);
+
+	// config.parameter_list.insert(String::from("NUM_TRIMS"), 5);
+	// config.parameter_list.insert(String::from("NUM_THREADS"), 8);
+
+	// Build a new miner with this info, which will load
+	// the associated plugin and
 
 
-    let pre_header="0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff\
+
+	// Keep a structure to hold the solution.. this will be
+	// filled out by the plugin
+	// let solution = CuckooMinerSolution::new();
+
+
+	let pre_header = "0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff\
     ffffffffffffffff0000000033e51b800e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787\
     faab45cdf12fe3a80e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a800";
-    let post_header="000000000000000a000000000000000a";
+	let post_header = "000000000000000a000000000000000a";
 
-    //miner.notify(1, pre_header, post_header, false);
+	// miner.notify(1, pre_header, post_header, false);
 
-    let duration_in_seconds=60;
-    let report_interval=2;
+	let duration_in_seconds = 60;
+	let report_interval = 2;
 
-    let deadline = time::get_time().sec + duration_in_seconds;
-    let mut report_time = time::get_time().sec + report_interval;
-   
-    while time::get_time().sec < deadline {
-        
-        //these always get consumed after notify
-        let miner = CuckooMiner::new(config.clone()).expect("");
-        let job_handle=miner.notify(1, pre_header, post_header, 10).unwrap();
+	let deadline = time::get_time().sec + duration_in_seconds;
+	let mut report_time = time::get_time().sec + report_interval;
 
-        loop {
-            if let Some(s) = job_handle.get_solution()  {
-                println!("Sol found: {}, {:?}", s.get_nonce_as_u64(), s);
-                //up to you to read it and check difficulty
-                job_handle.stop_jobs();
-                thread::sleep(std::time::Duration::from_millis(20));
-                break;    
-                
-            }
-            if time::get_time().sec >= report_time{
-                job_handle.get_stats();
-                report_time = time::get_time().sec + report_interval;
-            }
+	while time::get_time().sec < deadline {
 
-        }
-            //break;
-        
-        
-    }
+		// these always get consumed after notify
+		let miner = CuckooMiner::new(config_vec.clone()).expect("");
+		let job_handle = miner.notify(1, pre_header, post_header, 10).unwrap();
 
-    //thread::sleep(time::Duration::from_millis(500));
+		loop {
+			if let Some(s) = job_handle.get_solution() {
+				println!("Sol found: {}, {:?}", s.get_nonce_as_u64(), s);
+				// up to you to read it and check difficulty
+				job_handle.stop_jobs();
+				thread::sleep(std::time::Duration::from_millis(20));
+				break;
 
-    /*miner.notify(1, pre_header, post_header, false);
+			}
+			if time::get_time().sec >= report_time {
+				job_handle.get_stats(0);
+				report_time = time::get_time().sec + report_interval;
+			}
+
+		}
+		// break;
+
+
+	}
+
+	// thread::sleep(time::Duration::from_millis(500));
+
+	/*miner.notify(1, pre_header, post_header, false);
 
     loop {
         
@@ -134,8 +140,8 @@ fn main() {
     println!("Jobs should be stopped now");
 
     //thread::sleep(time::Duration::from_millis(5000));*/
-        
-    //Mine with given header and check for result
+
+	//Mine with given header and check for result
     /*let result = miner.mine(&KNOWN_SEED_16, &mut solution).unwrap();
 
     if result == true {
