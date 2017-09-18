@@ -35,7 +35,7 @@ Currently, the provided (and planned plugins are:)
 * lean_cpu (cuckoo_miner.cpp) (Cuckoo Sizes 16 and 30), the baseline CPU algorithm, which constrains memory use at the expense of speed
 * mean_cpu (matrix_miner.cpp) (Cuckoo size 30), currently the fastest CPU solver, but with much larger memory requirements
 * lean_cuda (cuda_miner.cu) (Cuckoo Size 30), lean cuckoo algorithm optimised for NVidia GPUs, (only built if cuda build environment is installed)
-* mean_cuda (PLANNED) (Cuckoo Sizes 16) cuda version of the mean algorithm, should be the fastest solver when implemented
+* mean_cuda (PLANNED) (Cuckoo Size 30) cuda version of the mean algorithm, should be the fastest solver when implemented
 
 These plugins are currently built by cmake as part of the cuckoo-sys module. The cmake scripts will attempt to detect the underlying environment
 as well as possible and build plugins accordingly (WIP)
