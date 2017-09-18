@@ -22,6 +22,7 @@ use std::string;
 ///
 /// Top level enum for all errors that the cuckoo-miner crate can return.
 ///
+
 #[derive(Debug)]
 pub enum CuckooMinerError {
 	/// Occurs when trying to call a plugin function when a

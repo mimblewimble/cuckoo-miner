@@ -269,14 +269,14 @@ impl PluginLibrary {
 	/// #Example
 	///
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///
@@ -321,14 +321,14 @@ impl PluginLibrary {
 	/// #Example
 	///
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl = PluginLibrary::new(plugin_path).unwrap();
@@ -381,14 +381,14 @@ impl PluginLibrary {
 	/// #Example
 	///
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///
@@ -446,14 +446,14 @@ impl PluginLibrary {
 	/// #Example
 	///
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///
@@ -495,14 +495,14 @@ impl PluginLibrary {
 	///
 	/// #Example
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///
@@ -539,14 +539,14 @@ impl PluginLibrary {
 	/// #Example
 	///
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
@@ -608,14 +608,14 @@ impl PluginLibrary {
 	///
 	/// #Example
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
@@ -647,14 +647,14 @@ impl PluginLibrary {
 	///
 	/// #Example
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
@@ -699,14 +699,14 @@ impl PluginLibrary {
 	///
 	/// #Example
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
@@ -760,14 +760,14 @@ impl PluginLibrary {
 	///
 	/// #Example
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
@@ -798,14 +798,14 @@ impl PluginLibrary {
 	///
 	/// #Example
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
@@ -836,14 +836,14 @@ impl PluginLibrary {
 	///
 	/// #Example
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
@@ -880,14 +880,14 @@ impl PluginLibrary {
 	///
 	/// #Example
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
@@ -944,14 +944,14 @@ impl PluginLibrary {
 	/// #Example
 	///
 	/// ```
-	///  # use cuckoo_sys::PluginLibrary;
+	///  # use cuckoo_miner::PluginLibrary;
 	///  # use std::env;
 	///  # use std::path::PathBuf;
 	///
 	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
 	///
 	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("../target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
+	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
 	///
 	///  # let plugin_path = d.to_str().unwrap();
 	///
