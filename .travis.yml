@@ -18,7 +18,6 @@ env:
     - RUST_BACKTRACE="1"
     - RUST_TEST_THREADS="1"
   matrix:
-    - TEST_DIR=cuckoo-sys
-    - TEST_DIR=miner
+    - TEST_DIR=.
 
-script: cd $TEST_DIR && cargo test --verbose
+script: cd $TEST_DIR && cargo test --verbose on_commit
