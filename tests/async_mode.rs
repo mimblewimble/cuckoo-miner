@@ -62,8 +62,11 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 			if time::get_time().sec >= next_stat_check {
 				let mut sps_total=0.0;
 				for index in 0..config_vec.len() {
-					let stats_vec=job_handle.get_stats(index).unwrap();
-					for s in stats_vec.into_iter() {
+					let stats_vec=job_handle.get_stats(index);
+					if let Err(_) = stats_vec {
+						break;
+					}
+					for s in stats_vec.unwrap().into_iter() {
 						let last_solution_time_secs = s.last_solution_time as f64 / 1000.0;
 						let last_hashes_per_sec = 1.0 / last_solution_time_secs;
 						println!("Plugin {} - Device {} ({}) - Last Solution time: {}; Solutions per second: {:.*}", 
