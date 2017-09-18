@@ -21,13 +21,13 @@ within the configuration file.
 
 If the cuda build environment is installed, the build will attempt to build CUDA versions of the plugin. If they work for you,
 they should give the best known solution times, with cuckoo30 generally finding a solution within a couple of seconds 
-(on a 980ti, at least :). 
+(on a 980ti, at least).
 
 Instructions on how to set up the nvcc tool chain won't be provided here, but this will generally be installed 
 as part of a 'cuda' package  on your distribution, and obviously depends on the correct nvidia driver package
 being installed as well.
 
-Once the libraries are built, you can experiment with calling them via the provided sample app in main.rs, or
+Once the libraries are built, you can experiment with calling them via the unit tests, or
 experiment with dropping them into grin's target/debug/deps directory, and calling them by modifying
 grin.toml as directed in the configuration file's documentation.
 

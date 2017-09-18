@@ -20,4 +20,6 @@ env:
   matrix:
     - TEST_DIR=.
 
-script: cd $TEST_DIR && cargo test --verbose on_commit
+script: 
+- cd $TEST_DIR && cargo test --verbose on_commit
+- cd $TEST_DIR && cargo test --doc 

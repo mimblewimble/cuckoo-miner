@@ -59,7 +59,7 @@ fn from_hex_string(in_str: &str) -> Vec<u8> {
 //Helper to load a plugin library
 fn load_plugin_lib(plugin:&str) -> Result<PluginLibrary, CuckooMinerError> {
 	let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	d.push(format!("../target/debug/plugins/{}{}", plugin, DLL_SUFFIX).as_str());
+	d.push(format!("target/debug/plugins/{}{}", plugin, DLL_SUFFIX).as_str());
 	PluginLibrary::new(d.to_str().unwrap())
 }
 
@@ -80,7 +80,7 @@ fn load_all_plugins() -> Vec<PluginLibrary>{
 
 //loads and unloads a plugin many times
 #[test]
-fn plugin_loading(){
+fn on_commit_plugin_loading(){
 	//core plugins should be built on all systems, fail if they don't exist
 	for _ in 0..100 {
 		for p in TEST_PLUGIN_LIBS_CORE.into_iter() {
@@ -102,14 +102,14 @@ fn plugin_loading(){
 
 //Loads all plugins at once
 #[test]
-fn plugin_multiple_loading(){
+fn on_commit_plugin_multiple_loading(){
 	let _p=load_all_plugins();
 }
 
 //tests cuckoo_init() on all available plugins
 //multiple calls to cuckoo init should be fine
 #[test]
-fn cuckoo_init(){
+fn on_commit_cuckoo_init(){
 	let iterations = 100;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
@@ -168,7 +168,7 @@ fn call_cuckoo_description_tests(pl: &PluginLibrary){
 
 //tests call_cuckoo_description() on all available plugins
 #[test]
-fn cuckoo_description(){
+fn on_commit_cuckoo_description(){
 	let iterations = 100;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
@@ -218,7 +218,7 @@ fn call_cuckoo_parameter_list_tests(pl: &PluginLibrary){
 
 //tests call_cuckoo_parameter_list() on all available plugins
 #[test]
-fn cuckoo_parameter_list(){
+fn on_commit_cuckoo_parameter_list(){
 	let iterations = 100;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
@@ -259,7 +259,7 @@ fn call_cuckoo_get_parameter_tests(pl: &PluginLibrary){
 
 //tests call_cuckoo_get_parameter() on all available plugins
 #[test]
-fn cuckoo_get_parameter(){
+fn on_commit_cuckoo_get_parameter(){
 	let iterations = 100;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
@@ -307,7 +307,7 @@ fn call_cuckoo_set_parameter_tests(pl: &PluginLibrary){
 
 //tests call_cuckoo_get_parameter() on all available plugins
 #[test]
-fn cuckoo_set_parameter(){
+fn on_commit_cuckoo_set_parameter(){
 	let iterations = 100;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
@@ -345,7 +345,7 @@ fn cuckoo_call_tests(pl: &PluginLibrary){
 
 //tests cuckoo_call() on all available plugins
 #[test]
-fn cuckoo_call(){
+fn on_commit_cuckoo_call(){
 	let iterations = 1;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
@@ -381,7 +381,7 @@ fn call_cuckoo_start_processing_tests(pl: &PluginLibrary){
 //tests call_cuckoo_start_processing 
 //on all available plugins
 #[test]
-fn call_cuckoo_start_processing(){
+fn on_commit_call_cuckoo_start_processing(){
 	let iterations = 10;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
@@ -442,7 +442,7 @@ fn call_cuckoo_push_to_input_queue_tests(pl: &PluginLibrary){
 //tests call_cuckoo_push_to_input_queue
 //on all available plugins
 #[test]
-fn call_cuckoo_push_to_input_queue(){
+fn on_commit_call_cuckoo_push_to_input_queue(){
 	let iterations = 10;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
@@ -504,7 +504,7 @@ fn call_cuckoo_stop_processing_tests(pl: &PluginLibrary){
 //tests call_cuckoo_stop_processing
 //on all available plugins
 #[test]
-fn call_cuckoo_stop_processing(){
+fn on_commit_call_cuckoo_stop_processing(){
 	let iterations = 1;
 	/*let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
@@ -573,7 +573,7 @@ fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
 //plugins
 
 #[test]
-fn call_cuckoo_read_from_output_queue(){
+fn on_commit_call_cuckoo_read_from_output_queue(){
 	let iterations = 1;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
@@ -667,7 +667,7 @@ fn call_cuckoo_get_stats_test(pl: &PluginLibrary){
 
 //tests call_cuckoo_parameter_list() on all available plugins
 #[test]
-fn call_cuckoo_get_stats(){
+fn on_commit_call_cuckoo_get_stats(){
 	let iterations = 2;
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
