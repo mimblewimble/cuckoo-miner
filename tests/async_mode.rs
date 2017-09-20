@@ -123,6 +123,19 @@ fn on_cuda_commit_mine_single_plugin_async() {
 	}
 }
 
+//mine cuda and matrix (mean) miner for a bit
+#[test]
+fn on_cuda_commit_mine_mean_cpu_and_lean_cuda_async() {
+	let caps = common::get_plugin_vec("");
+	let mut plugin_path_vec:Vec<&str> = Vec::new();
+	for c in &caps {
+		if c.full_path.contains("lean_cuda_30") || c.full_path.contains("mean_cpu_30"){
+			plugin_path_vec.push(&c.full_path);
+		}
+	}
+	mine_async_for_duration(plugin_path_vec, 180);
+}
+
 //Mines for a bit on all available plugins at once
 //(won't be efficient, but should stress-tes plugins nicely)
 #[test]
