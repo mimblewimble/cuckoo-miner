@@ -558,10 +558,10 @@ fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
 			pl.call_cuckoo_stop_processing();
 
 			while pl.call_cuckoo_has_processing_stopped()==0{};
-				pl.call_cuckoo_reset_processing();
-			}
+			pl.call_cuckoo_reset_processing();
 			//cry about it
 			panic!("Known solution not found");
+		}
 	}
 	
 	//now stop
