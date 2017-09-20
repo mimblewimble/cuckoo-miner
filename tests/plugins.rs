@@ -540,8 +540,8 @@ fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
 	//Record time now, because we don't want to wait forever
 	let start=Instant::now();
 
-	//if 2 minutes has elapsed, there's no solution
-	let max_time_ms=120000;
+	//if 6 minutes has elapsed, there's no solution
+	let max_time_ms=360000;
 
 	let mut sols:[u32; 42] = [0; 42];
 	let mut nonce: [u8; 8] = [0;8];
@@ -554,8 +554,14 @@ fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
 		let elapsed=start.elapsed();
 		let elapsed_ms=(elapsed.as_secs() * 1_000) + (elapsed.subsec_nanos() / 1_000_000) as u64;
 		if elapsed_ms > max_time_ms{
+		//stop
+			pl.call_cuckoo_stop_processing();
+
+			while pl.call_cuckoo_has_processing_stopped()==0{};
+				pl.call_cuckoo_reset_processing();
+			}
+			//cry about it
 			panic!("Known solution not found");
-		}
 	}
 	
 	//now stop
