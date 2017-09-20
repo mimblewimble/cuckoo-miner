@@ -19,12 +19,9 @@ extern crate cuckoo_miner as cuckoo;
 extern crate time;
 
 mod common;
+use common::{SAMPLE_GRIN_PRE_HEADER_1, SAMPLE_GRIN_POST_HEADER_1};
 
-use std::path::PathBuf;
-
-use cuckoo::CuckooMinerError;
-use cuckoo::{CuckooMinerConfig, CuckooMinerSolution, CuckooMiner};
-use cuckoo::{CuckooPluginManager, CuckooPluginCapabilities};
+use cuckoo::{CuckooMinerConfig, CuckooMiner};
 
 // Helper function, tests a particular miner implementation against a known set
 fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
@@ -51,7 +48,7 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 
 		// these always get consumed after a notify
 		let miner = CuckooMiner::new(config_vec.clone()).expect("");
-		let job_handle = miner.notify(1, common::SAMPLE_GRIN_PRE_HEADER_1, common::SAMPLE_GRIN_POST_HEADER_1, 0).unwrap();
+		let job_handle = miner.notify(1, SAMPLE_GRIN_PRE_HEADER_1, SAMPLE_GRIN_POST_HEADER_1, 0).unwrap();
 
 		loop {
 			if let Some(s) = job_handle.get_solution() {
@@ -63,8 +60,8 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 				let mut sps_total=0.0;
 				for index in 0..config_vec.len() {
 					let stats_vec=job_handle.get_stats(index);
-					if let Err(_) = stats_vec {
-						break;
+					if let Err(e) = stats_vec {
+						panic!("Error getting stats: {:?}", e);
 					}
 					for s in stats_vec.unwrap().into_iter() {
 						let last_solution_time_secs = s.last_solution_time as f64 / 1000.0;
@@ -100,7 +97,7 @@ fn on_commit_mine_single_plugin_async() {
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
-		mine_async_for_duration(plugin_path_vec, 75); 
+		mine_async_for_duration(plugin_path_vec, 120);
 	}
 }
 
@@ -111,7 +108,7 @@ fn on_cuda_commit_mine_single_plugin_async() {
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
-		mine_async_for_duration(plugin_path_vec, 75); 
+		mine_async_for_duration(plugin_path_vec, 120);
 	}
 }
 
@@ -126,5 +123,5 @@ fn on_commit_mine_all_plugins_async() {
 	for c in &caps {
 		plugin_path_vec.push(&c.full_path);
 	}
-	mine_async_for_duration(plugin_path_vec, 75); 
+	mine_async_for_duration(plugin_path_vec, 120);
 }

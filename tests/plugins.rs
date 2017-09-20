@@ -24,6 +24,11 @@ use std::time::Instant;
 use cuckoo::CuckooMinerError;
 use cuckoo::PluginLibrary;
 
+mod common;
+use common::{
+	KNOWN_30_HASH_1,
+	KNOWN_16_HASH_1};
+
 static DLL_SUFFIX: &str = ".cuckooplugin";
 
 const TEST_PLUGIN_LIBS_CORE : [&str;3] = [
@@ -35,13 +40,6 @@ const TEST_PLUGIN_LIBS_CORE : [&str;3] = [
 const TEST_PLUGIN_LIBS_OPTIONAL : [&str;1] = [
 	"lean_cuda_30",
 ];
-
-//hashes known to return a solution at cuckoo 30 and 16
-static KNOWN_30_HASH:&str = "11c5059b4d4053131323fdfab6a6509d73ef22\
-9aedc4073d5995c6edced5a3e6";
-
-static KNOWN_16_HASH:&str = "5f16f104018fc651c00a280ba7a8b48db80b30\
-20eed60f393bdcb17d0e646538";
 
 //Helper to convert from hex string
 fn from_hex_string(in_str: &str) -> Vec<u8> {
@@ -212,7 +210,7 @@ fn call_cuckoo_parameter_list_tests(pl: &PluginLibrary){
 	let mut param_list_bytes_len=param_list_bytes.len() as u32;
 	let ret_val=pl.call_cuckoo_parameter_list(&mut param_list_bytes,
 		&mut param_list_bytes_len);
-	let result_list = String::from_utf8(param_list_bytes.to_vec()).unwrap();
+	//let result_list = String::from_utf8(param_list_bytes.to_vec()).unwrap();
 	assert!(ret_val==3);
 }
 
@@ -326,10 +324,10 @@ fn cuckoo_call_tests(pl: &PluginLibrary){
 	println!("Plugin: {}", pl.lib_full_path);
 
 	//Known Hash
-	let mut header = from_hex_string(KNOWN_30_HASH);
+	let mut header = from_hex_string(KNOWN_30_HASH_1);
 	//or 16, if needed
 	if pl.lib_full_path.contains("16") {
-		header = from_hex_string(KNOWN_16_HASH);
+		header = from_hex_string(KNOWN_16_HASH_1);
 	}
 
 	let mut solution:[u32; 42] = [0;42];
@@ -506,15 +504,15 @@ fn call_cuckoo_stop_processing_tests(pl: &PluginLibrary){
 #[test]
 fn on_commit_call_cuckoo_stop_processing(){
 	let iterations = 1;
-	/*let plugins = load_all_plugins();
+	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
 		for _ in 0..iterations {
 			call_cuckoo_stop_processing_tests(&p);
 		}
-	}*/
+	}
 
-	let pl = load_plugin_lib("lean_cuda_30").unwrap();
-	call_cuckoo_stop_processing_tests(&pl);
+	//let pl = load_plugin_lib("lean_cuda_30").unwrap();
+	//call_cuckoo_stop_processing_tests(&pl);
 }
 
 // Helper to test call_cuckoo_read_from_output_queue
@@ -525,10 +523,10 @@ fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
 	println!("Plugin: {}", pl.lib_full_path);
 
 	//Known Hash
-	let mut header = from_hex_string(KNOWN_30_HASH);
+	let mut header = from_hex_string(KNOWN_30_HASH_1);
 	//or 16, if needed
 	if pl.lib_full_path.contains("16") {
-		header = from_hex_string(KNOWN_16_HASH);
+		header = from_hex_string(KNOWN_16_HASH_1);
 	}
 	//Just zero nonce here, for ID
 	let nonce:[u8;8]=[0;8];
@@ -624,10 +622,10 @@ fn call_cuckoo_get_stats_test(pl: &PluginLibrary){
 
 	//Now start up processing and check values
 	//Known Hash
-	let mut header = from_hex_string(KNOWN_30_HASH);
+	let mut header = from_hex_string(KNOWN_30_HASH_1);
 	//or 16, if needed
 	if pl.lib_full_path.contains("16") {
-		header = from_hex_string(KNOWN_16_HASH);
+		header = from_hex_string(KNOWN_16_HASH_1);
 	}
 	//Just zero nonce here, for ID
 	let nonce:[u8;8]=[0;8];

@@ -1,3 +1,4 @@
+
 // Copyright 2017 The Grin Developers
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,12 +20,11 @@ extern crate cuckoo_miner as cuckoo;
 
 use std::path::PathBuf;
 
-use cuckoo::CuckooMinerError;
 use cuckoo::{CuckooPluginManager, CuckooPluginCapabilities};
 
 //Helper to convert from hex string
 //avoids a lot of awkward byte array initialisation below
-pub fn from_hex_string(in_str: &str) -> Vec<u8> {
+pub fn _from_hex_string(in_str: &str) -> Vec<u8> {
 	let mut bytes = Vec::new();
 	for i in 0..(in_str.len() / 2) {
 		let res = u8::from_str_radix(&in_str[2 * i..2 * i + 2], 16);
@@ -36,15 +36,15 @@ pub fn from_hex_string(in_str: &str) -> Vec<u8> {
 	bytes
 }
 
-pub const DLL_SUFFIX: &str = ".cuckooplugin";
+pub const _DLL_SUFFIX: &str = ".cuckooplugin";
 
-pub const TEST_PLUGIN_LIBS_CORE : [&str;3] = [
+pub const _TEST_PLUGIN_LIBS_CORE : [&str;3] = [
 	"lean_cpu_16",
 	"lean_cpu_30",
 	"mean_cpu_30",
 ];
 
-pub const TEST_PLUGIN_LIBS_OPTIONAL : [&str;1] = [
+pub const _TEST_PLUGIN_LIBS_OPTIONAL : [&str;1] = [
 	"lean_cuda_30",
 ];
 

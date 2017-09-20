@@ -20,11 +20,7 @@ extern crate time;
 
 mod common;
 
-use std::path::PathBuf;
-
-use cuckoo::CuckooMinerError;
 use cuckoo::{CuckooMinerConfig, CuckooMinerSolution, CuckooMiner};
-use cuckoo::{CuckooPluginManager, CuckooPluginCapabilities};
 
 // Helper function, tests a particular miner implementation against a known set
 fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64) {

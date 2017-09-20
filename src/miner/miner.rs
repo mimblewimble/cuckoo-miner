@@ -304,16 +304,15 @@ impl CuckooMinerJobHandle {
 			stats_vec.push(stats_bytes[i as usize].clone());
 		}
 		let stats_json = String::from_utf8(stats_vec)?;
-		// println!("Stats_json: {}", stats_json);
+//		println!("Stats_json: {}", stats_json);
 
 		let result = serde_json::from_str(&stats_json);
-		if let Ok(r) = result {
-			return Ok(r);
-		} else {
+		if let Err(e) = result {
 			return Err(CuckooMinerError::StatsError(
-				String::from("Error retrieving stats from plugin"),
+				String::from(format!("Error retrieving stats from plugin: {:?}", e)),
 			));
 		}
+		Ok(result.unwrap())
 	}
 }
 
@@ -502,13 +501,12 @@ impl CuckooMiner {
 		// println!("Stats_json: {}", stats_json);
 
 		let result = serde_json::from_str(&stats_json);
-		if let Ok(r) = result {
-			return Ok(r);
-		} else {
+		if let Err(e) = result {
 			return Err(CuckooMinerError::StatsError(
-				String::from("Error retrieving stats from plugin"),
+				String::from(format!("Error retrieving stats from plugin: {:?}", e)),
 			));
 		}
+		Ok(result.unwrap())
 	}
 
 	/// #Description
