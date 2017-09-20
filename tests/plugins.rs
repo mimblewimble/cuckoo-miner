@@ -542,7 +542,7 @@ fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
 	let start=Instant::now();
 
 	//if 6 minutes has elapsed, there's no solution
-	let max_time_ms=360000;
+	let max_time_ms=480000;
 
 	let mut sols:[u32; 42] = [0; 42];
 	let mut nonce: [u8; 8] = [0;8];
