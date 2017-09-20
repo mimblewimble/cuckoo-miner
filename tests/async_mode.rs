@@ -39,7 +39,7 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 	//for CI testing on slower servers
 	//if we're trying to quit and there are no stats yet, keep going for a bit
 	let mut extra_time=false;
-	let extra_time_value=180;
+	let extra_time_value=600;
 
 	while time::get_time().sec < deadline {
 
