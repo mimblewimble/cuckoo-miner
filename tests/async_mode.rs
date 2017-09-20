@@ -91,6 +91,7 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 				if !stats_updated && !extra_time {
 					extra_time=true;
 					deadline+=extra_time_value;
+					println!("More time needed");
 				} else {
 					println!("Stopping jobs and waiting for cleanup");
 					job_handle.stop_jobs();
@@ -109,7 +110,7 @@ fn on_commit_mine_single_plugin_async() {
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
-		mine_async_for_duration(plugin_path_vec, 180);
+		mine_async_for_duration(plugin_path_vec, 60);
 	}
 }
 
@@ -120,7 +121,7 @@ fn on_cuda_commit_mine_single_plugin_async() {
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
-		mine_async_for_duration(plugin_path_vec, 180);
+		mine_async_for_duration(plugin_path_vec, 60);
 	}
 }
 

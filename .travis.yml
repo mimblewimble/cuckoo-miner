@@ -20,5 +20,5 @@ env:
     - TEST_DIR=.
 
 script: 
-- cd $TEST_DIR && RUST_TEST_THREADS=1 cargo test --verbose on_commit
-- cd $TEST_DIR && cargo test --doc 
+- RUST_TEST_THREADS=1 cargo test --verbose on_commit
+- cargo test --doc 
