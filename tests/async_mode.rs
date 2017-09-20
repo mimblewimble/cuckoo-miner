@@ -91,10 +91,11 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 				if !stats_updated && !extra_time {
 					extra_time=true;
 					deadline+=extra_time_value;
+				} else {
+					println!("Stopping jobs and waiting for cleanup");
+					job_handle.stop_jobs();
+					break;
 				}
-				println!("Stopping jobs and waiting for cleanup");
-				job_handle.stop_jobs();
-				break;
 			}
 		}
 	}
