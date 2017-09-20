@@ -33,9 +33,13 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 	}
 
 	let stat_check_interval = 3;
-	let deadline = time::get_time().sec + duration_in_seconds;
+	let mut deadline = time::get_time().sec + duration_in_seconds;
 	let mut next_stat_check = time::get_time().sec + stat_check_interval;
 	let mut stats_updated=false;
+	//for CI testing on slower servers
+	//if we're trying to quit and there are no stats yet, keep going for a bit
+	let mut extra_time=false;
+	let extra_time_value=180;
 
 	while time::get_time().sec < deadline {
 
@@ -73,6 +77,9 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 						}
 						if last_solution_time_secs > 0.0 {
 							stats_updated = true;
+							if extra_time {
+								break;
+							}
 						}
 						i+=1;
 					}
@@ -81,6 +88,10 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 				next_stat_check = time::get_time().sec + stat_check_interval;
 			}
 			if time::get_time().sec > deadline {
+				if !stats_updated && !extra_time {
+					extra_time=true;
+					deadline+=extra_time_value;
+				}
 				println!("Stopping jobs and waiting for cleanup");
 				job_handle.stop_jobs();
 				break;
