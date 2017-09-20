@@ -24,7 +24,8 @@ use std::time::Instant;
 use cuckoo::CuckooMinerError;
 use cuckoo::PluginLibrary;
 
-mod common;
+pub mod common;
+
 use common::{
 	KNOWN_30_HASH_1,
 	KNOWN_16_HASH_1};

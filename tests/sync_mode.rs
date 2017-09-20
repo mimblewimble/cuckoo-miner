@@ -18,7 +18,7 @@
 extern crate cuckoo_miner as cuckoo;
 extern crate time;
 
-mod common;
+pub mod common;
 
 use cuckoo::{CuckooMinerConfig, CuckooMinerSolution, CuckooMiner};
 

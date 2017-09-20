@@ -18,7 +18,7 @@
 extern crate cuckoo_miner as cuckoo;
 extern crate time;
 
-mod common;
+pub mod common;
 use common::{SAMPLE_GRIN_PRE_HEADER_1, SAMPLE_GRIN_POST_HEADER_1};
 
 use cuckoo::{CuckooMinerConfig, CuckooMiner};
