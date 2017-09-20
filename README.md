@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mimblewimble/cuckoo-miner.svg?branch=master)](https://travis-ci.org/ignopeverell/grin) [![Gitter chat](https://badges.gitter.im/grin_community/Lobby.png)](https://gitter.im/grin_community/Lobby)
+[![Build Status](https://travis-ci.org/mimblewimble/cuckoo-miner.svg?branch=master)](https://travis-ci.org/mimblewimble/cuckoo-miner) [![Gitter chat](https://badges.gitter.im/grin_community/Lobby.png)](https://gitter.im/grin_community/Lobby)
 # cuckoo-miner
 
 Cuckoo-miner is Rust crate which provides various implementations of the Cuckoo Cycle algorithm. It is primarily intended for
