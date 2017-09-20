@@ -77,9 +77,6 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 						}
 						if last_solution_time_secs > 0.0 {
 							stats_updated = true;
-							if extra_time {
-								break;
-							}
 						}
 						i+=1;
 					}
@@ -98,8 +95,14 @@ fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
 					break;
 				}
 			}
+			if stats_updated && extra_time {
+				break;
+			}
 		}
-	}
+		if stats_updated && extra_time {
+			break;
+		}
+}
 	assert!(stats_updated==true);
 }
 
@@ -110,7 +113,7 @@ fn on_commit_mine_single_plugin_async() {
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
-		mine_async_for_duration(plugin_path_vec, 60);
+		mine_async_for_duration(plugin_path_vec, 10);
 	}
 }
 
