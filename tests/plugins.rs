@@ -492,10 +492,10 @@ fn call_cuckoo_stop_processing_tests(pl: &PluginLibrary){
 	let elapsed_ms=(elapsed.as_secs() * 1_000) + (elapsed.subsec_nanos() / 1_000_000) as u64;
 	println!("Shutdown elapsed_ms: {}",elapsed_ms);
 
-	//will give each plugin half a second for now
+	//will give each plugin a few seconds for now
 	//but give cuda libs a pass for now, as they're hard to stop
 	if !pl.lib_full_path.contains("cuda"){
-		assert!(elapsed_ms<=500);
+		assert!(elapsed_ms<=5000);
 	}
 }
 
