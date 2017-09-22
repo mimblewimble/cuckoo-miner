@@ -318,7 +318,7 @@ fn on_commit_cuckoo_set_parameter(){
 
 // Helper to test cuckoo_call
 // at this level, given the time involved we're just going to
-// do a sanity check that the same known hashe will indeed give
+// do a sanity check that the same known hash will indeed give
 // a solution consistently across plugin implementations
 
 fn cuckoo_call_tests(pl: &PluginLibrary){
@@ -682,4 +682,25 @@ fn on_commit_call_cuckoo_get_stats(){
 	}
 	/*let pl = load_plugin_lib("lean_cpu_30").unwrap();
 	call_cuckoo_get_stats_test(&pl);*/
+}
+
+// test specific issues in plugins,
+// for instance exercising parameters, etc // won't necessarily run this on every
+// commit on CI
+#[test]
+fn specific_lean_cpu_16(){
+	let pl = load_plugin_lib("lean_cpu_16").unwrap();
+	println!("Plugin: {}", pl.lib_full_path);
+
+	let header:[u8;32] = [0;32];
+	let mut solution:[u32; 42] = [0;42];
+	let max_iterations=10000;
+	let return_value=pl.call_cuckoo_set_parameter(String::from("NUM_THREADS").as_bytes(), 4);
+	assert!(return_value==0);
+	for i in 0..max_iterations {
+		let _=pl.call_cuckoo(&header, &mut solution);
+		if i%100 == 0{ 
+			println!("Iterations: {}", i);
+		}
+	}
 }
