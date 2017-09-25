@@ -15,6 +15,8 @@
 /// Tests exercising the loading and unloading of plugins, as well as the
 /// existence and correct functionality of each plugin function
 
+extern crate rand;
+
 extern crate cuckoo_miner as cuckoo;
 
 use std::path::PathBuf;
@@ -693,23 +695,36 @@ fn on_commit_call_cuckoo_get_stats(){
 
 // test specific issues in plugins,
 // for instance exercising parameters, etc 
+// Known to fail hard at moment due to thread cleanup issues in lean_16 
 #[test]
-fn on_commit_specific_lean_cpu_16(){
+fn specific_lean_cpu_16(){
 	let pl = load_plugin_lib("lean_cpu_16").unwrap();
 	println!("Plugin: {}", pl.lib_full_path);
 
-	let header:[u8;32] = [0;32];
+	let mut header:[u8;32] = [0;32];
 	let mut solution:[u32; 42] = [0;42];
 	let max_iterations=10000;
 	let return_value=pl.call_cuckoo_set_parameter(String::from("NUM_THREADS").as_bytes(), 4);
 	assert!(return_value==0);
+
+	//check specific header on 4 threads
+	let known_header = from_hex_string(KNOWN_16_HASH_1);
+	let return_value=pl.call_cuckoo(&known_header, &mut solution);
+	assert!(return_value==1);
+
 	for i in 0..max_iterations {
+		for j in 0..32 {
+			header[j]=rand::random::<u8>();
+		}
 		let _=pl.call_cuckoo(&header, &mut solution);
 		if i%100 == 0{ 
 			println!("Iterations: {}", i);
 		}
 	}
+	let return_value=pl.call_cuckoo(&known_header, &mut solution);
+	assert!(return_value==1);
 }
+
 
 // test specific issues in plugins,
 // for instance exercising parameters, etc 
@@ -718,15 +733,22 @@ fn on_commit_specific_mean_cpu_16(){
 	let pl = load_plugin_lib("mean_cpu_16").unwrap();
 	println!("Plugin: {}", pl.lib_full_path);
 
-	let header:[u8;32] = [0;32];
+	let mut header:[u8;32] = [0;32];
 	let mut solution:[u32; 42] = [0;42];
 	let max_iterations=10000;
 	let return_value=pl.call_cuckoo_set_parameter(String::from("NUM_THREADS").as_bytes(), 4);
 	assert!(return_value==0);
 	for i in 0..max_iterations {
+		for j in 0..32 {
+			header[j]=rand::random::<u8>();
+		}
 		let _=pl.call_cuckoo(&header, &mut solution);
 		if i%100 == 0{ 
 			println!("Iterations: {}", i);
 		}
 	}
+	//check specific header on 4 threads
+	let known_header = from_hex_string(KNOWN_16_HASH_1);
+	let return_value=pl.call_cuckoo(&known_header, &mut solution);
+	assert!(return_value==1);
 }

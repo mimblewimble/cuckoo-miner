@@ -30,6 +30,7 @@ libloading = "0.4.1"
 
 [dev-dependencies]
 const-cstr = "0.2"
+rand = "^0.3.16"
 
 [build-dependencies]
 cmake = "0.1.24"
