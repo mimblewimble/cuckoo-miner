@@ -32,9 +32,10 @@ use common::{
 
 static DLL_SUFFIX: &str = ".cuckooplugin";
 
-const TEST_PLUGIN_LIBS_CORE : [&str;3] = [
+const TEST_PLUGIN_LIBS_CORE : [&str;4] = [
 	"lean_cpu_16",
 	"lean_cpu_30",
+	"mean_cpu_16",
 	"mean_cpu_30",
 ];
 
@@ -352,6 +353,12 @@ fn on_commit_cuckoo_call(){
 			cuckoo_call_tests(&p);
 		}
 	}
+	/*let pl = load_plugin_lib("mean_cpu_30").unwrap();
+	cuckoo_call_tests(&pl);
+	//pl.unload();
+	let pl2 = load_plugin_lib("mean_cpu_16").unwrap();
+	cuckoo_call_tests(&pl2);*/
+
 }
 
 // Helper to test call_cuckoo_start_processing
@@ -685,11 +692,30 @@ fn on_commit_call_cuckoo_get_stats(){
 }
 
 // test specific issues in plugins,
-// for instance exercising parameters, etc // won't necessarily run this on every
-// commit on CI
+// for instance exercising parameters, etc 
 #[test]
-fn specific_lean_cpu_16(){
+fn on_commit_specific_lean_cpu_16(){
 	let pl = load_plugin_lib("lean_cpu_16").unwrap();
+	println!("Plugin: {}", pl.lib_full_path);
+
+	let header:[u8;32] = [0;32];
+	let mut solution:[u32; 42] = [0;42];
+	let max_iterations=10000;
+	let return_value=pl.call_cuckoo_set_parameter(String::from("NUM_THREADS").as_bytes(), 4);
+	assert!(return_value==0);
+	for i in 0..max_iterations {
+		let _=pl.call_cuckoo(&header, &mut solution);
+		if i%100 == 0{ 
+			println!("Iterations: {}", i);
+		}
+	}
+}
+
+// test specific issues in plugins,
+// for instance exercising parameters, etc 
+#[test]
+fn on_commit_specific_mean_cpu_16(){
+	let pl = load_plugin_lib("mean_cpu_16").unwrap();
 	println!("Plugin: {}", pl.lib_full_path);
 
 	let header:[u8;32] = [0;32];

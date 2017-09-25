@@ -19,36 +19,35 @@ set (BLAKE_2B "cuckoo/src/blake2b-ref.c")
 #set (SIMPLE_MINER_SOURCES cuckoo/src/simple_miner.cpp ${BLAKE_2B})
 
 #cuckoo_miner (lean_cpu) sources
-set (CUCKOO_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/cuckoo_miner.hpp cuckoo/src/cuckoo_miner.cpp ${BLAKE_2B})
+set (LEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/lean_miner.hpp cuckoo/src/lean_miner.cpp ${BLAKE_2B})
 
 #matrix_miner sources (mean_cpu)
-set (MATRIX_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/matrix_miner.hpp cuckoo/src/matrix_miner.cpp ${BLAKE_2B})
+set (MEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/mean_miner.hpp cuckoo/src/mean_miner.cpp ${BLAKE_2B})
 
 #cuda_miner source (lean_cuda)
 set (CUDA_MINER_SOURCES cuckoo/src/cuda_miner.cu ${BLAKE_2B} )
 
-#cuckoo simple miner targets
-#foreach(CUCKOO_SIZE 12 16 20 25 28 30)
-#   add_library(cuckoo_simple_${CUCKOO_SIZE} SHARED ${SIMPLE_MINER_SOURCES})
-    #get edgebits
-#   math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-#   set_target_properties(cuckoo_simple_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -DEDGEBITS=${EDGEBITS}" )
-#endforeach(CUCKOO_SIZE)
-
-###cuckoo edgetrim (lean_cpu) miner targets
+###lean_cpu miner targets
 foreach(CUCKOO_SIZE 16 30)
-    add_library(lean_cpu_${CUCKOO_SIZE} SHARED ${CUCKOO_MINER_SOURCES})
+    add_library(lean_cpu_${CUCKOO_SIZE} SHARED ${LEAN_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
     set_target_properties(lean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -DATOMIC -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin" )
 endforeach(CUCKOO_SIZE)
 
 #matrix miner (mean_cpu) targets
-foreach(CUCKOO_SIZE 30)
-    add_library(mean_cpu_${CUCKOO_SIZE} SHARED ${MATRIX_MINER_SOURCES})
+foreach(CUCKOO_SIZE 16 30)
+    if (CUCKOO_SIZE EQUAL 16)
+        set (DXBITSFLAG "-DXBITS=0")
+        set (EXPANDROUNDFLAG "")
+    else()
+        set (DXBITSFLAG "")
+        set (EXPANDROUNDFLAG "-DEXPANDROUND=17")
+    endif()
+    add_library(mean_cpu_${CUCKOO_SIZE} SHARED ${MEAN_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-    set_target_properties(mean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 -DNSIPHASH=8 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
+    set_target_properties(mean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 ${DXBITSFLAG} ${EXPANDROUNDFLAG} -DNSIPHASH=8 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
 endforeach(CUCKOO_SIZE)
 
 # Cuda

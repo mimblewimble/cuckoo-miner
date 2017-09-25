@@ -39,6 +39,8 @@ pub fn fail_on_empty_directory(name: &str) {
 }
 
 fn main() {
+	#[cfg(feature = "no-plugin-build")]
+	return;
 	let mut command_finder = Finder::new();
 	// dumb and quick test for windows, can parse later
 	let windows_sysinfo = command_finder.maybe_have("systeminfo");
