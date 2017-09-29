@@ -18,7 +18,7 @@
 //!
 
 use std::sync::{Arc, RwLock};
-use std::thread;
+use std::{thread, time};
 use std::mem::transmute;
 
 use rand::{self, Rng};
@@ -286,6 +286,9 @@ impl Delegator {
 
 				}
 			}
+			//avoid busy wait 
+			let sleep_dur = time::Duration::from_millis(100);
+			thread::sleep(sleep_dur);
 		}
 
 		// Do any cleanup

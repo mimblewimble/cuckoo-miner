@@ -34,11 +34,13 @@ use common::{
 
 static DLL_SUFFIX: &str = ".cuckooplugin";
 
-const TEST_PLUGIN_LIBS_CORE : [&str;4] = [
+const TEST_PLUGIN_LIBS_CORE : [&str;6] = [
 	"lean_cpu_16",
 	"lean_cpu_30",
 	"mean_cpu_16",
 	"mean_cpu_30",
+	"mean_compat_cpu_16",
+	"mean_compat_cpu_30"
 ];
 
 const TEST_PLUGIN_LIBS_OPTIONAL : [&str;1] = [

@@ -15,96 +15,7 @@
 
 //! Tests for async mode.. should be run with RUST_TEST_THREADS=1
 
-extern crate cuckoo_miner as cuckoo;
-extern crate time;
-
 pub mod common;
-use common::{SAMPLE_GRIN_PRE_HEADER_1, SAMPLE_GRIN_POST_HEADER_1};
-
-use cuckoo::{CuckooMinerConfig, CuckooMiner};
-
-// Helper function, tests a particular miner implementation against a known set
-fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64) {
-	let mut config_vec=Vec::new();
-	for p in full_paths.into_iter() {
-		let mut config = CuckooMinerConfig::new();
-		config.plugin_full_path = String::from(p);
-		config_vec.push(config);
-	}
-
-	let stat_check_interval = 3;
-	let mut deadline = time::get_time().sec + duration_in_seconds;
-	let mut next_stat_check = time::get_time().sec + stat_check_interval;
-	let mut stats_updated=false;
-	//for CI testing on slower servers
-	//if we're trying to quit and there are no stats yet, keep going for a bit
-	let mut extra_time=false;
-	let extra_time_value=600;
-
-	while time::get_time().sec < deadline {
-
-		println!("Test mining for {} seconds, looking for difficulty > 0", duration_in_seconds);
-		let mut i=0;
-		for c in config_vec.clone().into_iter(){
-			println!("Plugin {}: {}", i, c.plugin_full_path);
-			i+=1;
-		}
-
-		// these always get consumed after a notify
-		let miner = CuckooMiner::new(config_vec.clone()).expect("");
-		let job_handle = miner.notify(1, SAMPLE_GRIN_PRE_HEADER_1, SAMPLE_GRIN_POST_HEADER_1, 0).unwrap();
-
-		loop {
-			if let Some(s) = job_handle.get_solution() {
-				println!("Sol found: {}, {:?}", s.get_nonce_as_u64(), s);
-				// up to you to read it and check difficulty
-				continue;
-			}
-			if time::get_time().sec >= next_stat_check {
-				let mut sps_total=0.0;
-				for index in 0..config_vec.len() {
-					let stats_vec=job_handle.get_stats(index);
-					if let Err(e) = stats_vec {
-						panic!("Error getting stats: {:?}", e);
-					}
-					for s in stats_vec.unwrap().into_iter() {
-						let last_solution_time_secs = s.last_solution_time as f64 / 1000.0;
-						let last_hashes_per_sec = 1.0 / last_solution_time_secs;
-						println!("Plugin {} - Device {} ({}) - Last Solution time: {}; Solutions per second: {:.*}", 
-						index,s.device_id, s.device_name, last_solution_time_secs, 3, last_hashes_per_sec);
-						if last_hashes_per_sec.is_finite() {
-							sps_total+=last_hashes_per_sec;
-						}
-						if last_solution_time_secs > 0.0 {
-							stats_updated = true;
-						}
-						i+=1;
-					}
-				}
-				println!("Total solutions per second: {}", sps_total);
-				next_stat_check = time::get_time().sec + stat_check_interval;
-			}
-			if time::get_time().sec > deadline {
-				if !stats_updated && !extra_time {
-					extra_time=true;
-					deadline+=extra_time_value;
-					println!("More time needed");
-				} else {
-					println!("Stopping jobs and waiting for cleanup");
-					job_handle.stop_jobs();
-					break;
-				}
-			}
-			if stats_updated && extra_time {
-				break;
-			}
-		}
-		if stats_updated && extra_time {
-			break;
-		}
-}
-	assert!(stats_updated==true);
-}
 
 //mines for a bit on each available plugin, one after the other
 #[test]
@@ -113,7 +24,7 @@ fn on_commit_mine_single_plugin_async() {
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
-		mine_async_for_duration(plugin_path_vec, 10);
+		common::mine_async_for_duration(plugin_path_vec, 10, None);
 	}
 }
 
@@ -124,7 +35,7 @@ fn on_cuda_commit_mine_single_plugin_async() {
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
-		mine_async_for_duration(plugin_path_vec, 60);
+		common::mine_async_for_duration(plugin_path_vec, 60, None);
 	}
 }
 
@@ -138,7 +49,7 @@ fn on_cuda_commit_mine_mean_cpu_and_lean_cuda_async() {
 			plugin_path_vec.push(&c.full_path);
 		}
 	}
-	mine_async_for_duration(plugin_path_vec, 180);
+	common::mine_async_for_duration(plugin_path_vec, 180, None);
 }
 
 //Mines for a bit on all available plugins at once
@@ -152,5 +63,5 @@ fn on_commit_mine_all_plugins_async() {
 	for c in &caps {
 		plugin_path_vec.push(&c.full_path);
 	}
-	mine_async_for_duration(plugin_path_vec, 120);
+	common::mine_async_for_duration(plugin_path_vec, 120, None);
 }
