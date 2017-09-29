@@ -22,9 +22,9 @@ pub mod common;
 fn on_commit_mine_single_plugin_async() {
 	let caps = common::get_plugin_vec("");
 	for c in &caps {
-	 let mut plugin_path_vec:Vec<&str> = Vec::new();
+		let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
-		common::mine_async_for_duration(plugin_path_vec, 10, None);
+		common::mine_async_for_duration(plugin_path_vec, 30, None);
 	}
 }
 

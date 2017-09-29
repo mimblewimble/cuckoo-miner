@@ -358,9 +358,9 @@ fn on_commit_cuckoo_call(){
 		}
 	}
 	/*let pl = load_plugin_lib("mean_cpu_30").unwrap();
-	cuckoo_call_tests(&pl);
+	cuckoo_call_tests(&pl);*/
 	//pl.unload();
-	let pl2 = load_plugin_lib("mean_cpu_16").unwrap();
+	/*let pl2 = load_plugin_lib("mean_cpu_16").unwrap();
 	cuckoo_call_tests(&pl2);*/
 
 }

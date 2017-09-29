@@ -38,31 +38,28 @@ endforeach(CUCKOO_SIZE)
 #matrix miner (mean_cpu) targets
 foreach(CUCKOO_SIZE 16 30)
     if (CUCKOO_SIZE EQUAL 16)
-        set (DXBITSFLAG "-DXBITS=0")
-        set (EXPANDROUNDFLAG "")
+       set (DXBITSFLAG "-DXBITS=0")
     else()
-        set (DXBITSFLAG "")
-        set (EXPANDROUNDFLAG "-DEXPANDROUND=17")
+       set (DXBITSFLAG "")
     endif()
+
     add_library(mean_cpu_${CUCKOO_SIZE} SHARED ${MEAN_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-    set_target_properties(mean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 ${DXBITSFLAG} ${EXPANDROUNDFLAG} -DNSIPHASH=8 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
+    set_target_properties(mean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 ${DXBITSFLAG} -DNSIPHASH=8 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
 endforeach(CUCKOO_SIZE)
 
 #matrix miner (mean_cpu) compatible mode targets, for older processors
 foreach(CUCKOO_SIZE 16 30)
     if (CUCKOO_SIZE EQUAL 16)
-        set (DXBITSFLAG "-DXBITS=0")
-        set (EXPANDROUNDFLAG "")
+       set (DXBITSFLAG "-DXBITS=0")
     else()
-        set (DXBITSFLAG "")
-        set (EXPANDROUNDFLAG "-DEXPANDROUND=17")
+       set (DXBITSFLAG "")
     endif()
     add_library(mean_compat_cpu_${CUCKOO_SIZE} SHARED ${MEAN_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-    set_target_properties(mean_compat_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 ${DXBITSFLAG} ${EXPANDROUNDFLAG} -DNSIPHASH=1 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
+    set_target_properties(mean_compat_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 ${DXBITSFLAG} -DNSIPHASH=1 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
 endforeach(CUCKOO_SIZE)
 
 # Cuda
