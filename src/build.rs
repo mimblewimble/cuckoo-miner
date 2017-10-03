@@ -25,6 +25,12 @@ use std::path::PathBuf;
 use fs_extra::dir::*;
 use sanity::Finder;
 
+
+#[cfg(feature = "build-cuda-plugins")]
+const BUILD_CUDA_PLUGINS:&str="TRUE";
+#[cfg(not(feature = "build-cuda-plugins"))]
+const BUILD_CUDA_PLUGINS:&str="FALSE";
+
 /// Tests whether source cuckoo directory exists
 
 pub fn fail_on_empty_directory(name: &str) {
@@ -70,12 +76,12 @@ fn main() {
 	for f in dir_content.files {
 		println!("cargo:rerun-if-changed={}", f);
 	}
+
 	let dst = Config::new("src/cuckoo_sys/plugins")
-	                      //.define("FOO","BAR") //whatever flags go here
+	                      .define("BUILD_CUDA_PLUGINS",BUILD_CUDA_PLUGINS) //whatever flags go here
 	                      //.cflag("-foo") //and here
 	                      .build_target("")
 	                      .build();
-
 
 	println!("Plugin path: {:?}", plugin_path);
 	println!("OUT PATH: {:?}", out_path);

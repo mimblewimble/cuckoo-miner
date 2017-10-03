@@ -63,8 +63,7 @@ foreach(CUCKOO_SIZE 16 30)
 endforeach(CUCKOO_SIZE)
 
 # Cuda
-option(WITH_CUDA "Build NVIDIA-CUDA support" TRUE)
-if(WITH_CUDA)
+if(BUILD_CUDA_PLUGINS)
     include("cmake/find_cuda.cmake")
     IF (CUDA_FOUND)
     #TODO: detect or make this a flag, if gcc 5 is installed separately for cuda
@@ -78,4 +77,4 @@ if(WITH_CUDA)
         set_target_properties(lean_cuda_${CUCKOO_SIZE} PROPERTIES PREFIX "" SUFFIX ".cuckooplugin")
         endforeach(CUCKOO_SIZE)
     endif(CUDA_FOUND)
-endif(WITH_CUDA)
+endif(BUILD_CUDA_PLUGINS)

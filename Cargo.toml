@@ -11,6 +11,8 @@ build = "src/build.rs"
 default = []
 #feature to allow turing off plugin builds
 no-plugin-build = []
+#feature which defines whether to build cuda libs
+build-cuda-plugins = []
 
 [dependencies]
 time = "^0.1"
