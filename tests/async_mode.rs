@@ -58,11 +58,11 @@ fn on_cuda_commit_mine_mean_cpu_and_lean_cuda_async() {
 fn on_commit_mine_plugins_async() {
 	// Get a list of installed plugins and capabilities
 	// only do cuckoo 30s
-	let caps = common::get_plugin_vec("30");
+	let caps = common::get_plugin_vec("16");
 	let mut plugin_path_vec:Vec<&str> = Vec::new();
 	for c in &caps {
 		//Have to confine this for the time being to 2, due to travis CI memory constraints
-		if c.full_path.contains("lean_cuda_30") || c.full_path.contains("mean_cpu_30"){
+		if c.full_path.contains("lean_cuda") || c.full_path.contains("mean_cpu"){
 			plugin_path_vec.push(&c.full_path);
 		}
 	}
