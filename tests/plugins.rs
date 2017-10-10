@@ -16,7 +16,6 @@
 /// existence and correct functionality of each plugin function
 
 extern crate rand;
-
 extern crate cuckoo_miner as cuckoo;
 
 use std::path::PathBuf;

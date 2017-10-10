@@ -37,3 +37,13 @@ fn on_cuda_commit_mine_sync() {
 		common::mine_sync_for_duration(&c.full_path, 75, None);
 	}
 }
+
+//test for mean_16 compat
+//(won't be efficient, but should stress-tes plugins nicely)
+#[test]
+fn manual_mean_16_compat() {
+	// Get a list of installed plugins and capabilities
+	// only do cuckoo 30s
+	let caps = common::get_plugin_vec("mean_compat_cpu_16");
+	common::mine_sync_for_duration(&caps[0].full_path, 3600, None);
+}

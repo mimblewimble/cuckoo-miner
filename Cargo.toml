@@ -19,7 +19,7 @@ time = "^0.1"
 env_logger="^0.3.5"
 rust-crypto = "0.2.36"
 log = "^0.3"
-rand = "^0.3"
+rand = "^0.3.16"
 byteorder = "^0.5"
 blake2-rfc = "~0.2.17"
 regex = "~0.2.2"
@@ -32,7 +32,6 @@ libloading = "0.4.1"
 
 [dev-dependencies]
 const-cstr = "0.2"
-rand = "^0.3.16"
 
 [build-dependencies]
 cmake = "0.1.24"

@@ -18,10 +18,13 @@
 
 extern crate cuckoo_miner as cuckoo;
 extern crate time;
+extern crate rand;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std;
+
+use common::rand::Rng;
 
 use self::cuckoo::{CuckooPluginManager,
 	CuckooPluginCapabilities,
@@ -70,6 +73,13 @@ pub const KNOWN_30_HASH_1:&str = "11c5059b4d4053131323fdfab6a6509d73ef22\
 pub const KNOWN_16_HASH_1:&str = "5f16f104018fc651c00a280ba7a8b48db80b30\
 20eed60f393bdcb17d0e646538";
 
+pub fn get_random_hash() -> [u8;32] {
+	let mut ret_val:[u8;32] = [0;32];
+	for i in 0..32 {
+		ret_val[i]=rand::OsRng::new().unwrap().gen();
+	};
+	ret_val
+}
 
 // Helper to load plugins
 pub fn get_plugin_vec(filter: &str) -> Vec<CuckooPluginCapabilities>{
@@ -102,24 +112,24 @@ pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:O
 	let deadline = time::get_time().sec + duration_in_seconds;
 	let mut next_stat_check = time::get_time().sec + stat_check_interval;
 
-	let mut i=0;
+	let mut i:u64=0;
 	println!("Test mining for {} seconds, looking for difficulty > 0", duration_in_seconds);
 	for c in config_vec.clone().into_iter(){
 		println!("Plugin (Sync Mode): {}", c.plugin_full_path);
 	}
+	let miner = CuckooMiner::new(config_vec.clone()).expect("");
 	while time::get_time().sec < deadline {
-		let miner = CuckooMiner::new(config_vec.clone()).expect("");
-		let mut header:[u8; 32] = [0;32];
 		let mut iterations=0;
 		let mut solution = CuckooMinerSolution::new();
 		loop {
-			header[0]=i;
+			let header:[u8; 32] = get_random_hash();
 			//Mine on plugin loaded at index 0
 			let result = miner.mine(&header, &mut solution, 0).unwrap();
 			iterations+=1;
 			if result == true {
 				println!("Solution found after {} iterations: {}", i, solution);
 				println!("For hash: {:?}", header);
+				i=0;
 				break;
 			}
 			if time::get_time().sec > deadline {
@@ -137,9 +147,6 @@ pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:O
 				next_stat_check = time::get_time().sec + stat_check_interval;
 			}
 			i+=1;
-			if i==255 {
-				i=0;
-			}
 		}
 	}
 }
