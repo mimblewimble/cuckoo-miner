@@ -19,6 +19,7 @@ extern crate cuckoo_miner as cuckoo;
 extern crate time;
 
 pub mod common;
+use std::collections::HashMap;
 
 //Mines for a bit on each available plugin, one after the other
 #[test]
@@ -42,8 +43,8 @@ fn on_cuda_commit_mine_sync() {
 //(won't be efficient, but should stress-tes plugins nicely)
 #[test]
 fn manual_mean_16_compat() {
-	// Get a list of installed plugins and capabilities
-	// only do cuckoo 30s
+	let mut params=HashMap::new();
+	params.insert(String::from("NUM_THREADS"), 4);
 	let caps = common::get_plugin_vec("mean_compat_cpu_16");
-	common::mine_sync_for_duration(&caps[0].full_path, 3600, None);
+	common::mine_sync_for_duration(&caps[0].full_path, 3600, Some(params.clone()));
 }
