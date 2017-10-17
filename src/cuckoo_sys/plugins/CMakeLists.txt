@@ -19,10 +19,10 @@ set (BLAKE_2B "cuckoo/src/blake2b-ref.c")
 #set (SIMPLE_MINER_SOURCES cuckoo/src/simple_miner.cpp ${BLAKE_2B})
 
 #cuckoo_miner (lean_cpu) sources
-set (LEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/lean_miner.hpp cuckoo/src/lean_miner.cpp cuckoo/src/cuckoo_miner/osx_pthread_barrier.c ${BLAKE_2B})
+set (LEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/lean_miner.hpp cuckoo/src/lean_miner.cpp ${BLAKE_2B})
 
 #matrix_miner sources (mean_cpu)
-set (MEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/mean_miner.hpp cuckoo/src/mean_miner.cpp cuckoo/src/cuckoo_miner/osx_pthread_barrier.c ${BLAKE_2B})
+set (MEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/mean_miner.hpp cuckoo/src/mean_miner.cpp ${BLAKE_2B})
 
 #cuda_miner source (lean_cuda)
 set (CUDA_MINER_SOURCES cuckoo/src/cuda_miner.cu ${BLAKE_2B} )
