@@ -20,7 +20,7 @@ pub mod common;
 //mines for a bit on each available plugin, one after the other
 #[test]
 fn on_commit_mine_single_plugin_async() {
-	let caps = common::get_plugin_vec("16");
+	let caps = common::get_plugin_vec("mean_cpu_16");
 	for c in &caps {
 		let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);

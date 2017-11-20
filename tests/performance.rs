@@ -35,13 +35,13 @@ fn profile_mine_mean_30_async() {
 //they're taking roughly the same time
 #[test]
 fn perf_mean_30_compare() {
-	let caps = common::get_plugin_vec("mean_cpu_30");
+	let caps = common::get_plugin_vec("mean_cpu_16");
 	let mut plugin_path_vec:Vec<&str> = Vec::new();
 	for c in &caps {
 		plugin_path_vec.push(&c.full_path);
 	}
 	let mut params=HashMap::new();
-	params.insert(String::from("NUM_THREADS"), 8);
+	params.insert(String::from("NUM_THREADS"), 1);
 	common::mine_sync_for_duration(plugin_path_vec[0].clone(), 20, Some(params.clone()));
 	common::mine_async_for_duration(plugin_path_vec, 20, Some(params.clone()));
 }
