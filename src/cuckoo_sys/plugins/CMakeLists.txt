@@ -24,8 +24,8 @@ set (LEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/lean
 #matrix_miner sources (mean_cpu)
 set (MEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/mean_miner.hpp cuckoo/src/mean_miner.cpp ${BLAKE_2B})
 
-#cuda_miner source (lean_cuda)
-set (CUDA_MINER_SOURCES cuckoo/src/cuda_miner.cu ${BLAKE_2B} )
+#cuda_miner source (mean_cuda)
+set (CUDA_MINER_SOURCES cuckoo/src/mean_miner.cu ${BLAKE_2B} )
 
 ###lean_cpu miner targets
 foreach(CUCKOO_SIZE 16 30)
@@ -73,8 +73,8 @@ if(BUILD_CUDA_PLUGINS)
         foreach(CUCKOO_SIZE 30)
             #get edgebits
             math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-        cuda_add_library(lean_cuda_${CUCKOO_SIZE} SHARED ${CUDA_MINER_SOURCES} OPTIONS "-lssl -DEDGEBITS=${EDGEBITS}")
-        set_target_properties(lean_cuda_${CUCKOO_SIZE} PROPERTIES PREFIX "" SUFFIX ".cuckooplugin")
+        cuda_add_library(cuda_${CUCKOO_SIZE} SHARED ${CUDA_MINER_SOURCES} OPTIONS "-lssl -DEDGEBITS=${EDGEBITS}")
+        set_target_properties(cuda_${CUCKOO_SIZE} PROPERTIES PREFIX "" SUFFIX ".cuckooplugin")
         endforeach(CUCKOO_SIZE)
     endif(CUDA_FOUND)
 endif(BUILD_CUDA_PLUGINS)
