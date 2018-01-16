@@ -16,7 +16,6 @@
 //! Performance-related tests go here
 
 pub mod common;
-use std::collections::HashMap;
 
 //Test for profiling
 #[test]
@@ -40,8 +39,8 @@ fn perf_mean_30_compare() {
 	for c in &caps {
 		plugin_path_vec.push(&c.full_path);
 	}
-	let mut params=HashMap::new();
-	params.insert(String::from("NUM_THREADS"), 1);
+	let mut params=Vec::new();
+	params.push((String::from("NUM_THREADS"),0,1));
 	common::mine_sync_for_duration(plugin_path_vec[0].clone(), 20, Some(params.clone()));
 	common::mine_async_for_duration(plugin_path_vec, 20, Some(params.clone()));
 }

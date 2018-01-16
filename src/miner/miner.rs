@@ -19,7 +19,6 @@
 use std::sync::{Arc, RwLock};
 use std::{thread, time};
 use std::{fmt, cmp};
-use std::collections::HashMap;
 
 use byteorder::{ByteOrder, BigEndian};
 use blake2::blake2b::Blake2b;
@@ -155,14 +154,14 @@ pub struct CuckooMinerConfig {
 
 	/// A parameter list, which differs depending on which
 	/// plugin is being called
-	pub parameter_list: HashMap<String, u32>,
+	pub parameter_list: Vec<(String, u32, u32)>,
 }
 
 impl Default for CuckooMinerConfig {
 	fn default() -> CuckooMinerConfig {
 		CuckooMinerConfig {
 			plugin_full_path: String::from(""),
-			parameter_list: HashMap::new(),
+			parameter_list: Vec::new(),
 		}
 	}
 }
@@ -186,6 +185,9 @@ pub struct CuckooMinerDeviceStats {
 	/// The device name
 	pub device_name: String,
 
+	/// Whether the device is marked for use
+	pub in_use: u32,
+ 
 	/// The time at which the device last began to search a hash (epoch in
 	/// mills)
 	pub last_start_time: u64,
@@ -361,8 +363,8 @@ impl CuckooMiner {
 		let mut lib_vec=Vec::new();
 		for c in &configs {
 			let lib=PluginLibrary::new(&c.plugin_full_path)?;
-			for (name, value) in c.parameter_list.clone() {
-				CuckooMiner::set_parameter(name.clone(), value.clone(), &lib)?;
+			for elem in c.parameter_list.clone() {
+				CuckooMiner::set_parameter(elem.0.clone(), elem.1.clone(), elem.2.clone(), &lib)?;
 			}
 			lib_vec.push(lib);
 		}
@@ -394,9 +396,10 @@ impl CuckooMiner {
 	/// with specific detail is returned.
 	///
 
-	pub fn set_parameter(name: String, value: u32, library:&PluginLibrary) -> Result<(), CuckooMinerError> {
+	pub fn set_parameter(name: String, device_id: u32, value: u32, library:&PluginLibrary) -> Result<(), CuckooMinerError> {
 		let return_code = library.call_cuckoo_set_parameter(
 			name.as_bytes(),
+			device_id,
 			value,
 		);
 		if return_code != 0 {
@@ -404,6 +407,7 @@ impl CuckooMiner {
 			let reason = match return_code {
 				1 => "Property doesn't exist for this plugin",
 				2 => "Property outside allowed range",
+				5 => "Device doesn't exist",
 				_ => "Unknown Error",
 			};
 

@@ -20,7 +20,6 @@ extern crate cuckoo_miner as cuckoo;
 extern crate time;
 extern crate rand;
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std;
 
@@ -97,7 +96,7 @@ pub fn get_plugin_vec(filter: &str) -> Vec<CuckooPluginCapabilities>{
 }
 
 // Helper function, tests a particular miner implementation against a known set
-pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:Option<HashMap<String, u32>>) {
+pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:Option<Vec<(String, u32, u32)>>) {
 	let mut config_vec=Vec::new();
 	let mut config = CuckooMinerConfig::new();
 	config.plugin_full_path = String::from(full_path);
@@ -139,6 +138,7 @@ pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:O
 			if time::get_time().sec >= next_stat_check {
 				let stats_vec=miner.get_stats(0).unwrap();
 				for s in stats_vec.into_iter() {
+					if s.in_use == 0 {continue;}
 					let last_solution_time_secs = s.last_solution_time as f64 / 1000000000.0;
 					let last_hashes_per_sec = 1.0 / last_solution_time_secs;
 					println!("Plugin 0 - Device {} ({}) - Last Graph time: {}; Graphs per second: {:.*} \
@@ -155,7 +155,7 @@ pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:O
 
 // Helper function, tests a particular miner implementation against a known set
 pub fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64, 
-	params:Option<HashMap<String, u32>>) {
+	params:Option<Vec<(String, u32, u32)>>) {
 	let mut config_vec=Vec::new();
 	for p in full_paths.into_iter() {
 		let mut config = CuckooMinerConfig::new();
@@ -202,6 +202,7 @@ pub fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64,
 						panic!("Error getting stats: {:?}", e);
 					}
 					for s in stats_vec.unwrap().into_iter() {
+						if s.in_use == 0 {continue;}
 						let last_solution_time_secs = s.last_solution_time as f64 / 1000000000.0;
 						let last_hashes_per_sec = 1.0 / last_solution_time_secs;
 						println!("Plugin 0 - Device {} ({}) - Last Graph time: {}; Graphs per second: {:.*} \

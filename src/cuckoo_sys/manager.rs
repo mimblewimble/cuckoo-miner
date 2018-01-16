@@ -41,8 +41,8 @@ type CuckooDescription = unsafe extern "C" fn(*mut c_uchar,
                                               *mut c_uchar,
                                               *mut uint32_t);
 type CuckooParameterList = unsafe extern "C" fn(*mut c_uchar, *mut uint32_t) -> uint32_t;
-type CuckooSetParameter = unsafe extern "C" fn(*const c_uchar, uint32_t, uint32_t) -> uint32_t;
-type CuckooGetParameter = unsafe extern "C" fn(*const c_uchar, uint32_t, *mut uint32_t) -> uint32_t;
+type CuckooSetParameter = unsafe extern "C" fn(*const c_uchar, uint32_t, uint32_t, uint32_t) -> uint32_t;
+type CuckooGetParameter = unsafe extern "C" fn(*const c_uchar, uint32_t, uint32_t, *mut uint32_t) -> uint32_t;
 type CuckooIsQueueUnderLimit = unsafe extern "C" fn() -> uint32_t;
 type CuckooPushToInputQueue = unsafe extern "C" fn(*const c_uchar, uint32_t, *const c_uchar)
                                                    -> uint32_t;
@@ -512,6 +512,7 @@ impl PluginLibrary {
 	/// * `name_bytes` (IN) A reference to a block of [u8] bytes storing the
 	/// parameter name
 	///
+	/// * `device_id` (IN) The device ID to which the parameter applies (if applicable)
 	/// * `value` (OUT) A reference where the parameter value will be stored
 	///
 	/// #Returns
@@ -537,9 +538,9 @@ impl PluginLibrary {
 	/// ```
 	///
 
-	pub fn call_cuckoo_get_parameter(&self, name_bytes: &[u8], value: &mut u32) -> u32 {
+	pub fn call_cuckoo_get_parameter(&self, name_bytes: &[u8], device_id: u32, value: &mut u32) -> u32 {
 		let cuckoo_get_parameter_ref = self.cuckoo_get_parameter.lock().unwrap();
-		unsafe { cuckoo_get_parameter_ref(name_bytes.as_ptr(), name_bytes.len() as u32, value) }
+		unsafe { cuckoo_get_parameter_ref(name_bytes.as_ptr(), name_bytes.len() as u32, device_id, value) }
 	}
 
 	/// Sets the value of a parameter in the currently loaded plugin
@@ -549,6 +550,7 @@ impl PluginLibrary {
 	/// * `name_bytes` (IN) A reference to a block of [u8] bytes storing the
 	/// parameter name
 	///
+	/// * `device_id` (IN) The deviceID to which the parameter applies (if applicable)
 	/// * `value` (IN) The value to which to set the parameter
 	///
 	/// #Returns
@@ -575,9 +577,9 @@ impl PluginLibrary {
 	/// ```
 	///
 
-	pub fn call_cuckoo_set_parameter(&self, name_bytes: &[u8], value: u32) -> u32 {
+	pub fn call_cuckoo_set_parameter(&self, name_bytes: &[u8], device_id: u32, value: u32) -> u32 {
 		let cuckoo_set_parameter_ref = self.cuckoo_set_parameter.lock().unwrap();
-		unsafe { cuckoo_set_parameter_ref(name_bytes.as_ptr(), name_bytes.len() as u32, value) }
+		unsafe { cuckoo_set_parameter_ref(name_bytes.as_ptr(), name_bytes.len() as u32, device_id, value) }
 	}
 
 	/// #Description

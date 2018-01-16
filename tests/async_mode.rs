@@ -31,11 +31,17 @@ fn on_commit_mine_single_plugin_async() {
 //Same as above, but only for cuda
 #[test]
 fn on_cuda_commit_mine_single_plugin_async() {
+	let mut params=Vec::new();
+	params.push((String::from("USE_DEVICE"),1,0));
+	params.push((String::from("NUM_BLOCKS"),0,128));
+	params.push((String::from("THREADS_PER_BLOCK"),0,8));
+	params.push((String::from("NUM_BLOCKS"),2,64));
+	params.push((String::from("THREADS_PER_BLOCK"),2,8));
 	let caps = common::get_plugin_vec("cuda");
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
-		common::mine_async_for_duration(plugin_path_vec, 60, None);
+		common::mine_async_for_duration(plugin_path_vec, 60, Some(params.clone()));
 	}
 }
 

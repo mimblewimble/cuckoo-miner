@@ -241,21 +241,21 @@ fn call_cuckoo_get_parameter_tests(pl: &PluginLibrary){
 	//normal param that should be there
 	let name = "NUM_THREADS";
 	let mut num_threads:u32 = 0;
-	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), &mut num_threads);
+	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), 0, &mut num_threads);
 	assert!(num_threads > 0);
 	assert!(return_value == 0);
 
 	//normal param that's not there
 	let name = "SANDWICHES";
 	let mut num_sandwiches:u32 = 0;
-	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), &mut num_sandwiches);
+	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), 0, &mut num_sandwiches);
 	assert!(num_sandwiches == 0);
 	assert!(return_value == 1);
 
 	//normal param that's not there and is too long
 	let name = "SANDWICHESSANDWICHESSANDWICHESSANDWICHESSANDWICHESSANDWICHESANDWICHESSAES";
 	let mut num_sandwiches:u32 = 0;
-	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), &mut num_sandwiches);
+	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), 0, &mut num_sandwiches);
 	assert!(num_sandwiches == 0);
 	assert!(return_value == 4);
 }
@@ -281,28 +281,28 @@ fn call_cuckoo_set_parameter_tests(pl: &PluginLibrary){
 	println!("Plugin: {}", pl.lib_full_path);
 	//normal param that should be there
 	let name = "NUM_THREADS";
-	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 16);
+	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 0, 16);
 	assert!(return_value == 0);
 
 	//param is there, but calling it with a value outside its expected range
 	let name = "NUM_THREADS";
-	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 99999999);
+	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 0, 99999999);
 	assert!(return_value == 2);
 
 	//normal param that's not there
 	let name = "SANDWICHES";
-	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 8);
+	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 0, 8);
 	assert!(return_value == 1);
 
 	//normal param that's not there and is too long
 	let name = "SANDWICHESSANDWICHESSANDWICHESSANDWICHESSANDWICHESSANDWICHESANDWICHESSAES";
-	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 8);
+	let return_value = pl.call_cuckoo_set_parameter(name.as_bytes(), 0, 8);
 	assert!(return_value == 4);
 
 	//get that one back and check value
 	let name = "NUM_THREADS";
 	let mut num_threads:u32 = 0;
-	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), &mut num_threads);
+	let return_value = pl.call_cuckoo_get_parameter(name.as_bytes(), 0, &mut num_threads);
 	println!("Num Threads: {}", num_threads);
 	assert!(return_value == 0);
 	assert!(num_threads == 16);
@@ -705,7 +705,7 @@ fn specific_lean_cpu_16(){
 	let mut header:[u8;32] = [0;32];
 	let mut solution:[u32; 42] = [0;42];
 	let max_iterations=10000;
-	let return_value=pl.call_cuckoo_set_parameter(String::from("NUM_THREADS").as_bytes(), 4);
+	let return_value=pl.call_cuckoo_set_parameter(String::from("NUM_THREADS").as_bytes(), 0, 4);
 	assert!(return_value==0);
 
 	//check specific header on 4 threads
@@ -737,7 +737,7 @@ fn on_commit_specific_mean_cpu_16(){
 	let mut header:[u8;32] = [0;32];
 	let mut solution:[u32; 42] = [0;42];
 	let max_iterations=10000;
-	let return_value=pl.call_cuckoo_set_parameter(String::from("NUM_THREADS").as_bytes(), 4);
+	let return_value=pl.call_cuckoo_set_parameter(String::from("NUM_THREADS").as_bytes(), 0, 4);
 	assert!(return_value==0);
 	for i in 0..max_iterations {
 		for j in 0..32 {
