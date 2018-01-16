@@ -139,10 +139,12 @@ pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:O
 			if time::get_time().sec >= next_stat_check {
 				let stats_vec=miner.get_stats(0).unwrap();
 				for s in stats_vec.into_iter() {
-					let last_solution_time_secs = s.last_solution_time as f64 / 1000.0;
+					let last_solution_time_secs = s.last_solution_time as f64 / 1000000000.0;
 					let last_hashes_per_sec = 1.0 / last_solution_time_secs;
-					println!("Plugin 0 - Device {} ({}) - Last Solution time: {}; Solutions per second: {:.*}", 
-					s.device_id, s.device_name, last_solution_time_secs, 3, last_hashes_per_sec);
+					println!("Plugin 0 - Device {} ({}) - Last Graph time: {}; Graphs per second: {:.*} \
+					- Total Attempts {}", 
+					s.device_id, s.device_name, last_solution_time_secs, 3, last_hashes_per_sec,
+					s.iterations_completed);
 				}
 				next_stat_check = time::get_time().sec + stat_check_interval;
 			}
@@ -200,10 +202,12 @@ pub fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64,
 						panic!("Error getting stats: {:?}", e);
 					}
 					for s in stats_vec.unwrap().into_iter() {
-						let last_solution_time_secs = s.last_solution_time as f64 / 1000.0;
+						let last_solution_time_secs = s.last_solution_time as f64 / 1000000000.0;
 						let last_hashes_per_sec = 1.0 / last_solution_time_secs;
-						println!("Plugin {} - Device {} ({}) - Last Solution time: {}; Solutions per second: {:.*}", 
-						index,s.device_id, s.device_name, last_solution_time_secs, 3, last_hashes_per_sec);
+						println!("Plugin 0 - Device {} ({}) - Last Graph time: {}; Graphs per second: {:.*} \
+						- Total Attempts {}", 
+						s.device_id, s.device_name, last_solution_time_secs, 3, last_hashes_per_sec,
+						s.iterations_completed);
 						if last_hashes_per_sec.is_finite() {
 							sps_total+=last_hashes_per_sec;
 						}
