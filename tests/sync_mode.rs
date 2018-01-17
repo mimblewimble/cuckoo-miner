@@ -23,9 +23,9 @@ pub mod common;
 //Mines for a bit on each available plugin, one after the other
 #[test]
 fn on_commit_mine_sync() {
-	let caps = common::get_plugin_vec("");
+	let caps = common::get_plugin_vec("16");
 	for c in &caps {
-		common::mine_sync_for_duration(&c.full_path, 75, None);
+		common::mine_sync_for_duration(&c.full_path, 10, None);
 	}
 }
 

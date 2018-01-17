@@ -353,7 +353,10 @@ fn on_commit_cuckoo_call(){
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
 		for _ in 0..iterations {
-			cuckoo_call_tests(&p);
+			//Only do 16
+			if p.lib_full_path.contains("16"){
+				cuckoo_call_tests(&p);
+			}
 		}
 	}
 	/*let pl = load_plugin_lib("mean_cpu_30").unwrap();
@@ -487,7 +490,7 @@ fn call_cuckoo_stop_processing_tests(pl: &PluginLibrary){
 	}
 
 	//Give it a bit to start up and process a bit
-	let wait_time = time::Duration::from_millis(15000);
+	let wait_time = time::Duration::from_millis(2500);
 	thread::sleep(wait_time);
 
 	let start=Instant::now();
@@ -518,7 +521,9 @@ fn on_commit_call_cuckoo_stop_processing(){
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
 		for _ in 0..iterations {
-			call_cuckoo_stop_processing_tests(&p);
+			if p.lib_full_path.contains("16"){
+				call_cuckoo_stop_processing_tests(&p);
+			}
 		}
 	}
 
@@ -593,7 +598,9 @@ fn on_commit_call_cuckoo_read_from_output_queue(){
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
 		for _ in 0..iterations {
-			call_cuckoo_read_from_output_queue_tests(&p);
+			if p.lib_full_path.contains("16"){
+				call_cuckoo_read_from_output_queue_tests(&p);
+			}
 		}
 	}
 	/*let pl = load_plugin_lib("lean_cuda_30").unwrap();
@@ -687,7 +694,9 @@ fn on_commit_call_cuckoo_get_stats(){
 	let plugins = load_all_plugins();
 	for p in plugins.into_iter() {
 		for _ in 0..iterations {
-			call_cuckoo_get_stats_test(&p);
+			if p.lib_full_path.contains("16"){
+				call_cuckoo_get_stats_test(&p);
+			}
 		}
 	}
 	/*let pl = load_plugin_lib("lean_cpu_30").unwrap();

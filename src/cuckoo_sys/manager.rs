@@ -534,7 +534,7 @@ impl PluginLibrary {
 	///  pl.call_cuckoo_init();
 	///  let name = "NUM_THREADS";
 	///  let mut num_threads:u32 = 0;
-	///  let ret_val = pl.call_cuckoo_get_parameter(name.as_bytes(), &mut num_threads);
+	///  let ret_val = pl.call_cuckoo_get_parameter(name.as_bytes(), 0, &mut num_threads);
 	/// ```
 	///
 
@@ -573,7 +573,7 @@ impl PluginLibrary {
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
 	///  let name = "NUM_THREADS";
-	///  let return_code = pl.call_cuckoo_set_parameter(name.as_bytes(), 8);
+	///  let return_code = pl.call_cuckoo_set_parameter(name.as_bytes(), 0, 8);
 	/// ```
 	///
 

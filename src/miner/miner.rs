@@ -188,6 +188,9 @@ pub struct CuckooMinerDeviceStats {
 	/// Whether the device is marked for use
 	pub in_use: u32,
  
+	/// Whether the device has thrown an error (and has stopped)
+	pub has_errored: u32,
+
 	/// The time at which the device last began to search a hash (epoch in
 	/// mills)
 	pub last_start_time: u64,
@@ -503,7 +506,7 @@ impl CuckooMiner {
 			stats_vec.push(stats_bytes[i as usize].clone());
 		}
 		let stats_json = String::from_utf8(stats_vec)?;
-		println!("Stats_json: {}", stats_json);
+		//println!("Stats_json: {}", stats_json);
 
 		let result = serde_json::from_str(&stats_json);
 		if let Err(e) = result {

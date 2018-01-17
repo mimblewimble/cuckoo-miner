@@ -21,6 +21,7 @@ extern crate time;
 extern crate rand;
 
 use std::path::PathBuf;
+use std::fmt::Write;
 use std;
 
 use common::rand::Rng;
@@ -30,6 +31,15 @@ use self::cuckoo::{CuckooPluginManager,
 	CuckooMinerSolution,
 	CuckooMinerConfig,
 	CuckooMiner};
+
+// Encode the provided bytes into a hex string
+pub fn to_hex(bytes: Vec<u8>) -> String {
+	let mut s = String::new();
+	for byte in bytes {
+		write!(&mut s, "{:02x}", byte).expect("Unable to write");
+	}
+	s
+}
 
 //Helper to convert from hex string
 //avoids a lot of awkward byte array initialisation below
@@ -69,8 +79,8 @@ pub const SAMPLE_GRIN_POST_HEADER_1:&str = "010a020364";
 pub const KNOWN_30_HASH_1:&str = "11c5059b4d4053131323fdfab6a6509d73ef22\
 9aedc4073d5995c6edced5a3e6";
 
-pub const KNOWN_16_HASH_1:&str = "5f16f104018fc651c00a280ba7a8b48db80b30\
-20eed60f393bdcb17d0e646538";
+pub const KNOWN_16_HASH_1:&str = "c008b9ff7292fdacef0efbdff73d1db66674ff\
+3b6dea6cca670c85b6a110f0b2";
 
 pub fn get_random_hash() -> [u8;32] {
 	let mut ret_val:[u8;32] = [0;32];
@@ -127,7 +137,7 @@ pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:O
 			iterations+=1;
 			if result == true {
 				println!("Solution found after {} iterations: {}", i, solution);
-				println!("For hash: {:?}", header);
+				println!("For hash: {:?}", to_hex(header.to_vec()));
 				i=0;
 				break;
 			}
@@ -141,9 +151,13 @@ pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:O
 					if s.in_use == 0 {continue;}
 					let last_solution_time_secs = s.last_solution_time as f64 / 1000000000.0;
 					let last_hashes_per_sec = 1.0 / last_solution_time_secs;
-					println!("Plugin 0 - Device {} ({}) - Last Graph time: {}; Graphs per second: {:.*} \
+					let status = match s.has_errored {
+						0 => "OK",
+						_ => "ERRORED", 
+					};
+					println!("Plugin 0 - Device {} ({}) Status: {}, - Last Graph time: {}; Graphs per second: {:.*} \
 					- Total Attempts {}", 
-					s.device_id, s.device_name, last_solution_time_secs, 3, last_hashes_per_sec,
+					s.device_id, s.device_name, status, last_solution_time_secs, 3, last_hashes_per_sec,
 					s.iterations_completed);
 				}
 				next_stat_check = time::get_time().sec + stat_check_interval;
@@ -203,11 +217,15 @@ pub fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64,
 					}
 					for s in stats_vec.unwrap().into_iter() {
 						if s.in_use == 0 {continue;}
+						let status = match s.has_errored {
+							0 => "OK",
+							_ => "ERRORED", 
+						};
 						let last_solution_time_secs = s.last_solution_time as f64 / 1000000000.0;
 						let last_hashes_per_sec = 1.0 / last_solution_time_secs;
-						println!("Plugin 0 - Device {} ({}) - Last Graph time: {}; Graphs per second: {:.*} \
+						println!("Plugin 0 - Device {} ({}) Status: {} - Last Graph time: {}; Graphs per second: {:.*} \
 						- Total Attempts {}", 
-						s.device_id, s.device_name, last_solution_time_secs, 3, last_hashes_per_sec,
+						s.device_id, s.device_name, status, last_solution_time_secs, 3, last_hashes_per_sec,
 						s.iterations_completed);
 						if last_hashes_per_sec.is_finite() {
 							sps_total+=last_hashes_per_sec;

@@ -20,11 +20,12 @@ pub mod common;
 //mines for a bit on each available plugin, one after the other
 #[test]
 fn on_commit_mine_single_plugin_async() {
-	let caps = common::get_plugin_vec("mean_cpu_16");
+	//Should exercise lean/mean cpu at 16 for now
+	let caps = common::get_plugin_vec("cpu_16");
 	for c in &caps {
 		let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
-		common::mine_async_for_duration(plugin_path_vec, 30, None);
+		common::mine_async_for_duration(plugin_path_vec, 10, None);
 	}
 }
 
@@ -33,6 +34,7 @@ fn on_commit_mine_single_plugin_async() {
 fn on_cuda_commit_mine_single_plugin_async() {
 	let mut params=Vec::new();
 	params.push((String::from("USE_DEVICE"),1,0));
+	params.push((String::from("USE_DEVICE"),2,0));
 	params.push((String::from("NUM_BLOCKS"),0,128));
 	params.push((String::from("THREADS_PER_BLOCK"),0,8));
 	params.push((String::from("NUM_BLOCKS"),2,64));
@@ -68,9 +70,9 @@ fn on_commit_mine_plugins_async() {
 	let mut plugin_path_vec:Vec<&str> = Vec::new();
 	for c in &caps {
 		//Have to confine this for the time being to 2, due to travis CI memory constraints
-		if c.full_path.contains("lean_cuda") || c.full_path.contains("mean_cpu"){
+		if c.full_path.contains("lean_cpu") || c.full_path.contains("mean_cpu"){
 			plugin_path_vec.push(&c.full_path);
 		}
 	}
-	common::mine_async_for_duration(plugin_path_vec, 120, None);
+	common::mine_async_for_duration(plugin_path_vec, 15, None);
 }
