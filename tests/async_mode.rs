@@ -36,7 +36,7 @@ fn on_cuda_commit_mine_single_plugin_async() {
 	params.push((String::from("USE_DEVICE"),1,0));
 	params.push((String::from("USE_DEVICE"),2,0));
 	params.push((String::from("NUM_BLOCKS"),0,128));
-	params.push((String::from("THREADS_PER_BLOCK"),0,8));
+	params.push((String::from("THREADS_PER_BLOCK"),0,32));
 	params.push((String::from("NUM_BLOCKS"),2,64));
 	params.push((String::from("THREADS_PER_BLOCK"),2,8));
 	let caps = common::get_plugin_vec("cuda");

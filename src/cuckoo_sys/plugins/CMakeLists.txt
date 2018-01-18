@@ -73,7 +73,7 @@ if(BUILD_CUDA_PLUGINS)
         foreach(CUCKOO_SIZE 30)
             #get edgebits
             math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-        cuda_add_library(cuda_${CUCKOO_SIZE} SHARED ${CUDA_MINER_SOURCES} OPTIONS "-lssl -DEDGEBITS=${EDGEBITS}")
+        cuda_add_library(cuda_${CUCKOO_SIZE} SHARED ${CUDA_MINER_SOURCES} OPTIONS "-lssl -DEXPANDROUND=6 -DCOMPRESSROUND=16 -DBIGSIZE=5 -DEDGEBITS=${EDGEBITS}")
         set_target_properties(cuda_${CUCKOO_SIZE} PROPERTIES PREFIX "" SUFFIX ".cuckooplugin")
         endforeach(CUCKOO_SIZE)
     endif(CUDA_FOUND)
