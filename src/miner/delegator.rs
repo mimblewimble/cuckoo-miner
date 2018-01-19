@@ -33,7 +33,7 @@ use CuckooMinerSolution;
 
 /// From grin
 /// The target is the 8-bytes hash block hashes must be lower than.
-const MAX_TARGET: [u8; 8] = [0xf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+const MAX_TARGET: [u8; 8] = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 
 type JobSharedDataType = Arc<RwLock<JobSharedData>>;
 type JobControlDataType = Arc<RwLock<JobControlData>>;
