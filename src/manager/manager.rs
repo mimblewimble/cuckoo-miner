@@ -313,7 +313,7 @@ impl CuckooPluginManager {
 		caps.full_path = full_path.clone();
 		caps.file_name = String::from("");
 
-		let mut param_list_bytes: [u8; 1024] = [0; 1024];
+		let mut param_list_bytes: [u8; 4096] = [0; 4096];
 		let mut param_list_len = param_list_bytes.len() as u32;
 		// get a list of parameters
 		library.call_cuckoo_parameter_list(&mut param_list_bytes, &mut param_list_len);
