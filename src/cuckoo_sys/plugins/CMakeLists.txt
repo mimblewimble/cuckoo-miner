@@ -12,6 +12,8 @@ set (GPP_FLAGS "-march=native -m64 ${FLAGS}")
 set (CFLAGS "-Wno-format -fomit-frame-pointer ${OPT}")
 set (GCC_FLAGS "-m64 -std=gnu11 ${CFLAGS}")
 
+set (CUDA_HOST_COMPILER_OVERRIDE $ENV{CUDA_HOST_COMPILER})
+
 #blake2b prerequisite
 set (BLAKE_2B "cuckoo/src/blake2b-ref.c")
 
@@ -67,7 +69,11 @@ if(BUILD_CUDA_PLUGINS)
     include("cmake/find_cuda.cmake")
     IF (CUDA_FOUND)
     #TODO: detect or make this a flag, if gcc 5 is installed separately for cuda
-      set (CUDA_HOST_COMPILER "/usr/bin/gcc-5")
+      if (NOT CUDA_HOST_COMPILER_OVERRIDE)
+         set (CUDA_HOST_COMPILER "/opt/cuda/bin/gcc")
+      else()
+         set (CUDA_HOST_COMPILER ${CUDA_HOST_COMPILER_OVERRIDE})
+      endif(NOT CUDA_HOST_COMPILER_OVERRIDE)
       set (CUDA_PROPAGATE_HOST_FLAGS ON)
         ##cuckoo tomato miner targets
         foreach(CUCKOO_SIZE 30)
