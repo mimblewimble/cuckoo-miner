@@ -34,20 +34,20 @@ fn on_commit_mine_single_plugin_async() {
 fn on_cuda_commit_mine_single_plugin_async() {
 	let mut params=Vec::new();
 //	params.push((String::from("USE_DEVICE"),2,0));
-	params.push((String::from("N_TRIMS"),0,240));
-	params.push((String::from("N_BLOCKS"),0,64));
-	params.push((String::from("GENU_BLOCKS"),0,256));
+	/*params.push((String::from("N_TRIMS"),0,240));
+	params.push((String::from("N_BLOCKS"),0,128));
+	params.push((String::from("GENU_BLOCKS"),0,128));
 	params.push((String::from("GENU_TPB"),0,8));
 	params.push((String::from("GENV_STAGE1_TPB"),0,32));
 	params.push((String::from("GENV_STAGE2_TPB"),0,128));
 	params.push((String::from("TRIM_STAGE1_TPB"),0,32));
-	params.push((String::from("TRIM_STAGE2_TPB"),0,96));
+	params.push((String::from("TRIM_STAGE2_TPB"),0,128));
 	params.push((String::from("RENAME_0_STAGE1_TPB"),0,32));
 	params.push((String::from("RENAME_0_STAGE2_TPB"),0,64));
 	params.push((String::from("RENAME_1_STAGE1_TPB"),0,32));
 	params.push((String::from("RENAME_1_STAGE1_TPB"),0,128));
-	params.push((String::from("TRIM_3_TPB"),0,64));
-	params.push((String::from("RENAME_3_TPB"),0,8));
+	params.push((String::from("TRIM_3_TPB"),0,32));
+	params.push((String::from("RENAME_3_TPB"),0,8));*/
 	let caps = common::get_plugin_vec("cuda");
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
