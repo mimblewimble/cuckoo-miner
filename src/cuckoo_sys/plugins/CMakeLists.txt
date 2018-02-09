@@ -68,12 +68,6 @@ endforeach(CUCKOO_SIZE)
 if(BUILD_CUDA_PLUGINS)
     include("cmake/find_cuda.cmake")
     IF (CUDA_FOUND)
-    #TODO: detect or make this a flag, if gcc 5 is installed separately for cuda
-      if (NOT CUDA_HOST_COMPILER_OVERRIDE)
-         set (CUDA_HOST_COMPILER "/opt/cuda/bin/gcc")
-      else()
-         set (CUDA_HOST_COMPILER ${CUDA_HOST_COMPILER_OVERRIDE})
-      endif(NOT CUDA_HOST_COMPILER_OVERRIDE)
       set (CUDA_PROPAGATE_HOST_FLAGS ON)
         ##cuckoo tomato miner targets
         foreach(CUCKOO_SIZE 30)

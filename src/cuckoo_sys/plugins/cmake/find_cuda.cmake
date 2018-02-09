@@ -11,22 +11,26 @@ find_package(CUDA 4)
 if(CUDA_FOUND)
 	message(STATUS "Found CUDA Toolkit v${CUDA_VERSION_STRING}")
 	
-	if(${CUDA_VERSION_STRING} VERSION_LESS "7.5")
-	  # Recent versions of cmake set CUDA_HOST_COMPILER to CMAKE_C_COMPILER which
-	  # on OSX defaults to clang (/usr/bin/cc), but this is not a supported cuda
-	  # compiler.  So, here we will preemptively set CUDA_HOST_COMPILER to gcc if
-	  # that compiler exists in /usr/bin.  This will not override an existing cache
-	  # value if the user has passed CUDA_HOST_COMPILER on the command line.
-	  if (NOT DEFINED CUDA_HOST_COMPILER AND CMAKE_C_COMPILER_ID STREQUAL "Clang" AND EXISTS /usr/bin/gcc)
-	    set(CUDA_HOST_COMPILER /usr/bin/gcc CACHE FILEPATH "Host side compiler used by NVCC")
-	    message(STATUS "Setting CMAKE_HOST_COMPILER to /usr/bin/gcc instead of ${CMAKE_C_COMPILER}.  See http://dev.pointclouds.org/issues/979")
-	  endif()
+	# CUDA 9.1 + installs a symlink to its preferred compiler, so use that if it exists
+	# Otherwise, try to default to /usr/bin/gcc if one hasn't been supplied at the command line
+	# This will not override an existing cache
+	# value if the user has passed CUDA_HOST_COMPILER_OVERRIDE on the command line.
+	if (CUDA_HOST_COMPILER_OVERRIDE)
+	  set (CUDA_HOST_COMPILER ${CUDA_HOST_COMPILER_OVERRIDE})
+	elseif (EXISTS /opt/cuda/bin/gcc)
+	  set(CUDA_HOST_COMPILER /opt/cuda/bin/gcc)
+	elseif (EXISTS /usr/bin/gcc)
+	  set(CUDA_HOST_COMPILER /usr/bin/gcc)
+	elseif (EXISTS /usr/bin/cc)
+	  set(CUDA_HOST_COMPILER /usr/bin/cc)
+	endif()
 
-	  # Send a warning if CUDA_HOST_COMPILER is set to a compiler that is known
-	  # to be unsupported.
-	  if (CUDA_HOST_COMPILER STREQUAL CMAKE_C_COMPILER AND CMAKE_C_COMPILER_ID STREQUAL "Clang")
-	    message(WARNING "CUDA_HOST_COMPILER is set to an unsupported compiler: ${CMAKE_C_COMPILER}.  See http://dev.pointclouds.org/issues/979")
-	  endif()
+	message(STATUS "Setting CMAKE_HOST_COMPILER to ${CUDA_HOST_COMPILER}.")
+
+	# Send a warning if CUDA_HOST_COMPILER is set to a compiler that is known
+	# to be unsupported.
+	if (CUDA_HOST_COMPILER STREQUAL CMAKE_C_COMPILER AND CMAKE_C_COMPILER_ID STREQUAL "Clang")
+	  message(WARNING "CUDA_HOST_COMPILER is set to an unsupported compiler: ${CMAKE_C_COMPILER}.")
 	endif()
 
 	# CUDA_ARCH_BIN is a space separated list of versions to include in output so-file. So you can set CUDA_ARCH_BIN = 10 11 12 13 20
