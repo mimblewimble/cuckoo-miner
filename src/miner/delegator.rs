@@ -213,7 +213,7 @@ impl Delegator {
 	fn meets_difficulty(&self, in_difficulty: u64, sol: CuckooMinerSolution) -> bool {
 		let max_target = BigEndian::read_u64(&MAX_TARGET);
 		let num = BigEndian::read_u64(&sol.hash()[0..8]);
-		max_target / num > in_difficulty
+		max_target / num >= in_difficulty
 	}
 
 	/// The main job loop. Pushes hashes to the plugin and reads solutions
