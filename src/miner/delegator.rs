@@ -297,7 +297,9 @@ impl Delegator {
 		}
 		for l in self.libraries.read().unwrap().iter() {
 			//wait for internal processing to finish
-			while l.call_cuckoo_has_processing_stopped()==0{};
+			while l.call_cuckoo_has_processing_stopped()==0{
+				thread::sleep(time::Duration::from_millis(1));
+			};
 			l.call_cuckoo_reset_processing();
 		}
 		let mut s = self.control_data.write().unwrap();
