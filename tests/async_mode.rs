@@ -33,7 +33,7 @@ fn on_commit_mine_single_plugin_async() {
 #[test]
 fn on_cuda_commit_mine_single_plugin_async() {
 	let mut params=Vec::new();
-	//params.push((String::from("USE_DEVICE"),1,1));
+	params.push((String::from("USE_DEVICE"),1,1));
 	/*params.push((String::from("N_TRIMS"),0,256));
 	params.push((String::from("N_BLOCKS"),0,128));
 	params.push((String::from("GENU_BLOCKS"),0,128));
@@ -48,7 +48,7 @@ fn on_cuda_commit_mine_single_plugin_async() {
 	params.push((String::from("RENAME_1_STAGE1_TPB"),0,128));
 	params.push((String::from("TRIM_3_TPB"),0,32));
 	params.push((String::from("RENAME_3_TPB"),0,8));*/
-	let caps = common::get_plugin_vec("cuda");
+	let caps = common::get_plugin_vec("cuda_30");
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
@@ -56,6 +56,23 @@ fn on_cuda_commit_mine_single_plugin_async() {
 	}
 }
 
+#[test]
+fn on_cuda_meaner_commit_mine_single_plugin_async() {
+	let mut params=Vec::new();
+	/*params.push((String::from("USE_DEVICE"),0,0));
+	params.push((String::from("USE_DEVICE"),1,1));
+	params.push((String::from("N_TRIMS"),1,176));
+	params.push((String::from("GENA_BLOCKS"),1,128));
+	params.push((String::from("TAIL_TPB"),1,512));
+	params.push((String::from("RECOVER_BLOCKS"),1,512));
+	params.push((String::from("RECOVER_TPB"),1,512));*/
+	let caps = common::get_plugin_vec("cuda_meaner_30");
+	for c in &caps {
+	 let mut plugin_path_vec:Vec<&str> = Vec::new();
+		plugin_path_vec.push(&c.full_path);
+		common::mine_async_for_duration(plugin_path_vec, 60, Some(params.clone()));
+	}
+}
 //mine cuda and matrix (mean) miner for a bit
 #[test]
 fn on_cuda_commit_mine_mean_cpu_and_lean_cuda_async() {
