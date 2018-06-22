@@ -32,7 +32,16 @@ fn on_commit_mine_sync() {
 //Same as above, but for cuda only
 #[test]
 fn on_cuda_commit_mine_sync() {
-	let caps = common::get_plugin_vec("cuda");
+	let caps = common::get_plugin_vec("cuda_30");
+	for c in &caps {
+		common::mine_sync_for_duration(&c.full_path, 75, None);
+	}
+}
+
+//Same as above, but for cuda only
+#[test]
+fn on_cuda_meaner_commit_mine_sync() {
+	let caps = common::get_plugin_vec("cuda_meaner_30");
 	for c in &caps {
 		common::mine_sync_for_duration(&c.full_path, 75, None);
 	}

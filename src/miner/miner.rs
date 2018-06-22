@@ -277,6 +277,7 @@ impl CuckooMinerJobHandle {
 			if r.has_stopped {
 				break;
 			}
+			thread::sleep(time::Duration::from_millis(1));
 		}
 		debug!("All jobs have stopped");
 	}
