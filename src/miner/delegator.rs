@@ -23,6 +23,7 @@ use std::mem::transmute;
 
 use rand::{self, Rng};
 use byteorder::{ByteOrder, BigEndian};
+use blake2::blake2b::Blake2b;
 use env_logger;
 
 use cuckoo_sys::manager::PluginLibrary;
@@ -134,7 +135,7 @@ impl Delegator {
 
 	/// Starts the job loop, and initialises the internal plugin
 
-	pub fn start_job_loop(self) -> Result<CuckooMinerJobHandle, CuckooMinerError> {
+	pub fn start_job_loop(self, hash_header: bool) -> Result<CuckooMinerJobHandle, CuckooMinerError> {
 		let _=env_logger::init();
 		// this will block, waiting until previous job is cleared
 		// call_cuckoo_stop_processing();
@@ -144,7 +145,7 @@ impl Delegator {
 		let jh_library = self.libraries.clone();
 
 		thread::spawn(move || {
-			let result = self.job_loop();
+			let result = self.job_loop(hash_header);
 			if let Err(e) = result {
 				error!("Error in job loop: {:?}", e);
 			}
@@ -170,7 +171,7 @@ impl Delegator {
 		bytes
 	}
 
-	/// Return header data in the format expected by the plugin
+	/// As above, except doesn't hash the result
 	fn header_data(&self, pre_nonce: &str, post_nonce: &str, nonce: u64) -> Vec<u8> {
 		// Turn input strings into vectors
 		let mut pre_vec = self.from_hex_string(pre_nonce);
@@ -186,8 +187,20 @@ impl Delegator {
 
 		pre_vec
 	}
+	/// helper that generates a nonce and returns a header
 
-	/// Retrieve next potential chunk of header data
+	fn get_next_header_data_hashed(&self, pre_nonce: &str, post_nonce: &str) -> (u64, Vec<u8>) {
+		// Generate new nonce
+		let nonce: u64 = rand::OsRng::new().unwrap().gen();
+		let mut blake2b = Blake2b::new(32);
+		blake2b.update(&self.header_data(pre_nonce, post_nonce, nonce));
+
+		let mut ret = [0; 32];
+		ret.copy_from_slice(blake2b.finalize().as_bytes());
+		(nonce, ret.to_vec())
+	}
+
+	/// as above, except doesn't hash the result
 	fn get_next_header_data(&self, pre_nonce: &str, post_nonce: &str) -> (u64, Vec<u8>) {
 		let nonce: u64 = rand:: OsRng::new().unwrap().gen();
 		(nonce, self.header_data(pre_nonce, post_nonce, nonce))
@@ -206,7 +219,7 @@ impl Delegator {
 	/// from the queue, putting them into the job's output queue. Continues
 	/// until another thread sets the is_running flag to false
 
-	fn job_loop(self) -> Result<(), CuckooMinerError> {
+	fn job_loop(self, hash_header: bool) -> Result<(), CuckooMinerError> {
 		// keep some unchanging data here, can move this out of shared
 		// object later if it's not needed anywhere else
 		let pre_nonce: String;
@@ -240,8 +253,10 @@ impl Delegator {
 			}
 			for l in self.libraries.read().unwrap().iter() {
 				while l.call_cuckoo_is_queue_under_limit() == 1 {
-					let (nonce, data) = self.get_next_header_data(&pre_nonce, &post_nonce);
-					// println!("Hash thread 1: {:?}", hash);
+					let (nonce, data) = match hash_header {
+						true => self.get_next_header_data_hashed(&pre_nonce, &post_nonce),
+						false => self.get_next_header_data(&pre_nonce, &post_nonce),
+					};
 					// TODO: make this a serialise operation instead
 					let nonce_bytes: [u8; 8] = unsafe { transmute(nonce.to_be()) };
 					l.call_cuckoo_push_to_input_queue(&data, &nonce_bytes);
@@ -272,7 +287,7 @@ impl Delegator {
 
 				}
 			}
-			//avoid busy wait
+			//avoid busy wait 
 			let sleep_dur = time::Duration::from_millis(100);
 			thread::sleep(sleep_dur);
 		}

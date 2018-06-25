@@ -66,7 +66,6 @@ impl Clone for CuckooMinerSolution {
 	}
 }
 
-
 impl CuckooMinerSolution {
 	/// Creates a new cuckoo miner solution
 	/// with nonces set to a u32 array of size
@@ -568,10 +567,11 @@ impl CuckooMiner {
 		post_nonce: &str, // Post-nonce portion of header
 		difficulty: u64, /* The target difficulty, only sols greater than this difficulty will
 		                  * be returned. */
+		hash_header: bool, // (Temporary) Whether to hash the header before sending (true for testnet2 and earlier)
 	) -> Result<CuckooMinerJobHandle, CuckooMinerError> {
 
 		//Note this gives up the plugin to the job thread
 		self.delegator = Some(Delegator::new(job_id, pre_nonce, post_nonce, difficulty, self.libraries));
-		Ok(self.delegator.unwrap().start_job_loop().unwrap())
+		Ok(self.delegator.unwrap().start_job_loop(hash_header).unwrap())
 	}
 }
