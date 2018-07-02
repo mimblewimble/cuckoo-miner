@@ -342,7 +342,7 @@ impl PluginLibrary {
 	///
 	/// * `header` (IN) A reference to a block of [u8] bytes to use for the
 	/// seed to the internal SIPHASH function which generates edge locations 
-	/// in the graph. In practice, this is a SHA3 hash of a Grin blockheader, 
+	/// in the graph. In practice, this is a Grin blockheader, 
 	/// but from the plugin's perspective this can be anything.
 	///
 	/// * `solutions` (OUT) A caller-allocated array of 42 unsigned bytes. This
@@ -585,7 +585,7 @@ impl PluginLibrary {
 	/// #Description
 	///
 	/// For Async/Queued mode, check whether the plugin is ready
-	/// to accept more hashes.
+	/// to accept more headers.
 	///
 	/// #Arguments
 	///
@@ -603,24 +603,24 @@ impl PluginLibrary {
 
 	/// #Description
 	///
-	/// Pushes a hash to the loaded plugin for later processing in
+	/// Pushes header data to the loaded plugin for later processing in
 	/// asyncronous/queued mode.
 	///
 	/// #Arguments
 	///
-	/// * `hash` (IN) A block of bytes to use for the seed to the internal
+	/// * `data` (IN) A block of bytes to use for the seed to the internal
 	/// SIPHASH function which generates edge locations in the graph. In 
-	/// practice, this is a BLAKE2 hash of a Grin blockheader, but from the 
+	/// practice, this is a Grin blockheader, but from the 
 	/// plugin's perspective this can be anything.
 	///
-	/// * `nonce` (IN) The nonce that was used to generate this hash, for
+	/// * `nonce` (IN) The nonce that was used to generate this data, for
 	/// identification purposes in the solution queue
 	///
 	/// #Returns
 	///
 	/// 0 if the hash was successfully added to the queue
 	/// 1 if the queue is full
-	/// 2 if the length of the hash is greater than the plugin allows
+	/// 2 if the length of the data is greater than the plugin allows
 	/// 4 if the plugin has been told to shutdown
 	///
 	/// #Unsafe
@@ -647,14 +647,14 @@ impl PluginLibrary {
 	/// ```
 	///
 
-	pub fn call_cuckoo_push_to_input_queue(&self, hash: &[u8], nonce: &[u8;8]) -> u32 {
+	pub fn call_cuckoo_push_to_input_queue(&self, data: &[u8], nonce: &[u8;8]) -> u32 {
 		let cuckoo_push_to_input_queue_ref = self.cuckoo_push_to_input_queue.lock().unwrap();
-		unsafe { cuckoo_push_to_input_queue_ref(hash.as_ptr(), hash.len() as u32, nonce.as_ptr()) }
+		unsafe { cuckoo_push_to_input_queue_ref(data.as_ptr(), data.len() as u32, nonce.as_ptr()) }
 	}
 
 	/// #Description
 	///
-	/// Clears internal queues of all hashes.
+	/// Clears internal queues of all data
 	///
 	/// #Arguments
 	///
@@ -818,7 +818,7 @@ impl PluginLibrary {
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
 	///  let mut ret_val=pl.call_cuckoo_start_processing();
-	///  //Send hashes into queue, read results, etc
+	///  //Send data into queue, read results, etc
 	///  ret_val=pl.call_cuckoo_stop_processing();
 	///  while pl.call_cuckoo_has_processing_stopped() == 0 {
 	///     //don't continue/exit thread until plugin is stopped
@@ -853,7 +853,7 @@ impl PluginLibrary {
 	///  # let plugin_path = d.to_str().unwrap();
 	///  let pl=PluginLibrary::new(plugin_path).unwrap();
 	///  let mut ret_val=pl.call_cuckoo_start_processing();
-	///  //Send hashes into queue, read results, etc
+	///  //Send data into queue, read results, etc
 	///  ret_val=pl.call_cuckoo_stop_processing();
 	///  while pl.call_cuckoo_has_processing_stopped() == 0 {
 	///     //don't continue/exit thread until plugin is stopped
