@@ -224,6 +224,9 @@ impl Delegator {
 		// object later if it's not needed anywhere else
 		let pre_nonce: String;
 		let post_nonce: String;
+		// generate an identifier to ensure we're only reading our
+		// jobs from the queue
+		let queue_id: u32 = rand::OsRng::new().unwrap().gen();
 		let difficulty;
 		{
 			let s = self.shared_data.read().unwrap();
@@ -259,13 +262,15 @@ impl Delegator {
 					};
 					// TODO: make this a serialise operation instead
 					let nonce_bytes: [u8; 8] = unsafe { transmute(nonce.to_be()) };
-					l.call_cuckoo_push_to_input_queue(&data, &nonce_bytes);
+					l.call_cuckoo_push_to_input_queue(queue_id, &data, &nonce_bytes);
 				}
 			}
 
 			let mut plugin_index=0;
 			for l in self.libraries.read().unwrap().iter() {
+				let mut qid:u32=0;
 				while l.call_cuckoo_read_from_output_queue(
+					&mut qid,
 					&mut solution.solution_nonces,
 					&mut solution.nonce,
 				) != 0
@@ -273,7 +278,7 @@ impl Delegator {
 					// TODO: make this a serialise operation instead
 					let nonce = unsafe { transmute::<[u8; 8], u64>(solution.nonce) }.to_be();
 
-					if self.meets_difficulty(difficulty, solution) {
+					if self.meets_difficulty(difficulty, solution) && qid == queue_id {
 						debug!(
 							"Cuckoo-miner plugin[{}]: Solution Found for Nonce:({}), {:?}",
 							plugin_index,

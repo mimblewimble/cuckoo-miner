@@ -44,9 +44,9 @@ type CuckooParameterList = unsafe extern "C" fn(*mut c_uchar, *mut uint32_t) -> 
 type CuckooSetParameter = unsafe extern "C" fn(*const c_uchar, uint32_t, uint32_t, uint32_t) -> uint32_t;
 type CuckooGetParameter = unsafe extern "C" fn(*const c_uchar, uint32_t, uint32_t, *mut uint32_t) -> uint32_t;
 type CuckooIsQueueUnderLimit = unsafe extern "C" fn() -> uint32_t;
-type CuckooPushToInputQueue = unsafe extern "C" fn(*const c_uchar, uint32_t, *const c_uchar)
+type CuckooPushToInputQueue = unsafe extern "C" fn(uint32_t, *const c_uchar, uint32_t, *const c_uchar)
                                                    -> uint32_t;
-type CuckooReadFromOutputQueue = unsafe extern "C" fn(*mut uint32_t, *mut c_uchar) -> uint32_t;
+type CuckooReadFromOutputQueue = unsafe extern "C" fn(*mut uint32_t, *mut uint32_t, *mut c_uchar) -> uint32_t;
 type CuckooClearQueues = unsafe extern "C" fn();
 type CuckooStartProcessing = unsafe extern "C" fn() -> uint32_t;
 type CuckooStopProcessing = unsafe extern "C" fn() -> uint32_t;
@@ -647,9 +647,9 @@ impl PluginLibrary {
 	/// ```
 	///
 
-	pub fn call_cuckoo_push_to_input_queue(&self, data: &[u8], nonce: &[u8;8]) -> u32 {
+	pub fn call_cuckoo_push_to_input_queue(&self, id: u32, data: &[u8], nonce: &[u8;8]) -> u32 {
 		let cuckoo_push_to_input_queue_ref = self.cuckoo_push_to_input_queue.lock().unwrap();
-		unsafe { cuckoo_push_to_input_queue_ref(data.as_ptr(), data.len() as u32, nonce.as_ptr()) }
+		unsafe { cuckoo_push_to_input_queue_ref(id, data.as_ptr(), data.len() as u32, nonce.as_ptr()) }
 	}
 
 	/// #Description
@@ -739,11 +739,12 @@ impl PluginLibrary {
 
 	pub fn call_cuckoo_read_from_output_queue(
 		&self,
+		id: &mut u32,
 		solutions: &mut [u32; 42],
 		nonce: &mut [u8; 8],
 	) -> u32 {
 		let cuckoo_read_from_output_queue_ref = self.cuckoo_read_from_output_queue.lock().unwrap();
-		unsafe { cuckoo_read_from_output_queue_ref(solutions.as_mut_ptr(), nonce.as_mut_ptr()) }
+		unsafe { cuckoo_read_from_output_queue_ref(id, solutions.as_mut_ptr(), nonce.as_mut_ptr()) }
 	}
 
 	/// #Description
