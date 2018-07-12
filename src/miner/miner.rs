@@ -272,11 +272,13 @@ impl CuckooMinerJobHandle {
 		}
 		debug!("Stop jobs flag set");
 		loop {
-			let r = self.control_data.read().unwrap();
-			if r.has_stopped {
-				break;
+			{
+				let r = self.control_data.read().unwrap();
+				if r.has_stopped {
+					break;
+				}
 			}
-			thread::sleep(time::Duration::from_millis(1));
+			thread::sleep(time::Duration::from_millis(5));
 		}
 		debug!("All jobs have stopped");
 	}
