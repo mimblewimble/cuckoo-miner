@@ -29,44 +29,20 @@ fn on_commit_mine_single_plugin_async() {
 	}
 }
 
-//Same as above, but only for cuda
 #[test]
 fn on_cuda_commit_mine_single_plugin_async() {
 	let mut params=Vec::new();
-	params.push((String::from("USE_DEVICE"),1,1));
-	/*params.push((String::from("N_TRIMS"),0,256));
-	params.push((String::from("N_BLOCKS"),0,128));
-	params.push((String::from("GENU_BLOCKS"),0,128));
-	params.push((String::from("GENU_TPB"),0,8));
-	params.push((String::from("GENV_STAGE1_TPB"),0,32));
-	params.push((String::from("GENV_STAGE2_TPB"),0,128));
-	params.push((String::from("TRIM_STAGE1_TPB"),0,32));
-	params.push((String::from("TRIM_STAGE2_TPB"),0,128));
-	params.push((String::from("RENAME_0_STAGE1_TPB"),0,32));
-	params.push((String::from("RENAME_0_STAGE2_TPB"),0,64));
-	params.push((String::from("RENAME_1_STAGE1_TPB"),0,32));
-	params.push((String::from("RENAME_1_STAGE1_TPB"),0,128));
-	params.push((String::from("TRIM_3_TPB"),0,32));
-	params.push((String::from("RENAME_3_TPB"),0,8));*/
-	let caps = common::get_plugin_vec("cuda_30");
-	for c in &caps {
-	 let mut plugin_path_vec:Vec<&str> = Vec::new();
-		plugin_path_vec.push(&c.full_path);
-		common::mine_async_for_duration(plugin_path_vec, 60, Some(params.clone()));
-	}
-}
-
-#[test]
-fn on_cuda_meaner_commit_mine_single_plugin_async() {
-	let mut params=Vec::new();
 	/*params.push((String::from("USE_DEVICE"),0,0));
-	params.push((String::from("USE_DEVICE"),1,1));
-	params.push((String::from("N_TRIMS"),1,176));
-	params.push((String::from("GENA_BLOCKS"),1,128));
-	params.push((String::from("TAIL_TPB"),1,512));
-	params.push((String::from("RECOVER_BLOCKS"),1,512));
-	params.push((String::from("RECOVER_TPB"),1,512));*/
-	let caps = common::get_plugin_vec("cuda_meaner_30");
+	params.push((String::from("MEM_GB"),0,7));
+	params.push((String::from("N_TRIMS"),0,176));
+	params.push((String::from("GEN_A_BLOCKS"),0,4096));
+	params.push((String::from("GEN_A_TPB"),0,256));
+	params.push((String::from("GEN_B_TPB"),0,128));
+	params.push((String::from("TRIM_TPB"),0,512));
+	params.push((String::from("TAIL_TPB"),0,1024));
+	params.push((String::from("RECOVER_BLOCKS"),0,1024));
+	params.push((String::from("RECOVER_TPB"),0,1024));*/
+	let caps = common::get_plugin_vec("cuda_30");
 	for c in &caps {
 	 let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);

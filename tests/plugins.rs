@@ -412,19 +412,19 @@ fn call_cuckoo_push_to_input_queue_tests(pl: &PluginLibrary){
 	let hash:[u8;42]=[0;42];
 	let nonce:[u8;8]=[0;8];
 	println!("HASH LEN {}", hash.len());
-	let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+	let result=pl.call_cuckoo_push_to_input_queue(0, &hash, &nonce);
 	println!("Result: {}",result);
 	assert!(result==2);
 
 	//basic push
 	let hash:[u8;32]=[0;32];
 	let nonce:[u8;8]=[0;8];
-	let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+	let result=pl.call_cuckoo_push_to_input_queue(1, &hash, &nonce);
 	assert!(result==0);
 
 	//push until queue is full
 	for i in 0..10000 {
-		let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+		let result=pl.call_cuckoo_push_to_input_queue(i+2, &hash, &nonce);
 		if result==1 {
 			break;
 		}
@@ -433,7 +433,7 @@ fn call_cuckoo_push_to_input_queue_tests(pl: &PluginLibrary){
 	}
 
 	//should be full
-	let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+	let result=pl.call_cuckoo_push_to_input_queue(3, &hash, &nonce);
 	assert!(result==1);
 
 	//only do this on smaller test cuckoo, or we'll be here forever
@@ -485,7 +485,7 @@ fn call_cuckoo_stop_processing_tests(pl: &PluginLibrary){
 	//push a few hashes into the queue
 	for i in 0..100 {
 		hash[0]=i;
-		let result=pl.call_cuckoo_push_to_input_queue(&hash, &nonce);
+		let result=pl.call_cuckoo_push_to_input_queue(i as u32, &hash, &nonce);
 		assert!(result==0);
 	}
 
@@ -546,7 +546,7 @@ fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
 	}
 	//Just zero nonce here, for ID
 	let nonce:[u8;8]=[0;8];
-	let result=pl.call_cuckoo_push_to_input_queue(&header, &nonce);
+	let result=pl.call_cuckoo_push_to_input_queue(0, &header, &nonce);
 	println!("Result: {}", result);
 	assert!(result==0);
 
@@ -561,8 +561,9 @@ fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
 
 	let mut sols:[u32; 42] = [0; 42];
 	let mut nonce: [u8; 8] = [0;8];
+	let mut id = 0;
 	loop {
-		let found = pl.call_cuckoo_read_from_output_queue(&mut sols, &mut nonce);
+		let found = pl.call_cuckoo_read_from_output_queue(&mut id, &mut sols, &mut nonce);
 		if found == 1 {
 			println!("Found solution");
 			break;
@@ -653,7 +654,7 @@ fn call_cuckoo_get_stats_test(pl: &PluginLibrary){
 	}
 	//Just zero nonce here, for ID
 	let nonce:[u8;8]=[0;8];
-	let result=pl.call_cuckoo_push_to_input_queue(&header, &nonce);
+	let result=pl.call_cuckoo_push_to_input_queue(0, &header, &nonce);
 	println!("Result: {}", result);
 	assert!(result==0);
 
