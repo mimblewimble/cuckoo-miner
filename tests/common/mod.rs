@@ -223,9 +223,9 @@ pub fn mine_async_for_duration(full_paths: Vec<&str>, duration_in_seconds: i64,
 						};
 						let last_solution_time_secs = s.last_solution_time as f64 / 1000000000.0;
 						let last_hashes_per_sec = 1.0 / last_solution_time_secs;
-						println!("Plugin 0 - Device {} ({}) Status: {} - Last Graph time: {}; Graphs per second: {:.*} \
+						println!("Plugin 0 - Device {} ({}) at Cuckoo{} - Status: {} - Last Graph time: {}; Graphs per second: {:.*} \
 						- Total Attempts {}", 
-						s.device_id, s.device_name, status, last_solution_time_secs, 3, last_hashes_per_sec,
+						s.device_id, s.device_name, s.cuckoo_size, status, last_solution_time_secs, 3, last_hashes_per_sec,
 						s.iterations_completed);
 						if last_hashes_per_sec.is_finite() {
 							sps_total+=last_hashes_per_sec;

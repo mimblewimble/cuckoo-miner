@@ -181,6 +181,9 @@ pub struct CuckooMinerDeviceStats {
 	/// The internal device id
 	pub device_id: String,
 
+	/// Cuckoo size currently being used by the device
+	pub cuckoo_size: String,
+
 	/// The device name
 	pub device_name: String,
 
@@ -298,7 +301,7 @@ impl CuckooMinerJobHandle {
 	/// error occurred
 
 	pub fn get_stats(&self, plugin_index:usize) -> Result<Vec<CuckooMinerDeviceStats>, CuckooMinerError> {
-		let mut stats_bytes: [u8; 2048] = [0; 2048];
+		let mut stats_bytes: [u8; 4096] = [0; 4096];
 		let mut stats_bytes_len = stats_bytes.len() as u32;
 		// get a list of parameters
 		self.library.read().unwrap()[plugin_index].call_cuckoo_get_stats(
