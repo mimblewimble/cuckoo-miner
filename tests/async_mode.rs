@@ -33,7 +33,7 @@ fn on_commit_mine_single_plugin_async() {
 fn on_cuda_commit_mine_single_plugin_async() {
 	let mut params=Vec::new();
 	/*params.push((String::from("USE_DEVICE"),0,0));
-	params.push((String::from("MEM_GB"),0,7));
+	params.push((String::from("EXPAND"),0,0));
 	params.push((String::from("N_TRIMS"),0,176));
 	params.push((String::from("GEN_A_BLOCKS"),0,4096));
 	params.push((String::from("GEN_A_TPB"),0,256));
