@@ -30,7 +30,7 @@ set (MEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/mean
 set (CUDA_MINER_SOURCES cuckoo/src/mean_miner.cu ${BLAKE_2B} )
 
 ###lean_cpu miner targets
-foreach(CUCKOO_SIZE 16 30)
+foreach(CUCKOO_SIZE 16 30 31)
     add_library(lean_cpu_${CUCKOO_SIZE} SHARED ${LEAN_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
@@ -38,7 +38,7 @@ foreach(CUCKOO_SIZE 16 30)
 endforeach(CUCKOO_SIZE)
 
 #matrix miner (mean_cpu) targets
-foreach(CUCKOO_SIZE 16 30)
+foreach(CUCKOO_SIZE 16 30 31)
     if (CUCKOO_SIZE EQUAL 16)
        set (DXBITSFLAG "-DXBITS=0")
     else()
@@ -52,7 +52,7 @@ foreach(CUCKOO_SIZE 16 30)
 endforeach(CUCKOO_SIZE)
 
 #matrix miner (mean_cpu) compatible mode targets, for older processors
-foreach(CUCKOO_SIZE 16 30)
+foreach(CUCKOO_SIZE 16 30 31)
     if (CUCKOO_SIZE EQUAL 16)
        set (DXBITSFLAG "-DXBITS=0")
     else()
@@ -70,7 +70,7 @@ if(BUILD_CUDA_PLUGINS)
     IF (CUDA_FOUND)
       set (CUDA_PROPAGATE_HOST_FLAGS ON)
         ##cuda miner targets
-        foreach(CUCKOO_SIZE 30)
+        foreach(CUCKOO_SIZE 30 31)
             #get edgebits
             math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
         cuda_add_library (cuda_${CUCKOO_SIZE} SHARED ${CUDA_MINER_SOURCES} OPTIONS "-DEDGEBITS=${EDGEBITS}")
