@@ -28,10 +28,10 @@ set (CUDA_MINER_SOURCES cuckoo/src/cuckoo/mean.cu ${BLAKE_2B} )
 
 ###lean_cpu miner targets
 foreach(CUCKOO_SIZE 16 30 31)
-    add_library(lean_cpu_${CUCKOO_SIZE} SHARED ${LEAN_MINER_SOURCES})
+    add_library(cuckoo_lean_cpu_${CUCKOO_SIZE} SHARED ${LEAN_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-    set_target_properties(lean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -DATOMIC -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin" )
+    set_target_properties(cuckoo_lean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -DATOMIC -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin" )
 endforeach(CUCKOO_SIZE)
 
 #matrix miner (mean_cpu) targets
@@ -42,10 +42,10 @@ foreach(CUCKOO_SIZE 16 30 31)
        set (DXBITSFLAG "")
     endif()
 
-    add_library(mean_cpu_${CUCKOO_SIZE} SHARED ${MEAN_MINER_SOURCES})
+    add_library(cuckoo_mean_cpu_${CUCKOO_SIZE} SHARED ${MEAN_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-    set_target_properties(mean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 ${DXBITSFLAG} -DNSIPHASH=8 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
+    set_target_properties(cuckoo_mean_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 ${DXBITSFLAG} -DNSIPHASH=8 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
 endforeach(CUCKOO_SIZE)
 
 #matrix miner (mean_cpu) compatible mode targets, for older processors
@@ -55,10 +55,10 @@ foreach(CUCKOO_SIZE 16 30 31)
     else()
        set (DXBITSFLAG "")
     endif()
-    add_library(mean_compat_cpu_${CUCKOO_SIZE} SHARED ${MEAN_MINER_SOURCES})
+    add_library(cuckoo_mean_compat_cpu_${CUCKOO_SIZE} SHARED ${MEAN_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-    set_target_properties(mean_compat_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} ${DXBITSFLAG} -DNSIPHASH=1 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
+    set_target_properties(cuckoo_mean_compat_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} ${DXBITSFLAG} -DNSIPHASH=1 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
 endforeach(CUCKOO_SIZE)
 
 # Cuda
@@ -70,8 +70,8 @@ if(BUILD_CUDA_PLUGINS)
         foreach(CUCKOO_SIZE 30 31)
             #get edgebits
             math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
-        cuda_add_library (cuda_${CUCKOO_SIZE} SHARED ${CUDA_MINER_SOURCES} OPTIONS "-DEDGEBITS=${EDGEBITS}")
-        set_target_properties(cuda_${CUCKOO_SIZE} PROPERTIES PREFIX "" SUFFIX ".cuckooplugin")
+        cuda_add_library (cuckoo_cuda_${CUCKOO_SIZE} SHARED ${CUDA_MINER_SOURCES} OPTIONS "-DEDGEBITS=${EDGEBITS}")
+        set_target_properties(cuckoo_cuda_${CUCKOO_SIZE} PROPERTIES PREFIX "" SUFFIX ".cuckooplugin")
         endforeach(CUCKOO_SIZE)
     endif(CUDA_FOUND)
 endif(BUILD_CUDA_PLUGINS)
