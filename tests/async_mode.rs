@@ -25,6 +25,7 @@ fn on_commit_mine_single_plugin_async() {
 	for c in &caps {
 		let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
+		println!("Mining on {} for 10s", c.full_path);
 		common::mine_async_for_duration(plugin_path_vec, 10, None);
 	}
 }

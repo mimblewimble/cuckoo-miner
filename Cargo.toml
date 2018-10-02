@@ -35,4 +35,4 @@ const-cstr = "0.2"
 
 [build-dependencies]
 cmake = "0.1.24"
-fs_extra = "1.0.0"
+fs_extra = "1.1.0"

@@ -15,19 +15,16 @@ set (GCC_FLAGS "-m64 -std=gnu11 ${CFLAGS}")
 set (CUDA_HOST_COMPILER_OVERRIDE $ENV{CUDA_HOST_COMPILER})
 
 #blake2b prerequisite
-set (BLAKE_2B "cuckoo/src/blake2b-ref.c")
-
-#simple miner sources
-#set (SIMPLE_MINER_SOURCES cuckoo/src/simple_miner.cpp ${BLAKE_2B})
+set (BLAKE_2B "cuckoo/src/crypto/blake2b-ref.c")
 
 #cuckoo_miner (lean_cpu) sources
-set (LEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/lean_miner.hpp cuckoo/src/lean_miner.cpp ${BLAKE_2B})
+set (LEAN_MINER_SOURCES cuckoo/src/crypto/siphash.h cuckoo/src/cuckoo/cuckoo.h cuckoo/src/cuckoo/lean.hpp cuckoo/src/cuckoo/lean.cpp ${BLAKE_2B})
 
 #matrix_miner sources (mean_cpu)
-set (MEAN_MINER_SOURCES cuckoo/src/siphash.h cuckoo/src/cuckoo.h cuckoo/src/mean_miner.hpp cuckoo/src/mean_miner.cpp ${BLAKE_2B})
+set (MEAN_MINER_SOURCES cuckoo/src/crypto/siphash.h cuckoo/src/cuckoo/cuckoo.h cuckoo/src/cuckoo/mean.hpp cuckoo/src/cuckoo/mean.cpp ${BLAKE_2B})
 
 #cuda miner source (mean_miner.cu)
-set (CUDA_MINER_SOURCES cuckoo/src/mean_miner.cu ${BLAKE_2B} )
+set (CUDA_MINER_SOURCES cuckoo/src/cuckoo/mean.cu ${BLAKE_2B} )
 
 ###lean_cpu miner targets
 foreach(CUCKOO_SIZE 16 30 31)

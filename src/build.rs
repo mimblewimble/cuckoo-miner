@@ -66,7 +66,11 @@ fn main() {
 	plugin_path.push("build");
 	plugin_path.push("plugins");
 	// Collect the files and directories we care about
-	let dir_content = get_dir_content("src/cuckoo_sys/plugins").unwrap();
+	let p = PathBuf::from("src/cuckoo_sys/plugins");
+	let dir_content = match get_dir_content(p) {
+		Ok(c) => c,
+		Err(e) => panic!("Error getting directory content: {}", e),
+	};
 	for d in dir_content.directories {
 		let file_content = get_dir_content(d).unwrap();
 		for f in file_content.files {
