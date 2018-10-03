@@ -21,12 +21,14 @@ pub mod common;
 #[test]
 fn on_commit_mine_single_plugin_async() {
 	//Should exercise lean/mean cpu at 16 for now
-	let caps = common::get_plugin_vec("cpu_16");
-	for c in &caps {
+	let caps = common::get_plugin_vec("cuckatoo_lean_cpu_29");
+	let mut params=Vec::new();
+	params.push((String::from("NUM_THREADS"),0,8));
+		for c in &caps {
 		let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
 		println!("Mining on {} for 10s", c.full_path);
-		common::mine_async_for_duration(plugin_path_vec, 10, None);
+		common::mine_async_for_duration(plugin_path_vec, 10, Some(params.clone()));
 	}
 }
 

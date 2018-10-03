@@ -122,65 +122,6 @@ fn on_commit_cuckoo_init(){
 	}
 }
 
-// Helper to test call_cuckoo_description and return results
-// Ensures that all plugins *probably* don't overwrite
-// their buffers as they contain an null zero somewhere 
-// within the rust-enforced length
-
-fn call_cuckoo_description_tests(pl: &PluginLibrary){
-	///Test normal value
-	const LENGTH:usize = 256;
-	let mut name_bytes:[u8;LENGTH]=[0;LENGTH];
-	let mut description_bytes:[u8;LENGTH]=[0;LENGTH];
-	let mut name_len=name_bytes.len() as u32;
-	let mut desc_len=description_bytes.len() as u32;
-	pl.call_cuckoo_description(&mut name_bytes, &mut name_len,
-		&mut description_bytes, &mut desc_len);
-	let result_name = String::from_utf8(name_bytes.to_vec()).unwrap();
-	let result_name_length = result_name.find('\0');
-	let result_desc = String::from_utf8(description_bytes.to_vec()).unwrap();
-	let result_desc_length = result_desc.find('\0');
-	
-	//Check name is less than rust-enforced length,
-	//if there's no \0 the plugin is likely overwriting the buffer
-	println!("Name: **{}**", result_name);
-	assert!(result_name.len()>0);
-	assert!(result_name_length != None);
-	assert!(name_len!=0);
-	println!("Length: {}", result_name_length.unwrap());
-	println!("Description: **{}**", result_desc);
-	assert!(result_desc.len()>0);
-	assert!(result_desc_length != None);
-	assert!(desc_len!=0);
-	println!("Length: {}", result_desc_length.unwrap());
-
-	assert!(result_name.contains("cuckoo"));
-	assert!(result_desc.contains("cuckoo"));
-
-	///Test provided buffer too short
-	const TOO_SHORT_LENGTH:usize = 16;
-	let mut name_bytes:[u8;TOO_SHORT_LENGTH]=[0;TOO_SHORT_LENGTH];
-	let mut description_bytes:[u8;TOO_SHORT_LENGTH]=[0;TOO_SHORT_LENGTH];
-	let mut name_len=name_bytes.len() as u32;
-	let mut desc_len=description_bytes.len() as u32;
-	pl.call_cuckoo_description(&mut name_bytes, &mut name_len,
-		&mut description_bytes, &mut desc_len);
-	assert!(name_len==0);
-	assert!(desc_len==0);
-}
-
-//tests call_cuckoo_description() on all available plugins
-#[test]
-fn on_commit_cuckoo_description(){
-	let iterations = 100;
-	let plugins = load_all_plugins();
-	for p in plugins.into_iter() {
-		for _ in 0..iterations {
-			call_cuckoo_description_tests(&p);
-		}
-	}
-}
-
 // Helper to test call_cuckoo_parameter_list and return results
 // Ensures that all plugins *probably* don't overwrite
 // their buffers as they contain an null zero somewhere 

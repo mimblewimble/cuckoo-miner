@@ -64,13 +64,6 @@ fn abspath<P: AsRef<Path> + ?Sized>(relpath: &P) -> String {
 /// function. Basic at the moment, but will be extended.
 #[derive(Debug, Clone)]
 pub struct CuckooPluginCapabilities {
-	/// The plugin's descriptive name
-	/// As reported by the plugin
-	pub name: String,
-
-	/// The plugin's reported description
-	pub description: String,
-
 	/// The full path to the plugin
 	pub full_path: String,
 
@@ -84,8 +77,6 @@ pub struct CuckooPluginCapabilities {
 impl Default for CuckooPluginCapabilities {
 	fn default() -> CuckooPluginCapabilities {
 		CuckooPluginCapabilities {
-			name: String::from(""),
-			description: String::from(""),
 			full_path: String::from(""),
 			file_name: String::from(""),
 			parameters: Vec::new(),
@@ -97,9 +88,7 @@ impl fmt::Display for CuckooPluginCapabilities {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		write!(
 			f,
-			"Name: {}\nDescription:{}\nPath:{}\nParameters:{}\n",
-			self.name,
-			self.description,
+			"Path:{}\nParameters:{}\n",
 			self.full_path,
 			serde_json::to_string(&self.parameters).unwrap()
 		)
@@ -287,29 +276,7 @@ impl CuckooPluginManager {
 		debug!("Querying plugin at {}", full_path);
 		let library = PluginLibrary::new(&full_path).unwrap();
 		let mut caps = CuckooPluginCapabilities::default();
-		let mut name_bytes: [u8; 256] = [0; 256];
-		let mut description_bytes: [u8; 256] = [0; 256];
-		let mut name_len = name_bytes.len() as u32;
-		let mut desc_len = description_bytes.len() as u32;
-		library.call_cuckoo_description(
-			&mut name_bytes,
-			&mut name_len,
-			&mut description_bytes,
-			&mut desc_len,
-		);
 
-		let mut name_vec: Vec<u8> = Vec::new();
-		for i in 0..name_len {
-			name_vec.push(name_bytes[i as usize].clone());
-		}
-
-		let mut desc_vec: Vec<u8> = Vec::new();
-		for i in 0..desc_len {
-			desc_vec.push(description_bytes[i as usize].clone());
-		}
-
-		caps.name = String::from_utf8(name_vec)?;
-		caps.description = String::from_utf8(desc_vec)?;
 		caps.full_path = full_path.clone();
 		caps.file_name = String::from("");
 

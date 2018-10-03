@@ -36,10 +36,6 @@ use error::error::CuckooMinerError;
 
 type CuckooInit = unsafe extern "C" fn();
 type CuckooCall = unsafe extern "C" fn(*const c_uchar, uint32_t, *mut uint32_t) -> uint32_t;
-type CuckooDescription = unsafe extern "C" fn(*mut c_uchar,
-                                              *mut uint32_t,
-                                              *mut c_uchar,
-                                              *mut uint32_t);
 type CuckooParameterList = unsafe extern "C" fn(*mut c_uchar, *mut uint32_t) -> uint32_t;
 type CuckooSetParameter = unsafe extern "C" fn(*const c_uchar, uint32_t, uint32_t, uint32_t) -> uint32_t;
 type CuckooGetParameter = unsafe extern "C" fn(*const c_uchar, uint32_t, uint32_t, *mut uint32_t) -> uint32_t;
@@ -63,7 +59,6 @@ pub struct PluginLibrary {
 	loaded_library: Mutex<libloading::Library>,
 	cuckoo_init: Mutex<CuckooInit>,
 	cuckoo_call: Mutex<CuckooCall>,
-	cuckoo_description: Mutex<CuckooDescription>,
 	cuckoo_parameter_list: Mutex<CuckooParameterList>,
 	cuckoo_get_parameter: Mutex<CuckooGetParameter>,
 	cuckoo_set_parameter: Mutex<CuckooSetParameter>,
@@ -147,12 +142,6 @@ impl PluginLibrary {
 					let cuckoo_call: libloading::Symbol<CuckooCall> =
 						loaded_library.get(b"cuckoo_call\0").unwrap();
 					Mutex::new(*cuckoo_call.into_raw())
-				},
-
-				cuckoo_description: {
-					let cuckoo_description:libloading::Symbol<CuckooDescription> =
-						loaded_library.get(b"cuckoo_description\0").unwrap();
-					Mutex::new(*cuckoo_description.into_raw())
 				},
 
 				cuckoo_parameter_list: {
@@ -260,9 +249,6 @@ impl PluginLibrary {
 
 		let cuckoo_call_ref = self.cuckoo_call.lock().unwrap();
 		drop(cuckoo_call_ref);
-
-		let cuckoo_description_ref = self.cuckoo_description.lock().unwrap();
-		drop(cuckoo_description_ref);
 
 		let cuckoo_is_queue_under_limit_ref = self.cuckoo_is_queue_under_limit.lock().unwrap();
 		drop(cuckoo_is_queue_under_limit_ref);
@@ -383,74 +369,6 @@ impl PluginLibrary {
 	pub fn call_cuckoo(&self, header: &[u8], solutions: &mut [u32; 42]) -> u32 {
 		let cuckoo_call_ref = self.cuckoo_call.lock().unwrap();
 		unsafe { cuckoo_call_ref(header.as_ptr(), header.len() as u32, solutions.as_mut_ptr()) }
-	}
-
-	/// #Description
-	/// Call to the call_cuckoo_description function of the loaded
-	/// plugin, which will return various information about the plugin, including
-	/// its name, description, and other information (to be added as needed).
-	///
-	/// #Arguments
-	///
-	/// * `name_bytes` (OUT) A caller-allocated u8 array to which the plugin
-	/// will write its
-	/// name.
-	///
-	/// * `name_bytes_len` (IN-OUT) When called, this should contain the
-	/// maximum number of bytes
-	/// the plugin should write to `name_bytes`. Upon return, this is filled
-	/// with the number of bytes that were written to `name_bytes`.
-	///
-	/// * `description_bytes` (OUT) A caller-allocated u8 array to which the
-	/// plugin will write its description.
-	///
-	/// * `description_bytes_len` (IN-OUT) When called, this should contain the
-	/// maximum number of bytes the plugin should write to `description_bytes`. 
-	/// Upon return, this is filled with the number of bytes that were written 
-	/// to `description_bytes`.
-	///
-	/// #Returns
-	/// Nothing (Values are in OUT parameters). If the provided buffer was too short
-	/// the values of name_bytes_len and description_bytes_len will be 0
-	///
-	/// #Example
-	///
-	/// ```
-	///  # use cuckoo_miner::PluginLibrary;
-	///  # use std::env;
-	///  # use std::path::PathBuf;
-	///  # static DLL_SUFFIX: &str = ".cuckooplugin";
-	///  # let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	///  # d.push(format!("./target/debug/plugins/lean_cpu_16{}", DLL_SUFFIX).as_str());
-	///  # let plugin_path = d.to_str().unwrap();
-	///  let pl=PluginLibrary::new(plugin_path).unwrap();
-	///  pl.call_cuckoo_init();
-	///
-	///  let mut name_bytes:[u8;256]=[0;256];
-	///  let mut description_bytes:[u8;256]=[0;256];
-	///  let mut name_bytes_len=name_bytes.len() as u32;
-	///  let mut desc_len=description_bytes.len() as u32;
-	///  pl.call_cuckoo_description(&mut name_bytes, &mut name_bytes_len,
-	///                          &mut description_bytes, &mut desc_len);
-	/// ```
-	///
-
-	pub fn call_cuckoo_description(
-		&self,
-		name_bytes: &mut [u8],
-		name_bytes_len: &mut u32,
-		description_bytes: &mut [u8],
-		description_bytes_len: &mut u32,
-	) {
-		let cuckoo_description_ref = self.cuckoo_description.lock().unwrap();
-		unsafe {
-			cuckoo_description_ref(
-				name_bytes.as_mut_ptr(),
-				name_bytes_len,
-				description_bytes.as_mut_ptr(),
-				description_bytes_len,
-			);
-		}
 	}
 
 	/// #Description
