@@ -277,7 +277,8 @@ fn cuckoo_call_tests(pl: &PluginLibrary){
 	}
 
 	let mut solution:[u32; 42] = [0;42];
-	let result=pl.call_cuckoo(&header, &mut solution);
+	let mut size = 0;
+	let result=pl.call_cuckoo(&header, &mut size, &mut solution);
 	if result==1 {
 	  println!("Solution Found!");
 	} else {
@@ -503,8 +504,9 @@ fn call_cuckoo_read_from_output_queue_tests(pl: &PluginLibrary){
 	let mut sols:[u32; 42] = [0; 42];
 	let mut nonce: [u8; 8] = [0;8];
 	let mut id = 0;
+	let mut size = 0;
 	loop {
-		let found = pl.call_cuckoo_read_from_output_queue(&mut id, &mut sols, &mut nonce);
+		let found = pl.call_cuckoo_read_from_output_queue(&mut id, &mut sols, &mut size, &mut nonce);
 		if found == 1 {
 			println!("Found solution");
 			break;
@@ -661,19 +663,20 @@ fn specific_lean_cpu_16(){
 
 	//check specific header on 4 threads
 	let known_header = from_hex_string(KNOWN_16_HASH_1);
-	let return_value=pl.call_cuckoo(&known_header, &mut solution);
+	let mut size = 0;
+	let return_value=pl.call_cuckoo(&known_header, &mut size, &mut solution);
 	assert!(return_value==1);
 
 	for i in 0..max_iterations {
 		for j in 0..32 {
 			header[j]=rand::random::<u8>();
 		}
-		let _=pl.call_cuckoo(&header, &mut solution);
+		let _=pl.call_cuckoo(&header, &mut size, &mut solution);
 		if i%100 == 0{ 
 			println!("Iterations: {}", i);
 		}
 	}
-	let return_value=pl.call_cuckoo(&known_header, &mut solution);
+	let return_value=pl.call_cuckoo(&known_header, &mut size, &mut solution);
 	assert!(return_value==1);
 }
 
@@ -689,18 +692,19 @@ fn on_commit_specific_mean_cpu_16(){
 	let mut solution:[u32; 42] = [0;42];
 	let max_iterations=10000;
 	let return_value=pl.call_cuckoo_set_parameter(String::from("NUM_THREADS").as_bytes(), 0, 4);
+	let mut size = 0;
 	assert!(return_value==0);
 	for i in 0..max_iterations {
 		for j in 0..32 {
 			header[j]=rand::random::<u8>();
 		}
-		let _=pl.call_cuckoo(&header, &mut solution);
+		let _=pl.call_cuckoo(&header, &mut size, &mut solution);
 		if i%100 == 0{ 
 			println!("Iterations: {}", i);
 		}
 	}
 	//check specific header on 4 threads
 	let known_header = from_hex_string(KNOWN_16_HASH_1);
-	let return_value=pl.call_cuckoo(&known_header, &mut solution);
+	let return_value=pl.call_cuckoo(&known_header, &mut size, &mut solution);
 	assert!(return_value==1);
 }

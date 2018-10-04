@@ -132,8 +132,9 @@ pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:O
 		let mut solution = CuckooMinerSolution::new();
 		loop {
 			let header:[u8; 32] = get_random_hash();
+			let mut cuckoo_size = 0;
 			//Mine on plugin loaded at index 0
-			let result = miner.mine(&header, &mut solution, 0).unwrap();
+			let result = miner.mine(&header, &mut cuckoo_size, &mut solution, 0).unwrap();
 			iterations+=1;
 			if result == true {
 				println!("Solution found after {} iterations: {}", i, solution);

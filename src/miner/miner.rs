@@ -41,6 +41,8 @@ const CUCKOO_SOLUTION_SIZE: usize = 42;
 
 #[derive(Copy)]
 pub struct CuckooMinerSolution {
+	/// Cuckoo size
+	pub cuckoo_size: u32,
 	/// An array allocated in rust that will be filled
 	/// by the called plugin upon successfully finding
 	/// a solution
@@ -54,6 +56,7 @@ pub struct CuckooMinerSolution {
 impl Default for CuckooMinerSolution {
 	fn default() -> CuckooMinerSolution {
 		CuckooMinerSolution {
+			cuckoo_size: 30,
 			solution_nonces: [0; CUCKOO_SOLUTION_SIZE],
 			nonce: [0; 8],
 		}
@@ -467,11 +470,13 @@ impl CuckooMiner {
 	pub fn mine(
 		&self,
 		header: &[u8],
+		cuckoo_size: &mut u32,
 		solution: &mut CuckooMinerSolution,
 		plugin_index: usize
 	) -> Result<bool, CuckooMinerError> {
 		let result = self.libraries[plugin_index].call_cuckoo(
 			header,
+			cuckoo_size,
 			&mut solution.solution_nonces,
 		);
 		match result {

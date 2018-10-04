@@ -35,14 +35,14 @@ use error::error::CuckooMinerError;
 // Type definitions corresponding to each function that the plugin implements
 
 type CuckooInit = unsafe extern "C" fn();
-type CuckooCall = unsafe extern "C" fn(*const c_uchar, uint32_t, *mut uint32_t) -> uint32_t;
+type CuckooCall = unsafe extern "C" fn(*const c_uchar, uint32_t, *mut uint32_t, *mut uint32_t) -> uint32_t;
 type CuckooParameterList = unsafe extern "C" fn(*mut c_uchar, *mut uint32_t) -> uint32_t;
 type CuckooSetParameter = unsafe extern "C" fn(*const c_uchar, uint32_t, uint32_t, uint32_t) -> uint32_t;
 type CuckooGetParameter = unsafe extern "C" fn(*const c_uchar, uint32_t, uint32_t, *mut uint32_t) -> uint32_t;
 type CuckooIsQueueUnderLimit = unsafe extern "C" fn() -> uint32_t;
 type CuckooPushToInputQueue = unsafe extern "C" fn(uint32_t, *const c_uchar, uint32_t, *const c_uchar)
                                                    -> uint32_t;
-type CuckooReadFromOutputQueue = unsafe extern "C" fn(*mut uint32_t, *mut uint32_t, *mut c_uchar) -> uint32_t;
+type CuckooReadFromOutputQueue = unsafe extern "C" fn(*mut uint32_t, *mut uint32_t, *mut uint32_t, *mut c_uchar) -> uint32_t;
 type CuckooClearQueues = unsafe extern "C" fn();
 type CuckooStartProcessing = unsafe extern "C" fn() -> uint32_t;
 type CuckooStopProcessing = unsafe extern "C" fn() -> uint32_t;
@@ -356,7 +356,8 @@ impl PluginLibrary {
 	///  let pl = PluginLibrary::new(plugin_path).unwrap();
 	///  let header:[u8;40] = [0;40];
 	///  let mut solution:[u32; 42] = [0;42];
-	///  let result=pl.call_cuckoo(&header, &mut solution);
+	///  let mut cuckoo_size = 0;
+	///  let result=pl.call_cuckoo(&header, &mut cuckoo_size, &mut solution);
 	///  if result==0 {
 	///    println!("Solution Found!");
 	///  } else {
@@ -366,9 +367,9 @@ impl PluginLibrary {
 	/// ```
 	///
 
-	pub fn call_cuckoo(&self, header: &[u8], solutions: &mut [u32; 42]) -> u32 {
+	pub fn call_cuckoo(&self, header: &[u8], cuckoo_size: &mut u32, solutions: &mut [u32; 42]) -> u32 {
 		let cuckoo_call_ref = self.cuckoo_call.lock().unwrap();
-		unsafe { cuckoo_call_ref(header.as_ptr(), header.len() as u32, solutions.as_mut_ptr()) }
+		unsafe { cuckoo_call_ref(header.as_ptr(), header.len() as u32, cuckoo_size, solutions.as_mut_ptr()) }
 	}
 
 	/// #Description
@@ -651,7 +652,8 @@ impl PluginLibrary {
 	///  //within loop
 	///  let mut sols:[u32; 42] = [0; 42];
 	///  let mut nonce: [u8; 8] = [0;8];
-	///  let found = pl.call_cuckoo_read_from_output_queue(&mut sols, &mut nonce);
+	///  let mut cuckoo_size = 0;
+	///  let found = pl.call_cuckoo_read_from_output_queue(&mut sols, &mut cuckoo_size, &mut nonce);
 	/// ```
 	///
 
@@ -659,10 +661,11 @@ impl PluginLibrary {
 		&self,
 		id: &mut u32,
 		solutions: &mut [u32; 42],
+		cuckoo_size: &mut u32,
 		nonce: &mut [u8; 8],
 	) -> u32 {
 		let cuckoo_read_from_output_queue_ref = self.cuckoo_read_from_output_queue.lock().unwrap();
-		unsafe { cuckoo_read_from_output_queue_ref(id, solutions.as_mut_ptr(), nonce.as_mut_ptr()) }
+		unsafe { cuckoo_read_from_output_queue_ref(id, solutions.as_mut_ptr(), cuckoo_size, nonce.as_mut_ptr()) }
 	}
 
 	/// #Description

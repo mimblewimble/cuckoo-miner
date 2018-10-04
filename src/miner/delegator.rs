@@ -268,10 +268,11 @@ impl Delegator {
 
 			let mut plugin_index=0;
 			for l in self.libraries.read().unwrap().iter() {
-				let mut qid:u32=0;
+				let mut qid:u32 = 0;
 				while l.call_cuckoo_read_from_output_queue(
 					&mut qid,
 					&mut solution.solution_nonces,
+					&mut solution.cuckoo_size,
 					&mut solution.nonce,
 				) != 0
 				{
