@@ -38,7 +38,7 @@ foreach(CUCKOO_SIZE 16 30 31)
 endforeach(CUCKOO_SIZE)
 
 ###cuckatoo lean_cpu miner targets
-foreach(CUCKATOO_SIZE 15 29 30)
+foreach(CUCKATOO_SIZE 19 29 30)
     add_library(cuckatoo_lean_cpu_${CUCKATOO_SIZE} SHARED ${CUCKATOO_LEAN_MINER_SOURCES})
     #get edgebits
     math (EXPR EDGEBITS ${CUCKATOO_SIZE})

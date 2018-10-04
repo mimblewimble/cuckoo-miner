@@ -665,7 +665,8 @@ impl PluginLibrary {
 		nonce: &mut [u8; 8],
 	) -> u32 {
 		let cuckoo_read_from_output_queue_ref = self.cuckoo_read_from_output_queue.lock().unwrap();
-		unsafe { cuckoo_read_from_output_queue_ref(id, solutions.as_mut_ptr(), cuckoo_size, nonce.as_mut_ptr()) }
+		let ret = unsafe { cuckoo_read_from_output_queue_ref(id, solutions.as_mut_ptr(), cuckoo_size, nonce.as_mut_ptr()) };
+		ret
 	}
 
 	/// #Description
