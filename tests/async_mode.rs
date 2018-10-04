@@ -23,7 +23,7 @@ fn on_commit_mine_single_plugin_async() {
 	//Should exercise lean/mean cpu at 16 for now
 	let caps = common::get_plugin_vec("cuckatoo_lean_cpu_29");
 	let mut params=Vec::new();
-	params.push((String::from("NUM_THREADS"),0,8));
+	params.push((String::from("NUM_THREADS"),0,1));
 		for c in &caps {
 		let mut plugin_path_vec:Vec<&str> = Vec::new();
 		plugin_path_vec.push(&c.full_path);
