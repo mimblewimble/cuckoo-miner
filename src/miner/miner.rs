@@ -19,6 +19,7 @@
 use std::sync::{Arc, RwLock};
 use std::{thread, time};
 use std::{fmt, cmp};
+use std::path::Path;
 
 use byteorder::{ByteOrder, BigEndian};
 use blake2::blake2b::Blake2b;
@@ -181,6 +182,9 @@ impl CuckooMinerConfig {
 ///
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CuckooMinerDeviceStats {
+	/// The plugin file name (optional so the plugins don't have to deal with it on de/ser)
+	pub plugin_name: Option<String>,
+
 	/// The internal device id
 	pub device_id: String,
 
@@ -320,13 +324,22 @@ impl CuckooMinerJobHandle {
 		//println!("Stats_json: {}", stats_json);
 
 		let result = serde_json::from_str(&stats_json);
-
 		if let Err(e) = result {
 			return Err(CuckooMinerError::StatsError(
 				String::from(format!("Error retrieving stats from plugin: {:?}", e)),
 			));
 		}
-		Ok(result.unwrap())
+
+		let mut result:Vec<CuckooMinerDeviceStats> = result.unwrap();
+		let lib_full_path = &self.library.read().unwrap()[plugin_index].lib_full_path;
+		let path_str = Path::new(lib_full_path).file_name().unwrap();
+		let path = Path::new(path_str).file_stem().unwrap();
+		
+		for r in &mut result {
+			r.plugin_name = Some(path.to_str().unwrap().to_owned());
+		}
+
+		Ok(result)
 	}
 }
 
