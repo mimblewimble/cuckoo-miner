@@ -105,6 +105,29 @@ pub fn get_plugin_vec(filter: &str) -> Vec<CuckooPluginCapabilities>{
 	plugin_manager.get_available_plugins(filter).unwrap()
 }
 
+// Helper function, mines a plugin once
+pub fn mine_once(full_path:&str, params:Option<Vec<(String, u32, u32)>>) {
+
+	let mut config_vec=Vec::new();
+	let mut config = CuckooMinerConfig::new();
+	config.plugin_full_path = String::from(full_path);
+
+	if let Some(p) = params {
+		config.parameter_list = p;
+	}
+
+	config_vec.push(config);
+	for c in config_vec.clone().into_iter(){
+		println!("Plugin (Mine once): {}", c.plugin_full_path);
+	}
+
+	let miner = CuckooMiner::new(config_vec.clone()).expect("");
+	let header:[u8; 32] = get_random_hash();
+	let mut cuckoo_size = 0;
+	let mut solution = CuckooMinerSolution::new();
+	let result = miner.mine(&header, &mut cuckoo_size, &mut solution, 0).unwrap();
+}
+
 // Helper function, tests a particular miner implementation against a known set
 pub fn mine_sync_for_duration(full_path:&str, duration_in_seconds: i64, params:Option<Vec<(String, u32, u32)>>) {
 	let mut config_vec=Vec::new();

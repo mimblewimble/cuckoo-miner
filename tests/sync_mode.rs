@@ -20,6 +20,31 @@ extern crate time;
 
 pub mod common;
 
+//mines plugin as requsted
+#[test]
+fn mine_once_cuckatoo_cuda_29() {
+	//Should exercise lean/mean cpu at 1i9 for now
+	let caps = common::get_plugin_vec("cuckatoo_cuda_29");
+	for c in &caps {
+		let mut plugin_path_vec:Vec<&str> = Vec::new();
+		plugin_path_vec.push(&c.full_path);
+		common::mine_once(&c.full_path, None);
+	}
+}
+
+#[test]
+fn mine_once_cuckatoo_lean_29() {
+	//Should exercise lean/mean cpu at 1i9 for now
+	let caps = common::get_plugin_vec("cuckatoo_lean_cpu_29");
+	let mut params=Vec::new();
+	params.push((String::from("NUM_THREADS"),0,2));
+	for c in &caps {
+		let mut plugin_path_vec:Vec<&str> = Vec::new();
+		plugin_path_vec.push(&c.full_path);
+		common::mine_once(&c.full_path, Some(params.clone()));
+	}
+}
+
 //Mines for a bit on each available plugin, one after the other
 #[test]
 fn on_commit_mine_sync() {

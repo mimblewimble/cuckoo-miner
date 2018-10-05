@@ -29,6 +29,9 @@ set (CUCKOO_MEAN_MINER_SOURCES cuckoo/src/crypto/siphash.h cuckoo/src/cuckoo/cuc
 #cuckoo cuda miner source (mean_miner.cu)
 set (CUCKOO_CUDA_MINER_SOURCES cuckoo/src/cuckoo/mean.cu ${BLAKE_2B} )
 
+#cuckoo cuda miner source (mean_miner.cu)
+set (CUCKATOO_CUDA_MINER_SOURCES cuckoo/src/cuckatoo/mean.cu ${BLAKE_2B} )
+
 ###cuckoo lean_cpu miner targets
 foreach(CUCKOO_SIZE 16 30 31)
     add_library(cuckoo_lean_cpu_${CUCKOO_SIZE} SHARED ${CUCKOO_LEAN_MINER_SOURCES})
@@ -77,12 +80,19 @@ if(BUILD_CUDA_PLUGINS)
     include("cmake/find_cuda.cmake")
     IF (CUDA_FOUND)
       set (CUDA_PROPAGATE_HOST_FLAGS ON)
-        ##cuda miner targets
+        ##cuckoo cuda miner targets
         foreach(CUCKOO_SIZE 30 31)
             #get edgebits
             math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
         cuda_add_library (cuckoo_cuda_${CUCKOO_SIZE} SHARED ${CUCKOO_CUDA_MINER_SOURCES} OPTIONS "-DEDGEBITS=${EDGEBITS}")
         set_target_properties(cuckoo_cuda_${CUCKOO_SIZE} PROPERTIES PREFIX "" SUFFIX ".cuckooplugin")
         endforeach(CUCKOO_SIZE)
+        ##cuckatoo cuda miner targets
+        foreach(CUCKATOO_SIZE 19 29 30)
+            #get edgebits
+            math (EXPR EDGEBITS ${CUCKATOO_SIZE})
+        cuda_add_library (cuckatoo_cuda_${CUCKATOO_SIZE} SHARED ${CUCKATOO_CUDA_MINER_SOURCES} OPTIONS "-DEDGEBITS=${EDGEBITS}")
+        set_target_properties(cuckatoo_cuda_${CUCKATOO_SIZE} PROPERTIES PREFIX "" SUFFIX ".cuckooplugin")
+        endforeach(CUCKATOO_SIZE)
     endif(CUDA_FOUND)
 endif(BUILD_CUDA_PLUGINS)
