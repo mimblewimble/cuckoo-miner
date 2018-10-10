@@ -26,6 +26,9 @@ set (CUCKATOO_LEAN_MINER_SOURCES cuckoo/src/crypto/siphash.h cuckoo/src/cuckatoo
 #cuckoo mean miner sources (mean_cpu)
 set (CUCKOO_MEAN_MINER_SOURCES cuckoo/src/crypto/siphash.h cuckoo/src/cuckoo/cuckoo.h cuckoo/src/cuckoo/mean.hpp cuckoo/src/cuckoo/mean.cpp ${BLAKE_2B})
 
+#cuckatoo mean miner sources (mean_cpu)
+set (CUCKATOO_MEAN_MINER_SOURCES cuckoo/src/crypto/siphash.h cuckoo/src/cuckatoo/cuckatoo.h cuckoo/src/cuckatoo/mean.hpp cuckoo/src/cuckatoo/mean.cpp ${BLAKE_2B})
+
 #cuckoo cuda miner source (mean_miner.cu)
 set (CUCKOO_CUDA_MINER_SOURCES cuckoo/src/cuckoo/mean.cu ${BLAKE_2B} )
 
@@ -74,6 +77,33 @@ foreach(CUCKOO_SIZE 16 30 31)
     math (EXPR EDGEBITS ${CUCKOO_SIZE}-1)
     set_target_properties(cuckoo_mean_compat_cpu_${CUCKOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} ${DXBITSFLAG} -DNSIPHASH=1 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
 endforeach(CUCKOO_SIZE)
+
+#cuckatoo mean (cuckatoo_mean_cpu) targets
+foreach(CUCKATOO_SIZE 19 29 30)
+    if (CUCKATOO_SIZE EQUAL 19)
+       set (DXBITSFLAG "-DXBITS=2")
+    else()
+       set (DXBITSFLAG "")
+    endif()
+
+    add_library(cuckatoo_mean_cpu_${CUCKATOO_SIZE} SHARED ${CUCKATOO_MEAN_MINER_SOURCES})
+    #get edgebits
+    math (EXPR EDGEBITS ${CUCKATOO_SIZE})
+    set_target_properties(cuckatoo_mean_cpu_${CUCKATOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} -mavx2 ${DXBITSFLAG} -DNSIPHASH=8 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
+endforeach(CUCKATOO_SIZE)
+
+#matrix miner (cuckatoo_mean_compat_cpu) compatible mode targets, for older processors
+foreach(CUCKATOO_SIZE 19 29 30)
+    if (CUCKATOO_SIZE EQUAL 19)
+       set (DXBITSFLAG "-DXBITS=2")
+    else()
+       set (DXBITSFLAG "")
+    endif()
+    add_library(cuckatoo_mean_compat_cpu_${CUCKATOO_SIZE} SHARED ${CUCKATOO_MEAN_MINER_SOURCES})
+    #get edgebits
+    math (EXPR EDGEBITS ${CUCKATOO_SIZE})
+    set_target_properties(cuckatoo_mean_compat_cpu_${CUCKATOO_SIZE} PROPERTIES COMPILE_FLAGS "${GPP_FLAGS} ${DXBITSFLAG} -DNSIPHASH=1 -DSAVEEDGES -DEDGEBITS=${EDGEBITS}" PREFIX "" SUFFIX ".cuckooplugin")
+endforeach(CUCKATOO_SIZE)
 
 # Cuda
 if(BUILD_CUDA_PLUGINS)

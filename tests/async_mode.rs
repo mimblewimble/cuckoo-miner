@@ -21,7 +21,7 @@ pub mod common;
 #[test]
 fn on_commit_mine_single_plugin_async() {
 	//Should exercise lean/mean cpu at 1i9 for now
-	let caps = common::get_plugin_vec("cuckatoo_lean_cpu_19");
+	let caps = common::get_plugin_vec("cuckatoo_mean_compat_cpu_29");
 	let mut params=Vec::new();
 	params.push((String::from("NUM_THREADS"),0,2));
 		for c in &caps {
