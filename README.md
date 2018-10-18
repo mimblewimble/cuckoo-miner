@@ -72,6 +72,7 @@ can be found in [his github repository](https://github.com/tromp/cuckoo). The
 [white paper](https://github.com/tromp/cuckoo/blob/master/doc/cuckoo.pdf) is the best source of
 further technical details. 
 
+
 A higher level overview of Cuckoo Cycle and how it relates to Grin's Proof-of-work system can be found in 
 [Grin's POW Documentation](https://github.com/ignopeverell/grin/blob/master/doc/pow/pow.md).
 
