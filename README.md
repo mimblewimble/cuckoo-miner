@@ -1,4 +1,4 @@
-** This repository is now integrated directly into [grin-miner](https://github.com/mimblewimble/grin-miner) and obsolete **
+**This repository is now integrated directly into [grin-miner](https://github.com/mimblewimble/grin-miner) and obsolete**
 
 [![Build Status](https://travis-ci.org/mimblewimble/cuckoo-miner.svg?branch=master)](https://travis-ci.org/mimblewimble/cuckoo-miner) [![Gitter chat](https://badges.gitter.im/grin_community/Lobby.png)](https://gitter.im/grin_community/Lobby)
 # cuckoo-miner
